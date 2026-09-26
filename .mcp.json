@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "dkk": {
+      "command": "dkk",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}
