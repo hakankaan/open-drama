@@ -1,0 +1,13 @@
+# Command — an instruction to change domain state.
+name: SaveExtractedScenes
+description: Batch upsert from the extractor agent's save_dedup_scenes tool. Matches by normalised location plus time; matches are reused and enriched, new ones created; all are linked to the episode.
+fields:
+  - name: episodeId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: scenes
+    type: "ExtractedScene[]"
+    description: location, time, prompt, lighting
+actor: AgentRuntime
+handled_by: Scene

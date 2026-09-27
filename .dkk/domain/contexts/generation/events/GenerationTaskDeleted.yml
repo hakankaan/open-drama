@@ -1,0 +1,7 @@
+# Domain event — something that happened in the domain.
+name: GenerationTaskDeleted
+description: A task was removed from history.
+fields:
+  - name: taskId
+    type: ID
+raised_by: GenerationTask

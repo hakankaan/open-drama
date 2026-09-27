@@ -1,0 +1,18 @@
+# Command — an instruction to change domain state.
+name: GeneratePropFinalPrompt
+description: Run the prompt-generator agent to write the white-background product-shot final prompt for a prop (force regenerates). Persisted through SavePropFinalPrompt.
+fields:
+  - name: propId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: force
+    type: boolean
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+actor: Creator
+handled_by: Prop
+rejections:
+  - Agent finished without saving a prompt

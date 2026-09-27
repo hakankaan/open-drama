@@ -1,0 +1,15 @@
+# Read model — a query-optimised projection.
+name: ConfigurationReadiness
+description: Which service types (text, image, video) still lack an active service. Drives the site-wide banner and the first-run tour.
+fields:
+  - name: missingTypes
+    type: "string[]"
+  - name: ready
+    type: boolean
+subscribes_to:
+  - ModelServiceAdded
+  - ModelServiceUpdated
+  - ModelServiceDeleted
+  - QuickSetupApplied
+used_by:
+  - Creator

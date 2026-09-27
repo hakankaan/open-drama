@@ -1,0 +1,13 @@
+# Domain event — something that happened in the domain.
+name: ModelServiceProbed
+description: A connectivity probe returned with reachability, status code and a preview.
+fields:
+  - name: provider
+    type: string
+  - name: reachable
+    type: boolean
+  - name: status
+    type: number
+  - name: message
+    type: string
+raised_by: ModelService

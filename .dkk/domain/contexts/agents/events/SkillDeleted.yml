@@ -1,0 +1,7 @@
+# Domain event — something that happened in the domain.
+name: SkillDeleted
+description: A skill directory was removed.
+fields:
+  - name: id
+    type: string
+raised_by: AgentSkill

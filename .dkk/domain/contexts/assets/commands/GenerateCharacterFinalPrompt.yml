@@ -1,0 +1,18 @@
+# Command — an instruction to change domain state.
+name: GenerateCharacterFinalPrompt
+description: Run the prompt-generator agent to write the turnaround-sheet final prompt for a character (force regenerates even if one exists). The agent persists through SaveCharacterFinalPrompt; the command waits for the run.
+fields:
+  - name: characterId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: force
+    type: boolean
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+actor: Creator
+handled_by: Character
+rejections:
+  - Agent finished without saving a prompt

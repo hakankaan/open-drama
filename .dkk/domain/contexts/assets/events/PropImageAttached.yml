@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: PropImageAttached
+description: An image is now the prop's reference image.
+fields:
+  - name: propId
+    type: ID
+  - name: imagePath
+    type: string
+raised_by: Prop

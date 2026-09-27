@@ -1,0 +1,22 @@
+# Command — an instruction to change domain state.
+name: CreateStylePreset
+description: Add a visual style with a unique key, a name, an English prompt fragment, an optional description and sort order.
+fields:
+  - name: name
+    type: string
+  - name: value
+    type: string
+  - name: prompt
+    type: string
+  - name: description
+    type: string
+  - name: sortOrder
+    type: number
+  - name: isActive
+    type: boolean
+actor: Creator
+handled_by: StylePreset
+rejections:
+  - Missing name, key or prompt
+  - Key not lowercase letters, digits and dashes
+  - Key already exists

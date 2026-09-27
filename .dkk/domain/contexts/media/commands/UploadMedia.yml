@@ -1,0 +1,14 @@
+# Command — an instruction to change domain state.
+name: UploadMedia
+description: Accept a creator upload (image, video or audio) into the uploads directory after validating type and size, and return its path.
+fields:
+  - name: kind
+    type: string
+    description: image | video | audio
+  - name: file
+    type: File
+actor: Creator
+handled_by: MediaFile
+rejections:
+  - Unsupported file type
+  - File exceeds the size limit for its kind

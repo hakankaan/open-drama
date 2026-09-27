@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: CharactersExtracted
+description: The extractor agent saved characters for an episode; reports how many were created and how many merged into existing ones.
+fields:
+  - name: episodeId
+    type: ID
+  - name: created
+    type: number
+  - name: merged
+    type: number
+raised_by: Character

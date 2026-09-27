@@ -1,0 +1,13 @@
+# Command — an instruction to change domain state.
+name: AttachEpisodeFilm
+description: Record the latest rendered film as the episode's video. Issued by the compositing context when a merge completes.
+fields:
+  - name: episodeId
+    type: ID
+  - name: filmPath
+    type: string
+    description: Local media path of the rendered film
+  - name: durationSeconds
+    type: number
+actor: RenderWorker
+handled_by: Episode

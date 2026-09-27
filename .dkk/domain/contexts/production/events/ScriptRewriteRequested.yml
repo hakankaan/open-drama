@@ -1,0 +1,13 @@
+# Domain event — something that happened in the domain.
+name: ScriptRewriteRequested
+description: The creator asked for an AI rewrite of the episode's raw content; the script-rewriter agent should run.
+fields:
+  - name: episodeId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+raised_by: ScriptRewriteJob

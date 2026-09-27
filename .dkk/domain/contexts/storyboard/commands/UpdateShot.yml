@@ -1,0 +1,33 @@
+# Command — an instruction to change domain state.
+name: UpdateShot
+description: Edit any shot field — description, atmosphere, prompts, duration, camera fields, scene binding, character and prop bindings, uploaded reference media, or pick a different video from history as the current one.
+fields:
+  - name: shotId
+    type: ID
+  - name: description
+    type: string
+  - name: atmosphere
+    type: string
+  - name: videoPrompt
+    type: string
+  - name: imagePrompt
+    type: string
+  - name: durationSeconds
+    type: number
+  - name: sceneId
+    type: ID
+  - name: characterIds
+    type: "ID[]"
+  - name: propIds
+    type: "ID[]"
+  - name: referenceMedia
+    type: "ReferenceMedia[]"
+    description: Uploaded image / video / audio paths
+  - name: videoPath
+    type: string
+    description: Set a historical generation as the current video
+actor: Creator
+handled_by: Shot
+rejections:
+  - Binding refers to an asset outside the drama
+  - durationSeconds outside 2-30

@@ -1,0 +1,7 @@
+# Domain event — something that happened in the domain.
+name: PropFinalPromptSaved
+description: A product-shot final prompt is stored for the prop.
+fields:
+  - name: propId
+    type: ID
+raised_by: Prop

@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: ShotVideoAttached
+description: A generated video is now the shot's current video; the shot counts as generated for the stage rail and the export stage.
+fields:
+  - name: shotId
+    type: ID
+  - name: videoPath
+    type: string
+  - name: durationSeconds
+    type: number
+raised_by: Shot

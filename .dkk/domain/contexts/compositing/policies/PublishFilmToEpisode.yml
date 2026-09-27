@@ -1,0 +1,6 @@
+# Policy — reactive logic that listens to events and emits commands.
+name: PublishFilmToEpisode
+description: When a film is rendered, attach it to the episode as its current video (production.AttachEpisodeFilm — cross-context, see flow MergeAndExport).
+when:
+  events:
+    - FilmRendered

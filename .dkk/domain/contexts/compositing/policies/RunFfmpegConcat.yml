@@ -1,0 +1,10 @@
+# Policy — reactive logic that listens to events and emits commands.
+name: RunFfmpegConcat
+description: When a merge starts, write the concat list, run FFmpeg (concat demuxer, re-encode to H.264/AAC, faststart) into the merged media directory, probe the duration, then complete or fail the merge.
+when:
+  events:
+    - MergeStarted
+then:
+  commands:
+    - CompleteMerge
+    - FailMerge

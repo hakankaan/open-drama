@@ -1,0 +1,39 @@
+name: agents
+description: >-
+  The agent runtime and its editable knowledge. Four production agents (script rewriter, extractor, storyboard breaker,
+  prompt generator) run as tool-calling loops against the configured text model; their instructions come from prompt
+  files and skill files in a writable workspace, per content language, and are editable from the settings page.
+glossary:
+  - term: Agent
+    definition: >-
+      A named tool-calling loop with a fixed tool set and instructions assembled per run from its prompt file, its
+      skills and the content-language directive.
+  - term: Agent run
+    definition: >-
+      One invocation of an agent scoped to a drama and episode, with an optional text model or service override, bounded
+      by a maximum number of steps.
+  - term: Prompt file
+    definition: >-
+      The agent's system prompt as Markdown with a small frontmatter (name, optional model override). Language variants
+      sit next to the base file and fall back to it.
+  - term: Skill
+    definition: >-
+      A SKILL.md document (frontmatter name and description plus a body) in a directory under the workspace. Every skill
+      under an agent's prefix is injected in full into its instructions; new skill directories are discovered without
+      restart.
+  - term: Workspace
+    definition: >-
+      The writable directory holding prompts and skills. Shipped as a template and copied once into the data directory
+      on first start, so edits survive upgrades.
+  - term: Language directive
+    definition: >-
+      A highest-priority instruction block telling the agent to write all content in the configured language while never
+      translating existing @mentioned asset names.
+adr_refs:
+  - adr-0001
+  - adr-0002
+  - adr-0003
+  - adr-0006
+  - adr-0007
+  - adr-0011
+  - adr-0012

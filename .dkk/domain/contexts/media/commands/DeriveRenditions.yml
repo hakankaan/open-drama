@@ -1,0 +1,13 @@
+name: DeriveRenditions
+description: >-
+  Produce the thumbnail (images) or poster frame (videos, films) for a stored file next to it. Skipped silently when
+  FFmpeg is unavailable for videos.
+fields:
+  - name: path
+    type: string
+  - name: kind
+    type: string
+actor: GenerationWorker
+handled_by: MediaFile
+adr_refs:
+  - adr-0009

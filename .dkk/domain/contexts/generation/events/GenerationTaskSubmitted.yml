@@ -1,0 +1,16 @@
+name: GenerationTaskSubmitted
+description: A task row exists in processing state with its resolved service, model, prompt and parameters.
+fields:
+- name: taskId
+  type: ID
+- name: type
+  type: string
+  description: image | video
+- name: provider
+  type: string
+- name: model
+  type: string
+- name: ownerRef
+  type: string
+  description: character:ID | scene:ID | prop:ID (images) | shot:ID (videos)
+raised_by: GenerationTask

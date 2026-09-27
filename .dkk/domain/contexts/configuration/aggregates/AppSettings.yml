@@ -1,0 +1,16 @@
+name: AppSettings
+description: >-
+  Application-wide key-value settings — the AI content language and the list of onboarding tours already seen. Stored in
+  the database so they survive port changes and reinstalls.
+handles:
+  commands:
+    - SetContentLanguage
+    - RecordToursSeen
+emits:
+  events:
+    - ContentLanguageChanged
+    - ToursSeenRecorded
+invariants:
+  - contentLanguage is one of the supported languages; an unset or invalid value reads as the default language.
+adr_refs:
+  - adr-0011

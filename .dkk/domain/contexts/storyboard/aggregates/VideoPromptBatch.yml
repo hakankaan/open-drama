@@ -1,0 +1,17 @@
+name: VideoPromptBatch
+description: >-
+  A batch job that runs the prompt-generator agent once per shot to fill missing video prompts (or regenerate selected
+  ones), tracking total, completed, failed and the current shot.
+handles:
+  commands:
+    - StartVideoPromptBatch
+emits:
+  events:
+    - VideoPromptBatchStarted
+    - VideoPromptBatchCompleted
+    - VideoPromptBatchFailed
+invariants:
+  - One batch per episode at a time; starting while running returns the running job (alreadyRunning). Success per shot is judged by a non-empty video prompt actually persisted.
+  - The agent is told which video model the episode locked so it respects that model's duration and style limits.
+adr_refs:
+  - adr-0008

@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: VideoPromptBatchCompleted
+description: The batch finished with completed and failed counts (a failed shot is one whose prompt stayed empty).
+fields:
+  - name: episodeId
+    type: ID
+  - name: completed
+    type: number
+  - name: failed
+    type: number
+raised_by: VideoPromptBatch

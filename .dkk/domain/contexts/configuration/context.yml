@@ -1,0 +1,26 @@
+name: configuration
+description: Configuration of the AI model services the app talks to (text, image and video providers with base URL, key, models and priority), the visual style presets injected into prompts, and application-level settings such as the AI content language.
+glossary:
+- term: Model service
+  definition: A configured provider endpoint for one service type (text, image or video) with base URL, API key, an ordered list of models (first is the default), a priority and an active flag. Keys live in the database, never in files.
+  aliases:
+  - AI service config
+- term: Service type
+  definition: text, image or video — each stage needs exactly one active service of the type it uses.
+- term: Provider
+  definition: 'The dialect a service speaks: the official endpoints of the supported model families (openai, gemini, volcengine, minimax, aliyun), plus byteplus and modelrunner (adapters in iteration 2, adr-0013). Determines the adapter and the connectivity probe.'
+- term: Quick setup
+  definition: Writing a recommended text, image and video service in one step from a single API key of a compatible gateway.
+- term: Style preset
+  definition: A named visual style (3d, anime, ghibli, …) with an English prompt fragment prepended to every image and video prompt of dramas that use it. Built-ins are seeded and upgraded without overwriting user edits.
+- term: Content language
+  definition: The language every agent must write in (scripts, extracted fields, prompts). Changes the prompt and skill variants loaded and appends a highest-priority language directive.
+adr_refs:
+- adr-0001
+- adr-0002
+- adr-0003
+- adr-0004
+- adr-0007
+- adr-0010
+- adr-0012
+- adr-0013

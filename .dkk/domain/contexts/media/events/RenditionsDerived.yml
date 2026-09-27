@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: RenditionsDerived
+description: A thumbnail or poster frame now exists next to the stored file.
+fields:
+  - name: path
+    type: string
+  - name: renditionPath
+    type: string
+raised_by: MediaFile

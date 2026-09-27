@@ -1,0 +1,12 @@
+name: SetContentLanguage
+description: Set the language every agent writes in. The UI switches its locale together with it and reloads.
+fields:
+  - name: language
+    type: string
+    description: zh | en | ja | ko
+actor: Creator
+handled_by: AppSettings
+rejections:
+  - Unsupported language
+adr_refs:
+  - adr-0011

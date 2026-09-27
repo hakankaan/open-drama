@@ -1,0 +1,14 @@
+# Command — an instruction to change domain state.
+name: CreateSkill
+description: Create a skill directory with a starter SKILL.md under an agent's prefix.
+fields:
+  - name: id
+    type: string
+    description: Path such as storyboard-breaker/custom-pacing
+  - name: description
+    type: string
+actor: Creator
+handled_by: AgentSkill
+rejections:
+  - Invalid id segment
+  - Skill already exists

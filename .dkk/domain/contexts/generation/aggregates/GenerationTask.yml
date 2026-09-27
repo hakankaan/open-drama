@@ -1,0 +1,38 @@
+name: GenerationTask
+description: >-
+  One image or video generation request and its full lifecycle. Tagged with its owner so results can be written back,
+  and with the provider task id so polling can resume.
+handles:
+  commands:
+    - SubmitImageGeneration
+    - SubmitVideoGeneration
+    - DispatchGenerationTask
+    - PollGenerationTask
+    - CompleteGenerationTask
+    - FailGenerationTask
+    - DeleteGenerationTask
+    - FailInterruptedTasks
+emits:
+  events:
+    - GenerationTaskSubmitted
+    - GenerationTaskDispatched
+    - ProviderResultReceived
+    - ImageGenerated
+    - VideoGenerated
+    - GenerationTaskFailed
+    - GenerationTaskDeleted
+invariants:
+  - status moves processing → completed | failed and never back; a completed task always has a local result path.
+  - >-
+    The service used is the explicitly requested one, else the owner episode's locked service, else the highest-priority
+    active service of the type; a disabled locked service falls back rather than blocking.
+  - >-
+    Video resolution is stored in the project's own vocabulary (480p / 720p / 1080p) and mapped to the nearest provider
+    tier by each adapter.
+  - >-
+    Provider failures that are terminal (moderation, invalid input) fail the task immediately; transport errors retry
+    until the polling budget is exhausted.
+adr_refs:
+  - adr-0005
+  - adr-0008
+  - adr-0013

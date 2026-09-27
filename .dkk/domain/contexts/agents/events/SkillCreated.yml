@@ -1,0 +1,7 @@
+# Domain event — something that happened in the domain.
+name: SkillCreated
+description: A new skill directory exists and is injected into its agent from the next run.
+fields:
+  - name: id
+    type: string
+raised_by: AgentSkill

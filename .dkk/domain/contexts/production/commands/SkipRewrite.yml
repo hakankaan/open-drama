@@ -1,0 +1,10 @@
+# Command — an instruction to change domain state.
+name: SkipRewrite
+description: Skip the AI rewrite by copying the raw content into scriptContent, so extraction and storyboard breakdown use it and the skip is persisted (the stage rail shows the script as done after a reload).
+fields:
+  - name: episodeId
+    type: ID
+actor: Creator
+handled_by: Episode
+preconditions:
+  - Raw content is not empty

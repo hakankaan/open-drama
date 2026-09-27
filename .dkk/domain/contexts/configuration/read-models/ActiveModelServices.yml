@@ -1,0 +1,15 @@
+# Read model — a query-optimised projection.
+name: ActiveModelServices
+description: For each service type, the active services sorted by priority with their models, so the workbench top bar can switch text/image/video models and episode creation can lock the defaults.
+fields:
+  - name: serviceType
+    type: string
+  - name: services
+    type: "ServiceOption[]"
+subscribes_to:
+  - ModelServiceAdded
+  - ModelServiceUpdated
+  - ModelServiceDeleted
+  - QuickSetupApplied
+used_by:
+  - Creator

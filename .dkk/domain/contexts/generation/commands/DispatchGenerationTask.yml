@@ -1,0 +1,16 @@
+name: DispatchGenerationTask
+description: >-
+  Normalise the task's reference material, build the provider request through the adapter, send it, and record either a
+  synchronous result or the provider task id to poll.
+fields:
+  - name: taskId
+    type: ID
+actor: GenerationWorker
+handled_by: GenerationTask
+rejections:
+  - Unsupported provider for the task type
+  - Local reference video or audio without a public base URL
+  - Provider rejected the request (HTTP error)
+adr_refs:
+  - adr-0005
+  - adr-0013

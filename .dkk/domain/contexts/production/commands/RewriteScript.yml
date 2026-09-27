@@ -1,0 +1,23 @@
+name: RewriteScript
+description: >-
+  Ask the script-rewriter agent to turn the episode's raw content into a formatted script. The agent reads the content
+  and persists its result through SaveScript; the creator may pick a text model or service for this run.
+fields:
+  - name: episodeId
+    type: ID
+  - name: model
+    type: string
+    description: Optional text model override
+  - name: textServiceId
+    type: ID
+    description: Optional text service override
+actor: Creator
+handled_by: ScriptRewriteJob
+preconditions:
+  - Raw content is not empty
+  - If a rewrite job is already running for the episode, the running job is returned (alreadyRunning) instead of starting another
+rejections:
+  - Empty raw content
+  - No text model service configured
+adr_refs:
+  - adr-0008

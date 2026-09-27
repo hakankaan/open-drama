@@ -1,0 +1,23 @@
+# Command — an instruction to change domain state.
+name: UpdateDrama
+description: Update a drama's title, description, genre, style, status or tags. The aspect ratio is immutable and is ignored if supplied.
+fields:
+  - name: dramaId
+    type: ID
+  - name: title
+    type: string
+  - name: description
+    type: string
+  - name: genre
+    type: string
+  - name: style
+    type: string
+  - name: status
+    type: string
+    description: draft | active | completed (project-level status shown on the launcher)
+  - name: tags
+    type: "string[]"
+actor: Creator
+handled_by: Drama
+rejections:
+  - Drama not found or deleted

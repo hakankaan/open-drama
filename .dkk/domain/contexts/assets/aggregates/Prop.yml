@@ -1,0 +1,24 @@
+name: Prop
+description: A plot-critical object with a type and a physical description, a final white-background product-shot prompt and a reference image.
+handles:
+  commands:
+  - CreateProp
+  - UpdateProp
+  - DeleteProp
+  - SaveExtractedProps
+  - GeneratePropFinalPrompt
+  - SavePropFinalPrompt
+  - RequestPropImage
+emits:
+  events:
+  - PropCreated
+  - PropUpdated
+  - PropDeleted
+  - PropsExtracted
+  - PropFinalPromptSaved
+  - PropImageRequested
+  - PropImageAttached
+invariants:
+- name is required and deduplicated by near-name normalisation per drama.
+- description covers the object's physical appearance only; plot purpose never enters the image prompt.
+- Changing the description keeps finalPrompt but sets finalPromptStale; an explicit finalPrompt in an update always wins and clears the flag.

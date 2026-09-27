@@ -1,0 +1,39 @@
+name: storyboard
+description: >-
+  The breakdown of an episode's script into shots — each shot is one video-generation unit of 8-15 seconds carrying 2-4
+  sub-shots — plus per-shot video prompts, reference bindings to characters, scenes and props, and the generated shot
+  videos.
+glossary:
+  - term: Sub-shot
+    definition: >-
+      One visual unit of two to six seconds inside a shot, marked as a [Shot N] block in the description. A shot may
+      switch framing between its sub-shots, but all of them happen in the same scene.
+  - term: Video prompt
+    definition: >-
+      The generation prompt for a shot — a header naming the characters and scene, then one line per 3-second segment.
+      Assets are referenced with the delimited mention grammar @[Name] (brackets allow multi-word names); on generation
+      the API turns each mention into an ordered reference-image slot and the video adapter renders it in the provider's
+      own token syntax.
+  - term: Reference binding
+    definition: >-
+      The characters, scene and props whose reference images are sent with the shot's video request. Extra reference
+      images, videos or audio can be uploaded per shot.
+  - term: Breakdown
+    definition: >-
+      The storyboard-breaker agent run that replaces the episode's shots from the current script, saving in batches of
+      at most 8 with idempotent upsert by shot number.
+  - term: Beat
+    definition: >-
+      A story unit such as the setup, the inciting moment, the climax or a reversal. Two beats never share a shot, so a
+      beat change is always a place where one shot ends and the next begins.
+  - term: Storyboard segment
+    definition: What the Shot aggregate represents — one 8-15 second video-generation unit carrying 2-4 sub-shots.
+    aliases:
+      - Segment
+adr_refs:
+  - adr-0001
+  - adr-0002
+  - adr-0003
+  - adr-0004
+  - adr-0007
+  - adr-0012

@@ -1,0 +1,22 @@
+# Read model — a query-optimised projection.
+name: LatestMergeStatus
+description: The most recent merge of an episode for polling while rendering (status, film path, duration, error).
+fields:
+  - name: episodeId
+    type: ID
+  - name: mergeId
+    type: ID
+  - name: status
+    type: string
+  - name: filmPath
+    type: string
+  - name: durationSeconds
+    type: number
+  - name: error
+    type: string
+subscribes_to:
+  - MergeStarted
+  - FilmRendered
+  - MergeFailed
+used_by:
+  - Creator

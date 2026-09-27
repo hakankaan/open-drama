@@ -1,0 +1,24 @@
+# Command — an instruction to change domain state.
+name: CreateShot
+description: Manually add a shot to an episode with a number, description, duration and bindings.
+fields:
+  - name: episodeId
+    type: ID
+  - name: shotNumber
+    type: number
+  - name: title
+    type: string
+  - name: description
+    type: string
+  - name: durationSeconds
+    type: number
+  - name: sceneId
+    type: ID
+  - name: characterIds
+    type: "ID[]"
+  - name: propIds
+    type: "ID[]"
+actor: Creator
+handled_by: Shot
+rejections:
+  - Binding refers to an asset outside the drama

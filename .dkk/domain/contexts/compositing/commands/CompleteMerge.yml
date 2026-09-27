@@ -1,0 +1,12 @@
+# Command — an instruction to change domain state.
+name: CompleteMerge
+description: Record the rendered output path and probed duration on the merge and mark it completed.
+fields:
+  - name: mergeId
+    type: ID
+  - name: filmPath
+    type: string
+  - name: durationSeconds
+    type: number
+actor: RenderWorker
+handled_by: Film

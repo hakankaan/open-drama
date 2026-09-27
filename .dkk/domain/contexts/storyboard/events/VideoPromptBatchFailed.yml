@@ -1,0 +1,12 @@
+name: VideoPromptBatchFailed
+description: The batch aborted (agent runtime error or restart) before processing every shot; prompts already saved stay, and the creator can start it again for the remaining shots.
+fields:
+- name: episodeId
+  type: ID
+- name: completed
+  type: number
+- name: failed
+  type: number
+- name: error
+  type: string
+raised_by: VideoPromptBatch

@@ -1,0 +1,8 @@
+# Command — an instruction to change domain state.
+name: DeleteStylePreset
+description: Hard-delete a style. Dramas keep their key; a deleted built-in may be re-seeded on restart, so disabling is usually preferable.
+fields:
+  - name: presetId
+    type: ID
+actor: Creator
+handled_by: StylePreset

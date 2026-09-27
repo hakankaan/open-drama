@@ -1,0 +1,9 @@
+name: RunVideoPromptGenerator
+description: >-
+  When a prompt batch starts, run the prompt_generator agent once per shot in shot order (agents.RunAgent —
+  cross-context), telling it the episode's video model, and count success by the persisted prompt.
+when:
+  events:
+    - VideoPromptBatchStarted
+adr_refs:
+  - adr-0006

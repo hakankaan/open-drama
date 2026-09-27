@@ -1,0 +1,22 @@
+name: RequestPropImage
+description: Generate the prop's reference image as a square white-background product shot. Ensures a final prompt first.
+fields:
+- name: propId
+  type: ID
+- name: episodeId
+  type: ID
+- name: model
+  type: string
+- name: imageServiceId
+  type: ID
+- name: textModel
+  type: string
+- name: textServiceId
+  type: ID
+actor: Creator
+handled_by: Prop
+rejections:
+- No image model service configured
+- An image task for this prop is still processing
+adr_refs:
+- adr-0005

@@ -1,0 +1,25 @@
+# Read model — a query-optimised projection.
+name: StorageUsage
+description: The storage card in settings — data directory paths, deployment mode, disk usage broken down by bucket (database, images, videos, merged, uploads, temp, other), free space and when it was computed (cached with stale-while-revalidate).
+fields:
+  - name: mode
+    type: string
+  - name: dataDir
+    type: string
+  - name: storageRoot
+    type: string
+  - name: databasePath
+    type: string
+  - name: usageByBucket
+    type: "BucketUsage[]"
+  - name: freeBytes
+    type: number
+  - name: computedAt
+    type: datetime
+  - name: stale
+    type: boolean
+subscribes_to:
+  - MediaUploaded
+  - MediaStored
+used_by:
+  - Creator

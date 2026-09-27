@@ -1,0 +1,14 @@
+# Read model — a query-optimised projection.
+name: DramaStats
+description: Counts of dramas by status for the launcher hero (total, active, completed).
+fields:
+  - name: total
+    type: number
+  - name: byStatus
+    type: "StatusCount[]"
+subscribes_to:
+  - DramaCreated
+  - DramaUpdated
+  - DramaDeleted
+used_by:
+  - Creator

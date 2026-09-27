@@ -1,0 +1,8 @@
+# Command — an instruction to change domain state.
+name: DeleteScene
+description: Soft-delete a scene; shots that referenced it lose their scene binding.
+fields:
+  - name: sceneId
+    type: ID
+actor: Creator
+handled_by: Scene

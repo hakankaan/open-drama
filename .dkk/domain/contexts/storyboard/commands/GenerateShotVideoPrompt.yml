@@ -1,0 +1,14 @@
+# Command — an instruction to change domain state.
+name: GenerateShotVideoPrompt
+description: Run the prompt-generator agent for a single shot to write its video prompt from the description (sub-shots and dialogue), atmosphere and duration, then persist it via the agent's update_shot tool (only shotId and videoPrompt).
+fields:
+  - name: shotId
+    type: ID
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+actor: Creator
+handled_by: Shot
+rejections:
+  - Agent finished without saving a prompt

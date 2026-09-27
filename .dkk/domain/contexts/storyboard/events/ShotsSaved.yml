@@ -1,0 +1,13 @@
+# Domain event — something that happened in the domain.
+name: ShotsSaved
+description: A batch of shots was upserted for the episode and the episode's total duration recomputed.
+fields:
+  - name: episodeId
+    type: ID
+  - name: count
+    type: number
+  - name: replaced
+    type: boolean
+  - name: totalDurationSeconds
+    type: number
+raised_by: Shot

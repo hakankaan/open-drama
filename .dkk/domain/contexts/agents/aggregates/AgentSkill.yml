@@ -1,0 +1,21 @@
+name: AgentSkill
+description: >-
+  A skill directory with its SKILL.md and optional language variants. Owned by the agent whose prefix its path starts
+  with.
+handles:
+  commands:
+    - CreateSkill
+    - UpdateSkill
+    - DeleteSkill
+emits:
+  events:
+    - SkillCreated
+    - SkillUpdated
+    - SkillDeleted
+invariants:
+  - Skill ids are path segments of lowercase letters, digits and dashes; the frontmatter name equals the last segment.
+  - All file access is confined to the workspace directory.
+  - Base-language edits refresh the skill index immediately; variants are read fresh on every run.
+adr_refs:
+  - adr-0006
+  - adr-0011

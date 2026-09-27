@@ -1,0 +1,17 @@
+name: UpdateProp
+description: Edit a prop's fields, set its final prompt manually, or attach an uploaded or generated image. Editing the description marks the final prompt stale (it is kept); a finalPrompt supplied in the same request wins and clears the flag.
+fields:
+- name: propId
+  type: ID
+- name: name
+  type: string
+- name: type
+  type: string
+- name: description
+  type: string
+- name: finalPrompt
+  type: string
+- name: imagePath
+  type: string
+actor: Creator
+handled_by: Prop

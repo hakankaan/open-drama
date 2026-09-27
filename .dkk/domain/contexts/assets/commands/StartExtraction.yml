@@ -1,0 +1,23 @@
+name: StartExtraction
+description: >-
+  Start an asynchronous extraction of one target type (characters, scenes or props) from the episode's script. Returns
+  immediately; the UI polls the job. Optionally overrides the text model or service for the run.
+fields:
+  - name: episodeId
+    type: ID
+  - name: target
+    type: string
+    description: characters | scenes | props
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+actor: Creator
+handled_by: ExtractionJob
+preconditions:
+  - The episode has a script (formatted or raw)
+rejections:
+  - Unknown target
+  - Episode has no script
+adr_refs:
+  - adr-0008

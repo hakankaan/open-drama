@@ -1,0 +1,19 @@
+# Command — an instruction to change domain state.
+name: SaveAgentPrompt
+description: Write an agent's prompt file for a language (name, model override for the base language, and the system prompt body).
+fields:
+  - name: agentType
+    type: string
+  - name: language
+    type: string
+  - name: name
+    type: string
+  - name: model
+    type: string
+  - name: systemPrompt
+    type: string
+actor: Creator
+handled_by: AgentPrompt
+rejections:
+  - Unknown agent type
+  - Empty system prompt

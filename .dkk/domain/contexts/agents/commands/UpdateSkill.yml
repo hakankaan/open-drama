@@ -1,0 +1,14 @@
+# Command — an instruction to change domain state.
+name: UpdateSkill
+description: Overwrite a skill's SKILL.md (or a language variant) with new content.
+fields:
+  - name: id
+    type: string
+  - name: language
+    type: string
+  - name: content
+    type: string
+actor: Creator
+handled_by: AgentSkill
+rejections:
+  - Skill does not exist

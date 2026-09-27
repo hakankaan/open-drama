@@ -1,0 +1,25 @@
+name: AgentRun
+description: >-
+  One execution of an agent — resolves instructions and model, runs the tool-calling loop up to the step budget, and
+  reports the tools called and the final text. Success is judged by what the tools persisted, not by the model's reply.
+handles:
+  commands:
+    - RunAgent
+emits:
+  events:
+    - AgentRunStarted
+    - AgentRunCompleted
+    - AgentRunFailed
+invariants:
+  - >-
+    The run carries episodeId and dramaId in its request context; every tool reads scope from there and never from model
+    output.
+  - >-
+    Instructions = prompt file (language variant, else base, else built-in default) + all matching skills + language
+    directive.
+  - >-
+    The text model is the request override, else the prompt file's model, else the default model of the resolved text
+    service; provider quirks (thinking off on relays, temperature, max output tokens) are patched at the transport
+    layer.
+adr_refs:
+  - adr-0006

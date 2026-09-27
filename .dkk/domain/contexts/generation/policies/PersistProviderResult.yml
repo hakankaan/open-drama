@@ -1,0 +1,14 @@
+name: PersistProviderResult
+description: >-
+  When a provider result arrives, store it in local media (media.StoreRemoteFile for a URL, media.StoreInlineImage for
+  base64 — cross-context, see flow GenerationTaskLifecycle), let media derive renditions, then complete the task with
+  the local path so nothing downstream depends on an expiring provider URL.
+when:
+  events:
+    - ProviderResultReceived
+then:
+  commands:
+    - CompleteGenerationTask
+adr_refs:
+  - adr-0005
+  - adr-0009

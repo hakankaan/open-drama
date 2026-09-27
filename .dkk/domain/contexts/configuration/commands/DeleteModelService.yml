@@ -1,0 +1,8 @@
+# Command — an instruction to change domain state.
+name: DeleteModelService
+description: Remove a service permanently.
+fields:
+  - name: serviceId
+    type: ID
+actor: Creator
+handled_by: ModelService

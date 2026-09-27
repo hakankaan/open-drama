@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: EpisodeResolutionChanged
+description: The episode's video resolution tier changed; subsequent video generations use the new tier.
+fields:
+  - name: episodeId
+    type: ID
+  - name: resolution
+    type: string
+raised_by: Episode

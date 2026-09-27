@@ -1,0 +1,29 @@
+# Read model — a query-optimised projection.
+name: EpisodeAssets
+description: The assets stage of the workbench — characters, scenes and props linked to the episode with their fields, final prompt, reference image (plus thumbnail), readiness (ready / generating / pending) and the extraction job status per type.
+fields:
+  - name: episodeId
+    type: ID
+  - name: characters
+    type: "CharacterCard[]"
+  - name: scenes
+    type: "SceneCard[]"
+  - name: props
+    type: "PropCard[]"
+  - name: extraction
+    type: ExtractionStatusByTarget
+subscribes_to:
+  - CharactersExtracted
+  - ScenesExtracted
+  - PropsExtracted
+  - CharacterUpdated
+  - SceneUpdated
+  - PropUpdated
+  - CharacterImageAttached
+  - SceneImageAttached
+  - PropImageAttached
+  - ExtractionStarted
+  - ExtractionCompleted
+  - ExtractionFailed
+used_by:
+  - Creator

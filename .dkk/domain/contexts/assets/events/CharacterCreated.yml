@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: CharacterCreated
+description: A character was added to the drama (manually or by extraction).
+fields:
+  - name: characterId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: name
+    type: string
+raised_by: Character

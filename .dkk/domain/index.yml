@@ -1,0 +1,239 @@
+contexts:
+- name: production
+  description: 'Dramas (projects) and their episodes: the production lifecycle from raw source text to a finished episode film.'
+- name: assets
+  description: Characters, scenes and props extracted from a script, their final image prompts and reference images.
+- name: storyboard
+  description: Storyboard breakdown of an episode into shots, per-shot video prompts, reference bindings and shot videos.
+- name: generation
+  description: 'Provider-agnostic image and video generation tasks: submission, dispatch, polling and result persistence.'
+- name: compositing
+  description: Merging shot videos into an episode film with FFmpeg and exporting it.
+- name: media
+  description: 'Local media storage: uploads, persisted generation results, thumbnails, poster frames and static serving.'
+- name: configuration
+  description: Model service configuration (text/image/video providers), style presets and application settings.
+- name: agents
+  description: 'The agent runtime: production agents, their editable prompts and skills, and agent runs against the domain.'
+flows:
+- name: FirstRunSetup
+  description: A fresh install has no model services. The creator either applies a quick setup key or adds services manually, tests connectivity, and the readiness banner clears once text, image and video each have an active service.
+  steps:
+  - ref: configuration.ConfigurationReadiness
+    type: read_model
+    note: Banner shows which service types are missing
+  - ref: configuration.ApplyQuickSetup
+    type: command
+    note: Or AddModelService per type
+  - ref: configuration.ModelServiceAdded
+    type: event
+  - ref: configuration.TestModelService
+    type: command
+  - ref: configuration.ModelServiceProbed
+    type: event
+  - ref: configuration.ActiveModelServices
+    type: read_model
+    note: Episode creation locks the highest-priority active image and video services
+- name: ScriptStage
+  description: The creator creates a drama and an episode, pastes raw content and lets the script rewriter agent produce a formatted script (or skips the rewrite).
+  steps:
+  - ref: production.CreateDrama
+    type: command
+  - ref: production.DramaCreated
+    type: event
+  - ref: production.CreateEpisode
+    type: command
+    note: Locks image/video services and resolution
+  - ref: production.EpisodeCreated
+    type: event
+  - ref: production.UpdateEpisodeContent
+    type: command
+    note: Raw content pasted and saved
+  - ref: production.RewriteScript
+    type: command
+  - ref: production.ScriptRewriteRequested
+    type: event
+  - ref: production.RunScriptRewriter
+    type: policy
+  - ref: agents.RunAgent
+    type: command
+    note: script_rewriter agent reads the raw content and calls SaveScript
+  - ref: production.SaveScript
+    type: command
+  - ref: production.ScriptSaved
+    type: event
+  - ref: production.ScriptRewriteCompleted
+    type: event
+    note: Or ScriptRewriteFailed; the studio polls EpisodeJobs
+  - ref: production.EpisodePipelineStatus
+    type: read_model
+    note: Script stage shows done
+- name: AssetStage
+  description: Characters, scenes and props are extracted from the script by the extractor agent (deduplicated against the drama), each gets a final prompt from the prompt generator, and a reference image is generated or uploaded.
+  steps:
+  - ref: assets.StartExtraction
+    type: command
+    note: One job per episode and target type; types run in parallel
+  - ref: assets.ExtractionStarted
+    type: event
+  - ref: assets.RunExtractorAgent
+    type: policy
+  - ref: agents.RunAgent
+    type: command
+  - ref: assets.SaveExtractedCharacters
+    type: command
+    note: Also SaveExtractedScenes / SaveExtractedProps
+  - ref: assets.CharactersExtracted
+    type: event
+  - ref: assets.ExtractionCompleted
+    type: event
+  - ref: assets.RequestCharacterImage
+    type: command
+    note: Ensures a final prompt first (GenerateCharacterFinalPrompt), then requests the image
+  - ref: assets.CharacterImageRequested
+    type: event
+  - ref: assets.SubmitAssetImageGeneration
+    type: policy
+  - ref: generation.SubmitImageGeneration
+    type: command
+  - ref: generation.ImageGenerated
+    type: event
+  - ref: assets.AttachAssetImageOnGeneration
+    type: policy
+  - ref: assets.CharacterImageAttached
+    type: event
+  - ref: assets.EpisodeAssets
+    type: read_model
+    note: Readiness per asset feeds the stage rail
+- name: StoryboardAndVideoStage
+  description: The storyboard breaker agent splits the script into shots with descriptions, bindings and video prompts; the creator reviews prompts, binds references, picks the video model and generates each shot video (singly or in batch, with retry of failures).
+  steps:
+  - ref: storyboard.BreakdownStoryboard
+    type: command
+  - ref: storyboard.StoryboardBreakdownRequested
+    type: event
+  - ref: storyboard.RunStoryboardBreaker
+    type: policy
+  - ref: agents.RunAgent
+    type: command
+    note: storyboard_breaker agent saves shots in batches of at most 8
+  - ref: storyboard.SaveShots
+    type: command
+  - ref: storyboard.ShotsSaved
+    type: event
+  - ref: storyboard.StoryboardBreakdownCompleted
+    type: event
+  - ref: storyboard.StartVideoPromptBatch
+    type: command
+    note: Fills missing video prompts; optional for selected shots
+  - ref: storyboard.RunVideoPromptGenerator
+    type: policy
+  - ref: storyboard.ShotVideoPromptSaved
+    type: event
+  - ref: storyboard.RequestShotVideo
+    type: command
+    note: '@[Name] mentions resolve to ordered reference slots; style prompt is prepended'
+  - ref: storyboard.ShotVideoRequested
+    type: event
+  - ref: storyboard.SubmitShotVideoGeneration
+    type: policy
+  - ref: generation.SubmitVideoGeneration
+    type: command
+  - ref: generation.VideoGenerated
+    type: event
+  - ref: storyboard.AttachShotVideoOnGeneration
+    type: policy
+  - ref: storyboard.ShotVideoAttached
+    type: event
+  - ref: storyboard.EpisodeShotList
+    type: read_model
+- name: MergeAndExport
+  description: The creator selects shots that have videos, the render worker concatenates them with FFmpeg into a film, the film is attached to the episode, and the creator downloads it and marks the episode done.
+  steps:
+  - ref: compositing.MergeShots
+    type: command
+    note: Only shots with an existing video file; shot order preserved
+  - ref: compositing.MergeStarted
+    type: event
+  - ref: compositing.RunFfmpegConcat
+    type: policy
+  - ref: compositing.CompleteMerge
+    type: command
+  - ref: compositing.FilmRendered
+    type: event
+  - ref: compositing.DerivePosterForFilm
+    type: policy
+  - ref: media.DeriveRenditions
+    type: command
+  - ref: compositing.PublishFilmToEpisode
+    type: policy
+  - ref: production.AttachEpisodeFilm
+    type: command
+  - ref: production.EpisodeFilmAttached
+    type: event
+  - ref: compositing.EpisodeFilms
+    type: read_model
+    note: Film list with play and download
+  - ref: production.SetEpisodeStatus
+    type: command
+    note: Mark done (completed) — toggleable
+  - ref: production.EpisodeStatusChanged
+    type: event
+- name: GenerationTaskLifecycle
+  description: Every image or video generation, whatever triggered it, follows one lifecycle - a task row is created, the adapter builds the provider request, the worker submits and polls, the result is persisted to local media storage and then written back to the owner.
+  steps:
+  - ref: generation.SubmitImageGeneration
+    type: command
+    note: Or SubmitVideoGeneration
+  - ref: generation.GenerationTaskSubmitted
+    type: event
+  - ref: generation.DispatchOnSubmit
+    type: policy
+  - ref: generation.DispatchGenerationTask
+    type: command
+    note: Reference material normalised (local paths to data URLs or public URLs)
+  - ref: generation.GenerationTaskDispatched
+    type: event
+  - ref: generation.PollUntilSettled
+    type: policy
+  - ref: generation.PollGenerationTask
+    type: command
+  - ref: generation.ProviderResultReceived
+    type: event
+  - ref: generation.PersistProviderResult
+    type: policy
+  - ref: media.StoreRemoteFile
+    type: command
+    note: Or StoreInlineImage for base64 results
+  - ref: media.MediaStored
+    type: event
+  - ref: media.DeriveRenditionsOnStore
+    type: policy
+  - ref: generation.CompleteGenerationTask
+    type: command
+  - ref: generation.ImageGenerated
+    type: event
+    note: Or VideoGenerated; owners attach the local path
+  - ref: generation.GenerationTaskStatus
+    type: read_model
+    note: The UI polls this until the task settles
+  adr_refs:
+  - adr-0005
+- name: AgentRun
+  description: How any agent run is assembled - the caller names the agent and scope, the runtime composes instructions from the prompt file, skills and content language, resolves the text model, and loops on tool calls until the agent stops.
+  steps:
+  - ref: agents.RunAgent
+    type: command
+  - ref: agents.AgentRunStarted
+    type: event
+  - ref: agents.AgentCatalog
+    type: read_model
+    note: Prompt file plus skills for the agent, in the content language
+  - ref: configuration.ActiveModelServices
+    type: read_model
+    note: Text model service, unless the request overrides model or service
+  - ref: agents.AgentRunCompleted
+    type: event
+    note: Or AgentRunFailed; success is judged by what the tools persisted
+  adr_refs:
+  - adr-0006

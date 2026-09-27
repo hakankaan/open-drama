@@ -1,0 +1,11 @@
+# Command — an instruction to change domain state.
+name: SaveCharacterFinalPrompt
+description: Persist the final prompt written by the prompt-generator agent, prepending the drama's style prompt fragment.
+fields:
+  - name: characterId
+    type: ID
+  - name: prompt
+    type: string
+    description: Style-free prompt in the content language
+actor: AgentRuntime
+handled_by: Character

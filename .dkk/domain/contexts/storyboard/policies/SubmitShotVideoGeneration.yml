@@ -1,0 +1,6 @@
+# Policy — reactive logic that listens to events and emits commands.
+name: SubmitShotVideoGeneration
+description: When a shot video is requested, submit a video generation task tagged with the shot id carrying the resolved references and parameters (generation.SubmitVideoGeneration — cross-context, see flow StoryboardAndVideoStage).
+when:
+  events:
+    - ShotVideoRequested

@@ -1,0 +1,8 @@
+# Command — an instruction to change domain state.
+name: DeleteGenerationTask
+description: Remove a task from a shot's or asset's generation history (the media file is kept).
+fields:
+  - name: taskId
+    type: ID
+actor: Creator
+handled_by: GenerationTask

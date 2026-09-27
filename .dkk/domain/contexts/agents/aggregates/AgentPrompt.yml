@@ -1,0 +1,18 @@
+name: AgentPrompt
+description: >-
+  The prompt file of one agent in one language. The base language file also carries the optional model override;
+  variants do not.
+handles:
+  commands:
+    - SaveAgentPrompt
+    - ResetAgentPrompt
+emits:
+  events:
+    - AgentPromptSaved
+    - AgentPromptReset
+invariants:
+  - Only known agent types can have prompt files.
+  - Resetting deletes the file; the runtime then falls back to the base language file or the built-in default.
+adr_refs:
+  - adr-0006
+  - adr-0011

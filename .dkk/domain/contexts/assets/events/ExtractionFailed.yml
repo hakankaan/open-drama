@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: ExtractionFailed
+description: The extractor agent run failed or was interrupted by a restart; the error is shown and the creator can retry.
+fields:
+  - name: episodeId
+    type: ID
+  - name: target
+    type: string
+  - name: error
+    type: string
+raised_by: ExtractionJob

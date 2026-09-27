@@ -1,0 +1,7 @@
+# Domain event — something that happened in the domain.
+name: QuickSetupApplied
+description: The recommended text, image and video services were written from one key.
+fields:
+  - name: serviceIds
+    type: "ID[]"
+raised_by: ModelService

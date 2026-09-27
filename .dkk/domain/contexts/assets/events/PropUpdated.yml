@@ -1,0 +1,10 @@
+name: PropUpdated
+description: The asset's fields changed; if the description changed, finalPromptStale is now true.
+fields:
+- name: propId
+  type: ID
+- name: changedFields
+  type: string[]
+- name: finalPromptStale
+  type: boolean
+raised_by: Prop

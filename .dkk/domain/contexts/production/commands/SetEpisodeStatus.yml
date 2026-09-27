@@ -1,0 +1,12 @@
+# Command — an instruction to change domain state.
+name: SetEpisodeStatus
+description: Set the episode's production status (draft, active, completed — the same enum as Drama). "Mark done" on the export stage sets completed; clicking again reverts to active.
+fields:
+  - name: episodeId
+    type: ID
+  - name: status
+    type: string
+actor: Creator
+handled_by: Episode
+rejections:
+  - Unknown status value

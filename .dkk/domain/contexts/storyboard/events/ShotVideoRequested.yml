@@ -1,0 +1,26 @@
+name: ShotVideoRequested
+description: A video generation was requested for a shot with the fully resolved prompt, references and parameters.
+fields:
+- name: shotId
+  type: ID
+- name: dramaId
+  type: ID
+- name: prompt
+  type: string
+- name: videoServiceId
+  type: ID
+- name: model
+  type: string
+- name: durationSeconds
+  type: number
+- name: aspectRatio
+  type: string
+- name: resolution
+  type: string
+- name: referenceImageUrls
+  type: string[]
+- name: referenceVideoUrls
+  type: string[]
+- name: referenceAudioUrls
+  type: string[]
+raised_by: Shot

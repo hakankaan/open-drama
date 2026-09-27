@@ -1,0 +1,7 @@
+name: AttachAssetImageOnGeneration
+description: Triggered by generation.ImageGenerated (a cross-context event, see flow AssetStage) for a task tagged with a character, scene or prop — writes the local image path onto that asset. Failures leave the asset unchanged and are visible on the task.
+then:
+  commands:
+  - UpdateCharacter
+  - UpdateScene
+  - UpdateProp

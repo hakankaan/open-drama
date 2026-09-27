@@ -1,0 +1,31 @@
+name: generation
+description: >-
+  Provider-agnostic image and video generation. Every generation, whoever asked for it, is a task row with one lifecycle
+  — submitted, dispatched to a provider through an adapter, polled until it settles, persisted to local media and
+  written back to its owner.
+glossary:
+  - term: Generation task
+    definition: >-
+      One image or video generation request with its owner tags (character, scene or prop for images; shot for videos),
+      provider, model, prompt, parameters, provider task id, result and status.
+  - term: Provider adapter
+    definition: >-
+      A per-provider module that builds the generate request, parses the generate and poll responses and extracts the
+      result URL or inline data. The worker never speaks a provider's dialect directly.
+  - term: Polling profile
+    definition: >-
+      The cadence and budget for polling a task type — images every 5 seconds up to 10 minutes, videos every 10 seconds
+      up to 300 attempts.
+  - term: Reference normalisation
+    definition: >-
+      Turning local media paths into what a provider can consume — compressed data URLs for images, public URLs (via the
+      configured public base URL) for videos and audio.
+adr_refs:
+  - adr-0001
+  - adr-0002
+  - adr-0003
+  - adr-0004
+  - adr-0005
+  - adr-0007
+  - adr-0012
+  - adr-0013

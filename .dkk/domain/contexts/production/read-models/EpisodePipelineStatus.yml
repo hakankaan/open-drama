@@ -1,0 +1,30 @@
+# Read model — a query-optimised projection.
+name: EpisodePipelineStatus
+description: The stage rail for one episode, derived on read. Script is ready when raw content exists and done when scriptContent exists (rewritten or copied by SkipRewrite); assets report ready/total per type; storyboard reports shot count; videos report shots with a video over total; export reports the latest merge status and film path; completed reflects the manual mark.
+fields:
+  - name: episodeId
+    type: ID
+  - name: script
+    type: StepStatus
+  - name: characters
+    type: StepStatus
+  - name: scenes
+    type: StepStatus
+  - name: props
+    type: StepStatus
+  - name: shots
+    type: StepStatus
+  - name: videos
+    type: StepStatus
+  - name: merge
+    type: StepStatus
+  - name: completed
+    type: boolean
+subscribes_to:
+  - EpisodeContentUpdated
+  - ScriptSaved
+  - ScriptRewriteSkipped
+  - EpisodeStatusChanged
+  - EpisodeFilmAttached
+used_by:
+  - Creator

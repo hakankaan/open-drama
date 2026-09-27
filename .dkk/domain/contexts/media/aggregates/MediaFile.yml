@@ -1,0 +1,19 @@
+name: MediaFile
+description: A stored file with its relative path, kind (image, video, audio, film), MIME type, size and derived renditions.
+handles:
+  commands:
+    - UploadMedia
+    - StoreRemoteFile
+    - StoreInlineImage
+    - DeriveRenditions
+emits:
+  events:
+    - MediaUploaded
+    - MediaStored
+    - RenditionsDerived
+invariants:
+  - File names are uuids with the original extension; a path is never reused, so immutable caching is safe.
+  - Uploads are validated by extension and MIME (video ≤ 50 MB, audio ≤ 20 MB, images by extension).
+  - Rendition derivation never blocks or fails the main operation; a missing rendition is tolerated by the UI.
+adr_refs:
+  - adr-0009

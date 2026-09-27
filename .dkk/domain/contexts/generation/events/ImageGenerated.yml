@@ -1,0 +1,14 @@
+name: ImageGenerated
+description: An image task completed and its result is stored locally with a thumbnail; owners attach it.
+fields:
+- name: taskId
+  type: ID
+- name: localPath
+  type: string
+- name: characterId
+  type: ID
+- name: sceneId
+  type: ID
+- name: propId
+  type: ID
+raised_by: GenerationTask

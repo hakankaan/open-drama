@@ -1,0 +1,14 @@
+# Command — an instruction to change domain state.
+name: CompleteGenerationTask
+description: Mark the task completed with its provider result URL and the local media path where the result was persisted (plus duration for videos). Raises ImageGenerated or VideoGenerated for owners to write back.
+fields:
+  - name: taskId
+    type: ID
+  - name: resultUrl
+    type: string
+  - name: localPath
+    type: string
+  - name: durationSeconds
+    type: number
+actor: GenerationWorker
+handled_by: GenerationTask

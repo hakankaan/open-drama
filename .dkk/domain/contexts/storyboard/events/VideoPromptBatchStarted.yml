@@ -1,0 +1,13 @@
+# Domain event — something that happened in the domain.
+name: VideoPromptBatchStarted
+description: A prompt batch began with the list of shots to process.
+fields:
+  - name: episodeId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: shotIds
+    type: "ID[]"
+  - name: videoModelLabel
+    type: string
+raised_by: VideoPromptBatch

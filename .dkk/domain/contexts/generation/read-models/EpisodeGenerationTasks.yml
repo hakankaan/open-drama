@@ -1,0 +1,18 @@
+# Read model — a query-optimised projection.
+name: EpisodeGenerationTasks
+description: The task drawer of the workbench — every generation task belonging to the episode (through its shots and linked assets) newest first, plus the episode's merges, with elapsed time and owner labels.
+fields:
+  - name: episodeId
+    type: ID
+  - name: tasks
+    type: "TaskRow[]"
+  - name: merges
+    type: "MergeRow[]"
+subscribes_to:
+  - GenerationTaskSubmitted
+  - ImageGenerated
+  - VideoGenerated
+  - GenerationTaskFailed
+  - GenerationTaskDeleted
+used_by:
+  - Creator

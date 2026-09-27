@@ -1,0 +1,17 @@
+# Command — an instruction to change domain state.
+name: StartVideoPromptBatch
+description: Start filling video prompts for every shot that lacks one, or regenerate the given shot ids. Runs shot by shot in the background; the UI polls progress. Returns the running job (alreadyRunning) if one exists.
+fields:
+  - name: episodeId
+    type: ID
+  - name: shotIds
+    type: "ID[]"
+    description: Optional; when given, regenerates exactly these
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+actor: Creator
+handled_by: VideoPromptBatch
+rejections:
+  - Nothing to generate

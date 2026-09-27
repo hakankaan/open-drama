@@ -1,0 +1,13 @@
+name: StoreInlineImage
+description: >-
+  Decode a base64 image returned inline by a provider (for example Gemini) and store it with the extension matching its
+  MIME type.
+fields:
+  - name: base64Data
+    type: string
+  - name: mimeType
+    type: string
+actor: GenerationWorker
+handled_by: MediaFile
+adr_refs:
+  - adr-0009

@@ -1,0 +1,10 @@
+name: SceneUpdated
+description: The asset's fields changed; if description or lighting changed, finalPromptStale is now true.
+fields:
+- name: sceneId
+  type: ID
+- name: changedFields
+  type: string[]
+- name: finalPromptStale
+  type: boolean
+raised_by: Scene

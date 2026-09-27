@@ -1,0 +1,12 @@
+# Read model — a query-optimised projection.
+name: StylePresetCatalog
+description: Style presets sorted by sort order — active only for project creation, all of them for the settings page.
+fields:
+  - name: presets
+    type: "StylePresetRow[]"
+subscribes_to:
+  - StylePresetCreated
+  - StylePresetUpdated
+  - StylePresetDeleted
+used_by:
+  - Creator

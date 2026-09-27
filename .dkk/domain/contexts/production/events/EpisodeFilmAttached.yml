@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: EpisodeFilmAttached
+description: A rendered film became the episode's current video; the export stage can show and download it.
+fields:
+  - name: episodeId
+    type: ID
+  - name: filmPath
+    type: string
+  - name: durationSeconds
+    type: number
+raised_by: Episode

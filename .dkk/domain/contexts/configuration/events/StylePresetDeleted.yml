@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: StylePresetDeleted
+description: A style was removed.
+fields:
+  - name: presetId
+    type: ID
+  - name: value
+    type: string
+raised_by: StylePreset

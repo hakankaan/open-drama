@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: ShotCreated
+description: A shot was added manually.
+fields:
+  - name: shotId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: shotNumber
+    type: number
+raised_by: Shot

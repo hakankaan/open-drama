@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: CharacterImageAttached
+description: A generated or uploaded image is now the character's reference image; the asset counts as ready.
+fields:
+  - name: characterId
+    type: ID
+  - name: imagePath
+    type: string
+raised_by: Character

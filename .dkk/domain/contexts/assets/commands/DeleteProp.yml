@@ -1,0 +1,8 @@
+# Command — an instruction to change domain state.
+name: DeleteProp
+description: Soft-delete a prop; shots that referenced it lose the binding.
+fields:
+  - name: propId
+    type: ID
+actor: Creator
+handled_by: Prop

@@ -1,0 +1,19 @@
+# Command — an instruction to change domain state.
+name: CreateProp
+description: Manually add a prop (name, type, physical description) to a drama, optionally linking it to an episode.
+fields:
+  - name: dramaId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: name
+    type: string
+  - name: type
+    type: string
+    description: daily / weapon / document / keepsake …
+  - name: description
+    type: string
+actor: Creator
+handled_by: Prop
+rejections:
+  - Empty name

@@ -1,0 +1,24 @@
+name: RequestCharacterImage
+description: Generate the character's reference image. Ensures a final prompt exists first (generating one if missing, falling back to a locally composed prompt when the agent fails), then requests a 16:9 image through the generation context using the episode's locked image service unless overridden. Batch generation in the UI issues this once per asset with bounded concurrency; there is no server-side batch.
+fields:
+- name: characterId
+  type: ID
+- name: episodeId
+  type: ID
+- name: model
+  type: string
+- name: imageServiceId
+  type: ID
+- name: textModel
+  type: string
+- name: textServiceId
+  type: ID
+actor: Creator
+handled_by: Character
+preconditions:
+- An image model service is available (locked or active)
+rejections:
+- No image model service configured
+- An image task for this character is still processing
+adr_refs:
+- adr-0005

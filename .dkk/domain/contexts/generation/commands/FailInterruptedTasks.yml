@@ -1,0 +1,9 @@
+name: FailInterruptedTasks
+description: >-
+  At API startup, mark every task still in processing as failed with a restart message, because the in-memory polling
+  loops died with the previous process.
+actor: Bootstrap
+handled_by: GenerationTask
+adr_refs:
+  - adr-0005
+  - adr-0008

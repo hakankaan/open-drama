@@ -1,0 +1,20 @@
+# Command — an instruction to change domain state.
+name: UpdateEpisodeContent
+description: Save the creator's edits to an episode's raw content, formatted script, title or description. Used by the script workbench autosave.
+fields:
+  - name: episodeId
+    type: ID
+  - name: content
+    type: string
+    description: Raw source text
+  - name: scriptContent
+    type: string
+    description: Formatted script (manual edits)
+  - name: title
+    type: string
+  - name: description
+    type: string
+actor: Creator
+handled_by: Episode
+rejections:
+  - No updatable field supplied

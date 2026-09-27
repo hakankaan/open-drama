@@ -1,0 +1,7 @@
+# Domain event — something that happened in the domain.
+name: SceneDeleted
+description: A scene was soft-deleted.
+fields:
+  - name: sceneId
+    type: ID
+raised_by: Scene

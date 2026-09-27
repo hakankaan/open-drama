@@ -1,0 +1,8 @@
+name: SceneImageAttached
+description: An image is now the scene's reference image; the asset counts as ready.
+fields:
+- name: sceneId
+  type: ID
+- name: imagePath
+  type: string
+raised_by: Scene

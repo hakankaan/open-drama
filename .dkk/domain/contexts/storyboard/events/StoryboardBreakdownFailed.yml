@@ -1,0 +1,8 @@
+name: StoryboardBreakdownFailed
+description: The breaker agent failed or was interrupted; the shots parked by the first batch are restored, so the episode is back to its pre-breakdown shots and videos.
+fields:
+- name: episodeId
+  type: ID
+- name: error
+  type: string
+raised_by: StoryboardBreakdown

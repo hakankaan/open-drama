@@ -1,0 +1,10 @@
+name: RunScriptRewriter
+description: >-
+  When a script rewrite is requested, run the script_rewriter agent scoped to the episode (agents.RunAgent — a
+  cross-context command, see flow ScriptStage). The agent reads the raw content and calls SaveScript; the creator's UI
+  shows a rewriting state until the run completes.
+when:
+  events:
+    - ScriptRewriteRequested
+adr_refs:
+  - adr-0006

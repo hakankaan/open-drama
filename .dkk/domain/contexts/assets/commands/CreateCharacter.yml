@@ -1,0 +1,23 @@
+# Command — an instruction to change domain state.
+name: CreateCharacter
+description: Manually add a character to a drama, optionally linking it to an episode.
+fields:
+  - name: dramaId
+    type: ID
+  - name: episodeId
+    type: ID
+    description: Optional; links the character to this episode
+  - name: name
+    type: string
+  - name: role
+    type: string
+  - name: appearance
+    type: string
+  - name: styling
+    type: string
+  - name: description
+    type: string
+actor: Creator
+handled_by: Character
+rejections:
+  - Empty name

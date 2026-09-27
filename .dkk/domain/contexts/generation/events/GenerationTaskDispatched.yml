@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: GenerationTaskDispatched
+description: The provider accepted the request asynchronously and returned a provider task id to poll.
+fields:
+  - name: taskId
+    type: ID
+  - name: providerTaskId
+    type: string
+raised_by: GenerationTask

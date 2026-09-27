@@ -1,0 +1,25 @@
+name: Character
+description: A person in the drama with appearance and styling descriptions, an optional role, a final turnaround-sheet prompt and a reference image. Shared across the drama's episodes through episode links.
+handles:
+  commands:
+  - CreateCharacter
+  - UpdateCharacter
+  - DeleteCharacter
+  - SaveExtractedCharacters
+  - GenerateCharacterFinalPrompt
+  - SaveCharacterFinalPrompt
+  - RequestCharacterImage
+emits:
+  events:
+  - CharacterCreated
+  - CharacterUpdated
+  - CharacterDeleted
+  - CharactersExtracted
+  - CharacterFinalPromptSaved
+  - CharacterImageRequested
+  - CharacterImageAttached
+invariants:
+- name is required and unique per drama after near-name normalisation; extraction reuses an existing match instead of creating a duplicate.
+- Changing appearance or styling keeps finalPrompt but sets finalPromptStale; an explicit finalPrompt in an update always wins and clears the flag.
+- The saved final prompt always starts with the drama's style prompt fragment.
+- Deletion is a soft delete and removes the character from every episode of the drama.

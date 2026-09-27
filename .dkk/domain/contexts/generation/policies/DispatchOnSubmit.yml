@@ -1,0 +1,9 @@
+# Policy — reactive logic that listens to events and emits commands.
+name: DispatchOnSubmit
+description: As soon as a task is submitted, dispatch it in the background so the submitting request can return the task id immediately.
+when:
+  events:
+    - GenerationTaskSubmitted
+then:
+  commands:
+    - DispatchGenerationTask

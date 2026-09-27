@@ -1,0 +1,13 @@
+# Domain event — something that happened in the domain.
+name: DramaCreated
+description: A new drama project exists with its fixed aspect ratio and chosen visual style.
+fields:
+  - name: dramaId
+    type: ID
+  - name: title
+    type: string
+  - name: aspectRatio
+    type: string
+  - name: style
+    type: string
+raised_by: Drama

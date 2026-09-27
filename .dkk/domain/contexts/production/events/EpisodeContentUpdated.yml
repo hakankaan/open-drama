@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: EpisodeContentUpdated
+description: The creator saved edits to the raw content, script, title or description of an episode.
+fields:
+  - name: episodeId
+    type: ID
+  - name: changedFields
+    type: "string[]"
+raised_by: Episode

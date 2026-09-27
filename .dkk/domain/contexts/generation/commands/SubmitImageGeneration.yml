@@ -1,0 +1,26 @@
+name: SubmitImageGeneration
+description: Create an image generation task for a prompt with optional reference images and canvas size, tagged with its owner (character, scene or prop). Returns the task id at once; processing continues in the background.
+fields:
+- name: prompt
+  type: string
+- name: dramaId
+  type: ID
+- name: characterId
+  type: ID
+- name: sceneId
+  type: ID
+- name: propId
+  type: ID
+- name: size
+  type: string
+- name: referenceImages
+  type: string[]
+- name: model
+  type: string
+- name: imageServiceId
+  type: ID
+actor: GenerationWorker
+handled_by: GenerationTask
+rejections:
+- Empty prompt
+- No image model service resolvable

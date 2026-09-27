@@ -1,0 +1,25 @@
+# Command — an instruction to change domain state.
+name: UpdateModelService
+description: Edit a service (name, base URL, key, models and their order, priority, active flag, temperature). Reordering models so another is first changes the default model; raising priority makes the service the type's active choice.
+fields:
+  - name: serviceId
+    type: ID
+  - name: name
+    type: string
+  - name: baseUrl
+    type: string
+  - name: apiKey
+    type: string
+  - name: models
+    type: "string[]"
+  - name: priority
+    type: number
+  - name: isActive
+    type: boolean
+  - name: temperature
+    type: number
+actor: Creator
+handled_by: ModelService
+rejections:
+  - Unsupported provider for the service type
+  - Temperature outside 0-2

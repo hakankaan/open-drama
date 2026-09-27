@@ -1,0 +1,16 @@
+# Domain event — something that happened in the domain.
+name: ProviderResultReceived
+description: The provider reported a finished result — a downloadable URL or inline base64 data — that still has to be persisted locally.
+fields:
+  - name: taskId
+    type: ID
+  - name: resultUrl
+    type: string
+  - name: inlineData
+    type: string
+    description: base64 payload when the provider returns no URL
+  - name: mimeType
+    type: string
+  - name: durationSeconds
+    type: number
+raised_by: GenerationTask

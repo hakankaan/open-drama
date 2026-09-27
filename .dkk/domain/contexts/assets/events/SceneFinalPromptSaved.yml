@@ -1,0 +1,7 @@
+# Domain event — something that happened in the domain.
+name: SceneFinalPromptSaved
+description: An establishing-shot final prompt is stored for the scene.
+fields:
+  - name: sceneId
+    type: ID
+raised_by: Scene

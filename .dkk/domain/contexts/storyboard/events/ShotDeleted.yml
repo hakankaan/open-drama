@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: ShotDeleted
+description: A shot and its bindings were removed.
+fields:
+  - name: shotId
+    type: ID
+  - name: episodeId
+    type: ID
+raised_by: Shot

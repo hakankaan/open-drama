@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: MergeStarted
+description: A merge record exists in processing state with the ordered list of clips to concatenate.
+fields:
+  - name: mergeId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: clipPaths
+    type: "string[]"
+raised_by: Film

@@ -1,0 +1,7 @@
+# Domain event — something that happened in the domain.
+name: CharacterDeleted
+description: A character was soft-deleted.
+fields:
+  - name: characterId
+    type: ID
+raised_by: Character

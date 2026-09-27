@@ -1,0 +1,19 @@
+name: UpdateScene
+description: Edit a scene's fields, set its final prompt manually, or attach an uploaded or generated image. Editing the description or lighting marks the final prompt stale (it is kept); a finalPrompt supplied in the same request wins and clears the flag.
+fields:
+- name: sceneId
+  type: ID
+- name: location
+  type: string
+- name: time
+  type: string
+- name: prompt
+  type: string
+- name: lighting
+  type: string
+- name: finalPrompt
+  type: string
+- name: imagePath
+  type: string
+actor: Creator
+handled_by: Scene

@@ -1,0 +1,14 @@
+# Command — an instruction to change domain state.
+name: AttachShotVideo
+description: Record a completed video generation as the shot's current video and duration. Issued by the generation write-back.
+fields:
+  - name: shotId
+    type: ID
+  - name: videoPath
+    type: string
+  - name: durationSeconds
+    type: number
+  - name: taskId
+    type: ID
+actor: GenerationWorker
+handled_by: Shot

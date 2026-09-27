@@ -1,0 +1,23 @@
+name: Film
+description: >-
+  A rendered episode film and the merge job that produced it — which shot clips were included, the encoder settings,
+  status, output path, duration and poster.
+handles:
+  commands:
+    - MergeShots
+    - CompleteMerge
+    - FailMerge
+emits:
+  events:
+    - MergeStarted
+    - FilmRendered
+    - MergeFailed
+invariants:
+  - Clips are concatenated strictly in shot-number order regardless of selection order.
+  - >-
+    Every selected shot must have a video file that exists on disk, otherwise the merge is rejected naming the missing
+    shots.
+  - Output is H.264/AAC MP4 with faststart so it streams in the browser.
+adr_refs:
+  - adr-0008
+  - adr-0009

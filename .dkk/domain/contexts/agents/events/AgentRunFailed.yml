@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: AgentRunFailed
+description: The run raised an error (provider failure, tool error, step budget exceeded).
+fields:
+  - name: runId
+    type: ID
+  - name: agentType
+    type: string
+  - name: error
+    type: string
+raised_by: AgentRun

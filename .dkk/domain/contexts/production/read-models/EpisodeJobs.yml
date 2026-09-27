@@ -1,0 +1,20 @@
+# Read model — a query-optimised projection.
+name: EpisodeJobs
+description: The latest job per kind for an episode — rewrite, extraction per target, storyboard breakdown and video-prompt batch — with status (running / done / failed), progress and error, so the studio polls one endpoint while anything runs. Extraction, breakdown and prompt-batch jobs are owned by the assets and storyboard contexts; this projection reads their rows.
+fields:
+  - name: episodeId
+    type: ID
+  - name: rewrite
+    type: JobStatus
+  - name: extraction
+    type: JobStatusByTarget
+  - name: breakdown
+    type: JobStatus
+  - name: videoPromptBatch
+    type: JobStatus
+subscribes_to:
+  - ScriptRewriteRequested
+  - ScriptRewriteCompleted
+  - ScriptRewriteFailed
+used_by:
+  - Creator

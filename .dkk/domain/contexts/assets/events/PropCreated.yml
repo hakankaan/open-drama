@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: PropCreated
+description: A prop was added to the drama.
+fields:
+  - name: propId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: name
+    type: string
+raised_by: Prop

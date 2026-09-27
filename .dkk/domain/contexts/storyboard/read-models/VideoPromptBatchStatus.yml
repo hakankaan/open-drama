@@ -1,0 +1,22 @@
+name: VideoPromptBatchStatus
+description: Progress of the running or last prompt batch for an episode (status, total, completed, failed, current shot).
+fields:
+- name: episodeId
+  type: ID
+- name: status
+  type: string
+- name: total
+  type: number
+- name: completed
+  type: number
+- name: failed
+  type: number
+- name: currentShotId
+  type: ID
+subscribes_to:
+- VideoPromptBatchStarted
+- ShotVideoPromptSaved
+- VideoPromptBatchCompleted
+- VideoPromptBatchFailed
+used_by:
+- Creator

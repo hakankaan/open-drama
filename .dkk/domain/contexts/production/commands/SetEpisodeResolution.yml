@@ -1,0 +1,12 @@
+# Command — an instruction to change domain state.
+name: SetEpisodeResolution
+description: Change the resolution used for every video generated in this episode (480p, 720p, 1080p). Adapters map it to the nearest provider tier.
+fields:
+  - name: episodeId
+    type: ID
+  - name: resolution
+    type: string
+actor: Creator
+handled_by: Episode
+rejections:
+  - Resolution not one of 480p / 720p / 1080p

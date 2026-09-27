@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: StylePresetCreated
+description: A new style is available for project creation.
+fields:
+  - name: presetId
+    type: ID
+  - name: value
+    type: string
+raised_by: StylePreset

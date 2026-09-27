@@ -1,0 +1,10 @@
+# Domain event — something that happened in the domain.
+name: ShotVideoPromptSaved
+description: A video prompt was written to a shot by the agent or the creator.
+fields:
+  - name: shotId
+    type: ID
+  - name: source
+    type: string
+    description: agent | creator
+raised_by: Shot

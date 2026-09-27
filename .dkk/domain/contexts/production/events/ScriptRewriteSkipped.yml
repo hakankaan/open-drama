@@ -1,0 +1,7 @@
+# Domain event — something that happened in the domain.
+name: ScriptRewriteSkipped
+description: The creator chose to use the raw content directly instead of an AI rewrite.
+fields:
+  - name: episodeId
+    type: ID
+raised_by: Episode

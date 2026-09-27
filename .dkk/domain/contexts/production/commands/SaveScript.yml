@@ -1,0 +1,12 @@
+# Command — an instruction to change domain state.
+name: SaveScript
+description: Persist the formatted script produced by the script-rewriter agent (its save_script tool). Replaces the previous formatted script.
+fields:
+  - name: episodeId
+    type: ID
+  - name: scriptContent
+    type: string
+actor: AgentRuntime
+handled_by: Episode
+rejections:
+  - Empty script

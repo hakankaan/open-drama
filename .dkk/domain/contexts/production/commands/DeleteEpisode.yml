@@ -1,0 +1,10 @@
+# Command — an instruction to change domain state.
+name: DeleteEpisode
+description: Soft-delete an episode. Its shots and generation records are kept but no longer reachable; later episodes keep their numbers.
+fields:
+  - name: episodeId
+    type: ID
+actor: Creator
+handled_by: Episode
+rejections:
+  - Episode not found

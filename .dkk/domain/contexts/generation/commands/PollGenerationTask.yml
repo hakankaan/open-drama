@@ -1,0 +1,13 @@
+name: PollGenerationTask
+description: >-
+  Ask the provider for the status of an asynchronous task according to the type's polling profile; on completion capture
+  the result, on terminal failure fail the task, on budget exhaustion fail with a timeout.
+fields:
+  - name: taskId
+    type: ID
+  - name: attempt
+    type: number
+actor: GenerationWorker
+handled_by: GenerationTask
+adr_refs:
+  - adr-0005

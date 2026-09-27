@@ -1,0 +1,13 @@
+# Domain event — something that happened in the domain.
+name: MediaUploaded
+description: A creator upload was stored and is addressable by path.
+fields:
+  - name: path
+    type: string
+  - name: kind
+    type: string
+  - name: mimeType
+    type: string
+  - name: sizeBytes
+    type: number
+raised_by: MediaFile

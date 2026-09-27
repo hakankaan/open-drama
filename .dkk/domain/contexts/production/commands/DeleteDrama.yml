@@ -1,0 +1,8 @@
+# Command — an instruction to change domain state.
+name: DeleteDrama
+description: Soft-delete a drama. Its episodes, assets, shots and generation records remain stored but are hidden everywhere.
+fields:
+  - name: dramaId
+    type: ID
+actor: Creator
+handled_by: Drama

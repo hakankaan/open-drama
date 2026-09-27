@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: ScenesExtracted
+description: The extractor agent saved scenes for an episode (created vs reused counts).
+fields:
+  - name: episodeId
+    type: ID
+  - name: created
+    type: number
+  - name: reused
+    type: number
+raised_by: Scene

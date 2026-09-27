@@ -1,0 +1,8 @@
+# Command — an instruction to change domain state.
+name: DeleteShot
+description: Remove a shot and its bindings (hard delete; its generation tasks remain in history).
+fields:
+  - name: shotId
+    type: ID
+actor: Creator
+handled_by: Shot

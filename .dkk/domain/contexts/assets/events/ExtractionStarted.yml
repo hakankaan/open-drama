@@ -1,0 +1,15 @@
+# Domain event — something that happened in the domain.
+name: ExtractionStarted
+description: An extraction job for one target type began for the episode.
+fields:
+  - name: episodeId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: target
+    type: string
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+raised_by: ExtractionJob

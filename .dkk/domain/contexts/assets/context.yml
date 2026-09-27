@@ -1,0 +1,46 @@
+name: assets
+description: >-
+  Characters, scenes and props extracted from an episode's script, deduplicated across the drama, each carrying a final
+  image prompt and a reference image. These reference images are what keep faces, places and objects consistent across
+  generated shots.
+glossary:
+  - term: Extraction
+    definition: >-
+      An agent run that reads the episode script and upserts characters, scenes or props, deduplicating against what the
+      drama already has and linking the results to the episode.
+  - term: Final prompt
+    definition: >-
+      The complete image prompt for an asset, written by the prompt generator agent from the asset's fields, with the
+      drama's style prompt prepended on save. Editing the describing fields keeps the prompt but marks it stale until it
+      is regenerated or edited by hand.
+  - term: Reference image
+    definition: >-
+      The generated or uploaded image attached to an asset. Bound to shots and passed to the video provider so the asset
+      looks the same in every clip.
+  - term: Episode link
+    definition: >-
+      The many-to-many association saying an asset appears in an episode. Assets belong to the drama; links scope them
+      to episodes.
+  - term: Near-name deduplication
+    definition: >-
+      Characters and props match by exact name or by the name with parenthesised qualifiers and whitespace removed;
+      scenes match by normalised location plus time.
+  - term: Turnaround sheet
+    definition: >-
+      The character's reference image: one sheet that pairs a portrait of the face with the whole figure seen from
+      several fixed angles, drawn to the same scale on a plain backdrop, so later shots can copy the look exactly.
+  - term: Establishing shot
+    definition: >-
+      The scene's reference image: a single wide, steady view of the place with nobody in it, laid out so the depth of
+      the room, where people can enter, and the main furnishings are all readable at once.
+  - term: Product shot
+    definition: >-
+      The prop's reference image: the object by itself in the style of a catalogue photograph, seen whole with true
+      proportions against a neutral backdrop that tells no story.
+adr_refs:
+  - adr-0001
+  - adr-0002
+  - adr-0003
+  - adr-0004
+  - adr-0007
+  - adr-0012

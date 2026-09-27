@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: EpisodeDeleted
+description: An episode was soft-deleted and is hidden from the drama.
+fields:
+  - name: episodeId
+    type: ID
+  - name: dramaId
+    type: ID
+raised_by: Episode

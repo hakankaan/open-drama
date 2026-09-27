@@ -1,0 +1,132 @@
+actors:
+  - name: Creator
+    type: human
+    description: >-
+      The person producing a short drama. Creates projects and episodes, pastes source text, reviews AI output at every
+      stage, and exports the finished film.
+    capabilities:
+      - Create dramas and episodes, choose aspect ratio, visual style and resolution
+      - Paste raw content and trigger or skip the AI script rewrite
+      - Trigger asset extraction, edit assets, generate or upload reference images
+      - Trigger storyboard breakdown, edit shots and prompts, bind references, generate videos
+      - Select shots, merge them into a film, download it and mark the episode done
+      - Configure model services, style presets, agent prompts and skills
+    failure_modes:
+      - Starts production before any model service is configured (guided by the readiness banner)
+      - Edits an asset after its final prompt was generated, leaving the prompt stale
+    adr_refs:
+      - adr-0002
+      - adr-0007
+      - adr-0010
+  - name: AgentRuntime
+    type: system
+    description: >-
+      The in-process agent runtime inside the API. Runs the four production agents (script rewriter, extractor,
+      storyboard breaker, prompt generator) as tool-calling loops against a text model, and executes their tools as
+      commands on the domain.
+    capabilities:
+      - Resolve an agent's instructions from its prompt file, its skills and the content-language directive
+      - Resolve the text model service (episode default or per-request override) and patch provider quirks
+      - Execute agent tools that read and write dramas, episodes, assets and shots
+    failure_modes:
+      - Model finishes without calling the save tool (nothing persisted)
+      - Output truncated by a low provider max_tokens limit
+      - Relay endpoint rejects multi-turn thinking traffic
+    adr_refs:
+      - adr-0006
+  - name: GenerationWorker
+    type: system
+    description: >-
+      The background worker inside the API that drives image and video generation tasks — builds provider requests,
+      submits them, polls for completion, persists results locally and writes them back to the owning asset or shot.
+    capabilities:
+      - Build provider-specific requests through the adapter registry
+      - Poll asynchronous provider tasks with per-type cadence and timeouts
+      - Persist results into local media storage and derive thumbnails or poster frames
+    failure_modes:
+      - Process restart loses in-memory polling loops (tasks are marked failed at boot)
+      - Provider returns a moderation rejection
+      - Polling exceeds the attempt or duration budget
+    adr_refs:
+      - adr-0005
+      - adr-0008
+  - name: RenderWorker
+    type: system
+    description: The background worker that concatenates shot videos into an episode film by driving the bundled FFmpeg binaries.
+    capabilities:
+      - Validate that every selected shot video exists on disk before rendering
+      - Concatenate clips in shot order and re-encode to H.264/AAC with faststart
+      - Probe the rendered duration and extract a poster frame
+    failure_modes:
+      - Bundled FFmpeg binary missing or corrupt
+      - A selected shot's video file was deleted after generation
+    adr_refs:
+      - adr-0008
+  - name: Bootstrap
+    type: system
+    description: >-
+      The API process at startup. Applies database migrations, seeds style presets, copies the agent workspace template
+      once into the data directory and marks interrupted generation tasks as failed.
+    capabilities:
+      - Apply pending schema migrations idempotently
+      - Seed or upgrade built-in style presets without overwriting user edits
+      - Fail tasks that were still processing when the previous process died
+    failure_modes:
+      - Data directory not writable
+    adr_refs:
+      - adr-0004
+      - adr-0008
+  - name: FFmpeg
+    type: system
+    description: >-
+      The FFmpeg and FFprobe binaries bundled with the API (overridable by environment variables). Used for
+      concatenation, duration probing and poster-frame extraction.
+    capabilities:
+      - Concat demuxer with re-encode
+      - Probe container metadata
+      - Extract a single frame at a timestamp
+    failure_modes:
+      - Binary fails to spawn (corrupt download or wrong platform)
+      - Input clip has an unsupported codec
+  - name: TextModelProvider
+    type: external
+    description: >-
+      An OpenAI-compatible or Gemini chat-completion endpoint (official or relay) configured as a text model service.
+      Powers every agent run.
+    capabilities:
+      - Chat completions with tool calling
+    failure_modes:
+      - Authentication failure or quota exhaustion
+      - Rate limiting
+      - Relay-specific parameter rejections (thinking, temperature, max_tokens)
+    adr_refs:
+      - adr-0006
+      - adr-0013
+  - name: ImageModelProvider
+    type: external
+    description: >-
+      An image generation endpoint (OpenAI images, Gemini image, Volcengine and similar) behind an image provider
+      adapter. Returns a URL or inline base64, synchronously or through an async task.
+    capabilities:
+      - Text-to-image
+      - Reference-guided image generation (edits with uploaded reference images)
+    failure_modes:
+      - Content moderation rejection
+      - Async task never completes
+    adr_refs:
+      - adr-0005
+      - adr-0013
+  - name: VideoModelProvider
+    type: external
+    description: >-
+      A video generation endpoint (Seedance, MiniMax, Wan and similar) behind a video provider adapter. Accepts a prompt
+      plus reference images, videos and audio, and returns a task id to poll.
+    capabilities:
+      - Multimodal-reference video generation with duration, ratio and resolution tiers
+    failure_modes:
+      - Real-person or sensitive-content moderation rejection
+      - Cannot fetch a local reference file because no public base URL is configured
+      - Reference material over the provider's limits
+    adr_refs:
+      - adr-0005
+      - adr-0013

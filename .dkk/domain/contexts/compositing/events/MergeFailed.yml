@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: MergeFailed
+description: Rendering failed; the error is shown on the export stage and the creator can retry.
+fields:
+  - name: mergeId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: error
+    type: string
+raised_by: Film

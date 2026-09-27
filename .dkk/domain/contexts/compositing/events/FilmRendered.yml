@@ -1,0 +1,13 @@
+# Domain event — something that happened in the domain.
+name: FilmRendered
+description: The film was rendered to local media with a known duration; it should get a poster and become the episode's video.
+fields:
+  - name: mergeId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: filmPath
+    type: string
+  - name: durationSeconds
+    type: number
+raised_by: Film

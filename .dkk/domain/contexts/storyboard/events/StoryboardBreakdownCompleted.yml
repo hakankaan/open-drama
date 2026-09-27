@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: StoryboardBreakdownCompleted
+description: The breaker agent finished and shots were saved; the workbench reloads the shot list.
+fields:
+  - name: episodeId
+    type: ID
+  - name: shotCount
+    type: number
+raised_by: StoryboardBreakdown

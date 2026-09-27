@@ -1,0 +1,18 @@
+# Command — an instruction to change domain state.
+name: GenerateSceneFinalPrompt
+description: Run the prompt-generator agent to write the empty establishing-shot final prompt for a scene (force regenerates). Persisted through SaveSceneFinalPrompt.
+fields:
+  - name: sceneId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: force
+    type: boolean
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+actor: Creator
+handled_by: Scene
+rejections:
+  - Agent finished without saving a prompt

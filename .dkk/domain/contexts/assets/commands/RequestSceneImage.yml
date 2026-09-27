@@ -1,0 +1,22 @@
+name: RequestSceneImage
+description: Generate the scene's reference image. Ensures a final prompt first; the fallback prompt explicitly excludes people. Readiness is derived from the latest image task, not stored on the scene.
+fields:
+- name: sceneId
+  type: ID
+- name: episodeId
+  type: ID
+- name: model
+  type: string
+- name: imageServiceId
+  type: ID
+- name: textModel
+  type: string
+- name: textServiceId
+  type: ID
+actor: Creator
+handled_by: Scene
+rejections:
+- No image model service configured
+- An image task for this scene is still processing
+adr_refs:
+- adr-0005

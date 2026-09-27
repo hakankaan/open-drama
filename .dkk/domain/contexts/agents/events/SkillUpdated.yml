@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: SkillUpdated
+description: A skill's content changed.
+fields:
+  - name: id
+    type: string
+  - name: language
+    type: string
+raised_by: AgentSkill

@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: AgentPromptSaved
+description: A prompt file was written for an agent and language.
+fields:
+  - name: agentType
+    type: string
+  - name: language
+    type: string
+raised_by: AgentPrompt

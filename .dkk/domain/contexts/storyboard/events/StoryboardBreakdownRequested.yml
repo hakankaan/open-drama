@@ -1,0 +1,13 @@
+# Domain event — something that happened in the domain.
+name: StoryboardBreakdownRequested
+description: A breakdown job started for the episode; the storyboard-breaker agent should run.
+fields:
+  - name: episodeId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+raised_by: StoryboardBreakdown

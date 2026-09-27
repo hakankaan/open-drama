@@ -1,0 +1,17 @@
+# Domain event — something that happened in the domain.
+name: EpisodeCreated
+description: A new episode was added to a drama with its number, resolution and locked image/video services.
+fields:
+  - name: episodeId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: episodeNumber
+    type: number
+  - name: resolution
+    type: string
+  - name: imageServiceId
+    type: ID
+  - name: videoServiceId
+    type: ID
+raised_by: Episode

@@ -1,0 +1,15 @@
+# Command — an instruction to change domain state.
+name: SaveShots
+description: Batch upsert of shots from the agent's save_shots tool (at most 8 per call). replaceExisting on the first batch parks the episode's current shots under the running job id (purged on completion, restored on failure); rows are matched by shotNumber; bindings are validated against the drama and auto-linked to the episode; the episode's duration is recomputed.
+fields:
+  - name: episodeId
+    type: ID
+  - name: replaceExisting
+    type: boolean
+  - name: shots
+    type: "ShotInput[]"
+    description: shotNumber, title, shotType, angle, movement, location, time, description, result, atmosphere, imagePrompt, videoPrompt, bgmPrompt, soundEffect, durationSeconds, sceneId, characterIds, propIds
+actor: AgentRuntime
+handled_by: Shot
+rejections:
+  - A bound scene, character or prop does not belong to the drama

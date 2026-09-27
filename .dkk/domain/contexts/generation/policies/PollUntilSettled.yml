@@ -1,0 +1,9 @@
+# Policy — reactive logic that listens to events and emits commands.
+name: PollUntilSettled
+description: After an asynchronous dispatch, keep polling on the type's cadence until the provider reports completed or failed, or the attempt/duration budget runs out.
+when:
+  events:
+    - GenerationTaskDispatched
+then:
+  commands:
+    - PollGenerationTask

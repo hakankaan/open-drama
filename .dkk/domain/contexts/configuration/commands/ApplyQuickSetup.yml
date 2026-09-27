@@ -1,0 +1,13 @@
+# Command — an instruction to change domain state.
+name: ApplyQuickSetup
+description: From one API key of a compatible gateway, write the three recommended services (text, image, video) with preset base URLs and default models in a single step, then probe each.
+fields:
+  - name: apiKey
+    type: string
+  - name: gateway
+    type: string
+    description: Which recommended template set to apply
+actor: Creator
+handled_by: ModelService
+rejections:
+  - Empty API key

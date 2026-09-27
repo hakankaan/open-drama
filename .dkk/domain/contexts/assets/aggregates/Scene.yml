@@ -1,0 +1,24 @@
+name: Scene
+description: A location at a time period with a set-dressing prompt and lighting, a final establishing-shot prompt and a reference image that contains no people.
+handles:
+  commands:
+  - CreateScene
+  - UpdateScene
+  - DeleteScene
+  - SaveExtractedScenes
+  - GenerateSceneFinalPrompt
+  - SaveSceneFinalPrompt
+  - RequestSceneImage
+emits:
+  events:
+  - SceneCreated
+  - SceneUpdated
+  - SceneDeleted
+  - ScenesExtracted
+  - SceneFinalPromptSaved
+  - SceneImageRequested
+  - SceneImageAttached
+invariants:
+- location is required; identity is normalised location plus time, so the same place at another time of day is a different scene.
+- The final prompt and the fallback prompt both forbid people in the scene image.
+- Changing the description or lighting keeps finalPrompt but sets finalPromptStale; an explicit finalPrompt in an update always wins and clears the flag.

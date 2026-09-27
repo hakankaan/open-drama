@@ -1,0 +1,34 @@
+name: production
+description: >-
+  Dramas (projects) and their episodes — the production lifecycle from raw source text to a finished episode film. Owns
+  the per-episode stage rail (script → assets → video production → export) that the studio shows.
+glossary:
+  - term: Raw content
+    definition: The source text the creator pastes (novel chapter, outline, shot list) before any rewrite.
+  - term: Formatted script
+    definition: >-
+      The rewritten shooting script — scene headings (## S01 | INT/EXT · Location | Time), action paragraphs and
+      dialogue lines, with no camera language.
+    aliases:
+      - Script
+  - term: Stage rail
+    definition: >-
+      The per-episode progress indicator. It is derived from data (script present, assets ready, shots with videos, film
+      rendered, status completed), never stored directly.
+  - term: Locked generation config
+    definition: >-
+      The image and video model service ids snapshotted onto an episode at creation so later provider changes do not
+      silently alter an in-progress episode. Falls back to the active service if the locked one is disabled.
+  - term: Project
+    definition: >-
+      The creator-facing name for a Drama aggregate — a short-drama project that fixes aspect ratio and visual style and
+      owns episodes and shared assets.
+    aliases:
+      - Drama project
+adr_refs:
+  - adr-0001
+  - adr-0002
+  - adr-0003
+  - adr-0004
+  - adr-0007
+  - adr-0012

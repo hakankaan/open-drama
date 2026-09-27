@@ -1,0 +1,17 @@
+# Aggregate — a consistency boundary that handles commands and emits events.
+name: Drama
+description: A short-drama project — the root under which episodes, characters, scenes and props live. Fixes the aspect ratio and the visual style used by every image and video prompt.
+handles:
+  commands:
+    - CreateDrama
+    - UpdateDrama
+    - DeleteDrama
+emits:
+  events:
+    - DramaCreated
+    - DramaUpdated
+    - DramaDeleted
+invariants:
+  - aspectRatio is chosen at creation and never changes afterwards; every video generated for the drama uses it.
+  - style must reference an active StylePreset value at creation; the preset's prompt fragment is prepended to every image and video prompt of the drama.
+  - Deletion is a soft delete; episodes, assets and generation records stay on disk but become unreachable.

@@ -1,0 +1,10 @@
+# Command — an instruction to change domain state.
+name: SavePropFinalPrompt
+description: Persist the prop final prompt written by the agent with the drama's style prefix prepended.
+fields:
+  - name: propId
+    type: ID
+  - name: prompt
+    type: string
+actor: AgentRuntime
+handled_by: Prop

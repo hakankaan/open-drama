@@ -1,0 +1,13 @@
+name: DeriveRenditionsOnStore
+description: >-
+  Whenever an image or video is stored or uploaded, derive its thumbnail or poster frame so list views never load
+  originals.
+when:
+  events:
+    - MediaStored
+    - MediaUploaded
+then:
+  commands:
+    - DeriveRenditions
+adr_refs:
+  - adr-0009

@@ -1,0 +1,18 @@
+# Command — an instruction to change domain state.
+name: UpdateStylePreset
+description: Edit a style's name, prompt fragment, description, sort order or active flag. The key cannot change.
+fields:
+  - name: presetId
+    type: ID
+  - name: name
+    type: string
+  - name: prompt
+    type: string
+  - name: description
+    type: string
+  - name: sortOrder
+    type: number
+  - name: isActive
+    type: boolean
+actor: Creator
+handled_by: StylePreset

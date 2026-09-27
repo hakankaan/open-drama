@@ -1,0 +1,17 @@
+name: compositing
+description: >-
+  Turning an episode's shot videos into a film. The creator selects shots, the render worker concatenates them in shot
+  order with FFmpeg, and the resulting film is attached to the episode for playback and download.
+glossary:
+  - term: Merge
+    aliases:
+      - Final cut
+      - Export
+    definition: The asynchronous render job that produces a film; tracked with processing / completed / failed.
+adr_refs:
+  - adr-0001
+  - adr-0002
+  - adr-0003
+  - adr-0004
+  - adr-0007
+  - adr-0012

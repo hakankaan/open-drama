@@ -1,0 +1,6 @@
+# Policy — reactive logic that listens to events and emits commands.
+name: AttachShotVideoOnGeneration
+description: Triggered by generation.VideoGenerated (cross-context event, see flow StoryboardAndVideoStage) for a task tagged with a shot — attaches the local video path and duration to that shot.
+then:
+  commands:
+    - AttachShotVideo

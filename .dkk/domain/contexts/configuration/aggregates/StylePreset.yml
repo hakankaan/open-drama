@@ -1,0 +1,17 @@
+# Aggregate — a consistency boundary that handles commands and emits events.
+name: StylePreset
+description: A visual style with a stable key, a display name, an English prompt fragment and a sort order. Dramas reference the key.
+handles:
+  commands:
+    - CreateStylePreset
+    - UpdateStylePreset
+    - DeleteStylePreset
+emits:
+  events:
+    - StylePresetCreated
+    - StylePresetUpdated
+    - StylePresetDeleted
+invariants:
+  - value is unique, lowercase letters, digits and dashes, and immutable after creation.
+  - Built-in presets are seeded at startup and upgraded only when their prompt still equals the previous seed text (user edits win).
+  - Disabled presets are hidden from project creation but keep working for dramas that use them.

@@ -1,0 +1,15 @@
+# Domain event — something that happened in the domain.
+name: PropImageRequested
+description: A reference image generation was requested for a prop.
+fields:
+  - name: propId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: prompt
+    type: string
+  - name: imageServiceId
+    type: ID
+  - name: model
+    type: string
+raised_by: Prop

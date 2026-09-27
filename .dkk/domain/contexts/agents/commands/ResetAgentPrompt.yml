@@ -1,0 +1,10 @@
+# Command — an instruction to change domain state.
+name: ResetAgentPrompt
+description: Delete the prompt file for a language so the agent falls back (variant → base → built-in default).
+fields:
+  - name: agentType
+    type: string
+  - name: language
+    type: string
+actor: Creator
+handled_by: AgentPrompt

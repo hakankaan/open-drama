@@ -1,0 +1,7 @@
+# Domain event — something that happened in the domain.
+name: PropDeleted
+description: A prop was soft-deleted.
+fields:
+  - name: propId
+    type: ID
+raised_by: Prop

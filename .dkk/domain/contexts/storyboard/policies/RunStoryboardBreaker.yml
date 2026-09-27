@@ -1,0 +1,10 @@
+name: RunStoryboardBreaker
+description: >-
+  When a breakdown is requested, run the storyboard_breaker agent scoped to the episode (agents.RunAgent —
+  cross-context, see flow StoryboardAndVideoStage); it reads script and assets and saves shots in batches through
+  SaveShots.
+when:
+  events:
+    - StoryboardBreakdownRequested
+adr_refs:
+  - adr-0006

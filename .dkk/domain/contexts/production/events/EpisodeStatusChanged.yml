@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: EpisodeStatusChanged
+description: The episode's production status moved between draft, active and completed.
+fields:
+  - name: episodeId
+    type: ID
+  - name: status
+    type: string
+raised_by: Episode

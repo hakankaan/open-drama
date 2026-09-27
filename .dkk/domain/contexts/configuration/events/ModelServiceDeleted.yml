@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: ModelServiceDeleted
+description: A service was removed.
+fields:
+  - name: serviceId
+    type: ID
+  - name: serviceType
+    type: string
+raised_by: ModelService

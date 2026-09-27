@@ -1,0 +1,7 @@
+name: SubmitAssetImageGeneration
+description: When an asset image is requested, submit an image generation task tagged with the asset id (generation.SubmitImageGeneration — cross-context, see flow AssetStage). Characters use a 16:9 canvas, props a square canvas, scenes the drama's aspect ratio.
+when:
+  events:
+  - CharacterImageRequested
+  - SceneImageRequested
+  - PropImageRequested

@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: ShotUpdated
+description: A shot's fields, bindings or reference media changed.
+fields:
+  - name: shotId
+    type: ID
+  - name: changedFields
+    type: "string[]"
+raised_by: Shot

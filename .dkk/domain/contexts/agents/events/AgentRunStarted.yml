@@ -1,0 +1,15 @@
+# Domain event — something that happened in the domain.
+name: AgentRunStarted
+description: An agent run began with its resolved model and instructions.
+fields:
+  - name: runId
+    type: ID
+  - name: agentType
+    type: string
+  - name: episodeId
+    type: ID
+  - name: provider
+    type: string
+  - name: model
+    type: string
+raised_by: AgentRun

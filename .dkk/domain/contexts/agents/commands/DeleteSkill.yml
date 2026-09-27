@@ -1,0 +1,8 @@
+# Command — an instruction to change domain state.
+name: DeleteSkill
+description: Remove a skill directory and all its variants; the owning agent stops receiving it.
+fields:
+  - name: id
+    type: string
+actor: Creator
+handled_by: AgentSkill

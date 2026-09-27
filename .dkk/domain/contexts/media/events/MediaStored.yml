@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: MediaStored
+description: A generation result (downloaded or decoded) or a rendered film was written to local storage.
+fields:
+  - name: path
+    type: string
+  - name: kind
+    type: string
+raised_by: MediaFile

@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: ExtractionCompleted
+description: The extractor agent run finished for the target type; the linked assets are refreshed in the workbench.
+fields:
+  - name: episodeId
+    type: ID
+  - name: target
+    type: string
+raised_by: ExtractionJob

@@ -1,0 +1,27 @@
+name: EpisodeShotList
+description: The video-production stage — every shot of the episode in order with description, atmosphere, duration, bound scene/characters/props (with their reference images and readiness), video prompt, current video (with poster), generation status and history, plus the breakdown job state.
+fields:
+- name: episodeId
+  type: ID
+- name: shots
+  type: ShotCard[]
+  description: each card carries latestVideoTask (status, error class, taskId) — the single source of the shot's generating / failed state
+- name: breakdown
+  type: JobStatus
+- name: generatedCount
+  type: number
+- name: totalDurationSeconds
+  type: number
+subscribes_to:
+- ShotsSaved
+- ShotCreated
+- ShotUpdated
+- ShotDeleted
+- ShotVideoPromptSaved
+- ShotVideoRequested
+- ShotVideoAttached
+- StoryboardBreakdownRequested
+- StoryboardBreakdownCompleted
+- StoryboardBreakdownFailed
+used_by:
+- Creator

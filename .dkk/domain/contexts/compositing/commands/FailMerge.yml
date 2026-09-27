@@ -1,0 +1,10 @@
+# Command — an instruction to change domain state.
+name: FailMerge
+description: Mark the merge failed with the FFmpeg error.
+fields:
+  - name: mergeId
+    type: ID
+  - name: error
+    type: string
+actor: RenderWorker
+handled_by: Film

@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: AgentPromptReset
+description: A prompt file was deleted and the agent falls back to the next level.
+fields:
+  - name: agentType
+    type: string
+  - name: language
+    type: string
+raised_by: AgentPrompt

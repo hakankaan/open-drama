@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: ScriptRewriteFailed
+description: The rewrite agent failed, finished without saving, or was interrupted by a restart; the error is shown and the creator can retry or skip.
+fields:
+  - name: episodeId
+    type: ID
+  - name: jobId
+    type: ID
+  - name: error
+    type: string
+raised_by: ScriptRewriteJob

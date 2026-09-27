@@ -1,0 +1,8 @@
+# Command — an instruction to change domain state.
+name: RecordToursSeen
+description: Store the ids of onboarding tours the creator has completed so they do not replay.
+fields:
+  - name: seen
+    type: "string[]"
+actor: Creator
+handled_by: AppSettings

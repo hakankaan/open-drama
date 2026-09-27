@@ -1,0 +1,8 @@
+name: ContentLanguageChanged
+description: The AI content language changed; subsequent agent runs load that language's prompt and skill variants.
+fields:
+  - name: language
+    type: string
+raised_by: AppSettings
+adr_refs:
+  - adr-0011

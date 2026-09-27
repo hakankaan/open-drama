@@ -1,0 +1,10 @@
+name: CharacterUpdated
+description: The asset's fields changed; if appearance or styling changed, finalPromptStale is now true.
+fields:
+- name: characterId
+  type: ID
+- name: changedFields
+  type: string[]
+- name: finalPromptStale
+  type: boolean
+raised_by: Character

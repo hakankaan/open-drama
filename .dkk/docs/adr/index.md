@@ -1,0 +1,22 @@
+# Decision Log
+
+> Auto-generated — do not edit manually. Run `dkk render` to regenerate.
+> The ADRs themselves live in `.dkk/adr/` and are the source of truth.
+
+4 accepted · 9 proposed
+
+| ADR | Title | Status | Date | Constrains | Supersession |
+|-----|-------|--------|------|------------|--------------|
+| [adr-0001](../../adr/adr-0001.md) | Product scope and original work | accepted | 2026-09-27 | context.production, context.assets, context.storyboard, context.generation, context.compositing, context.media, context.configuration, context.agents | — |
+| [adr-0002](../../adr/adr-0002.md) | Monorepo with a Next.js web app and a Node.js API | accepted | 2026-09-27 | context.production, context.assets, context.storyboard, context.generation, context.compositing, context.media, context.configuration, context.agents, actor.Creator | — |
+| [adr-0003](../../adr/adr-0003.md) | Hono on the Node adapter as the HTTP framework | proposed | 2026-09-27 | context.production, context.assets, context.storyboard, context.generation, context.compositing, context.media, context.configuration, context.agents | — |
+| [adr-0004](../../adr/adr-0004.md) | SQLite through Drizzle ORM with migrations applied at startup | proposed | 2026-09-27 | context.production, context.assets, context.storyboard, context.generation, context.compositing, context.media, context.configuration, actor.Bootstrap | — |
+| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | proposed | 2026-09-27 | context.generation, generation.GenerationTask, generation.DispatchGenerationTask, generation.PollGenerationTask, generation.PersistProviderResult, generation.FailInterruptedTasks, assets.RequestCharacterImage, assets.RequestSceneImage, assets.RequestPropImage, storyboard.RequestShotVideo, actor.GenerationWorker, actor.ImageModelProvider, actor.VideoModelProvider, flow.GenerationTaskLifecycle | — |
+| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | proposed | 2026-09-27 | context.agents, agents.AgentRun, agents.AgentPrompt, agents.AgentSkill, agents.RunAgent, actor.AgentRuntime, actor.TextModelProvider, flow.AgentRun, production.RunScriptRewriter, assets.RunExtractorAgent, storyboard.RunStoryboardBreaker, storyboard.RunVideoPromptGenerator | — |
+| [adr-0007](../../adr/adr-0007.md) | API contract: camelCase JSON validated by shared zod schemas | proposed | 2026-09-27 | context.production, context.assets, context.storyboard, context.generation, context.compositing, context.media, context.configuration, context.agents, actor.Creator | — |
+| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | proposed | 2026-09-27 | assets.ExtractionJob, assets.StartExtraction, storyboard.StoryboardBreakdown, storyboard.VideoPromptBatch, generation.GenerationTask, generation.FailInterruptedTasks, compositing.Film, production.RewriteScript, actor.Bootstrap, actor.GenerationWorker, actor.RenderWorker | — |
+| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | proposed | 2026-09-27 | context.media, media.MediaFile, media.StoreRemoteFile, media.StoreInlineImage, media.DeriveRenditions, media.DeriveRenditionsOnStore, generation.PersistProviderResult, compositing.Film, storyboard.RequestShotVideo | — |
+| [adr-0010](../../adr/adr-0010.md) | Next.js serves the UI as its own process and proxies the API | proposed | 2026-09-27 | context.media, context.configuration, actor.Creator | — |
+| [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | proposed | 2026-09-27 | context.agents, agents.AgentPrompt, agents.AgentSkill, configuration.AppSettings, configuration.SetContentLanguage, configuration.ContentLanguageChanged | — |
+| [adr-0012](../../adr/adr-0012.md) | Licence: CC BY-NC-SA 4.0 | accepted | 2026-09-27 | context.production, context.assets, context.storyboard, context.generation, context.compositing, context.media, context.configuration, context.agents | — |
+| [adr-0013](../../adr/adr-0013.md) | Model providers: official endpoints of supported models, plus BytePlus and ModelRunner | accepted | 2026-09-27 | context.configuration, context.generation, configuration.ModelService, configuration.AddModelService, generation.GenerationTask, generation.DispatchGenerationTask, actor.TextModelProvider, actor.ImageModelProvider, actor.VideoModelProvider | — |

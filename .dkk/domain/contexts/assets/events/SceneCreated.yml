@@ -1,0 +1,13 @@
+# Domain event — something that happened in the domain.
+name: SceneCreated
+description: A scene was added to the drama.
+fields:
+  - name: sceneId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: location
+    type: string
+  - name: time
+    type: string
+raised_by: Scene

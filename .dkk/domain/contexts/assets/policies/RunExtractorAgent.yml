@@ -1,0 +1,10 @@
+name: RunExtractorAgent
+description: >-
+  When an extraction starts, run the extractor agent scoped to the episode with a target-specific instruction (only
+  characters, only scenes, or only plot-critical props) — agents.RunAgent, a cross-context command, see flow AssetStage.
+  The agent reads the script and existing assets, deduplicates and saves through the SaveExtracted* commands.
+when:
+  events:
+    - ExtractionStarted
+adr_refs:
+  - adr-0006

@@ -1,0 +1,13 @@
+# Read model — a query-optimised projection.
+name: AppSettingsView
+description: The current content language and the tours already seen, read at app start.
+fields:
+  - name: contentLanguage
+    type: string
+  - name: toursSeen
+    type: "string[]"
+subscribes_to:
+  - ContentLanguageChanged
+  - ToursSeenRecorded
+used_by:
+  - Creator

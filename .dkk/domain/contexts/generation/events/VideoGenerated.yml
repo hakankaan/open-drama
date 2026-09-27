@@ -1,0 +1,13 @@
+# Domain event — something that happened in the domain.
+name: VideoGenerated
+description: A video task completed and its clip is stored locally with a poster frame; the owning shot attaches it.
+fields:
+  - name: taskId
+    type: ID
+  - name: localPath
+    type: string
+  - name: shotId
+    type: ID
+  - name: durationSeconds
+    type: number
+raised_by: GenerationTask

@@ -1,0 +1,15 @@
+# Domain event — something that happened in the domain.
+name: AgentRunCompleted
+description: The loop ended normally; lists the tools called and the final text. Callers verify the expected side effect (script saved, prompt persisted) separately.
+fields:
+  - name: runId
+    type: ID
+  - name: agentType
+    type: string
+  - name: toolCalls
+    type: "string[]"
+  - name: steps
+    type: number
+  - name: elapsedSeconds
+    type: number
+raised_by: AgentRun

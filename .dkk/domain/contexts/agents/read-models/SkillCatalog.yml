@@ -1,0 +1,12 @@
+# Read model — a query-optimised projection.
+name: SkillCatalog
+description: All skills grouped by owning agent with id, name, description (localised when a variant exists) and raw content for editing.
+fields:
+  - name: skills
+    type: "SkillRow[]"
+subscribes_to:
+  - SkillCreated
+  - SkillUpdated
+  - SkillDeleted
+used_by:
+  - Creator

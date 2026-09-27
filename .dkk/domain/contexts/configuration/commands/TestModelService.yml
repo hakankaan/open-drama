@@ -1,0 +1,18 @@
+# Command — an instruction to change domain state.
+name: TestModelService
+description: Probe a service's endpoint with a provider-appropriate minimal request (model list, tiny chat completion, or an empty task post) and report reachability, HTTP status and a response preview without creating billable work.
+fields:
+  - name: serviceType
+    type: string
+  - name: provider
+    type: string
+  - name: baseUrl
+    type: string
+  - name: apiKey
+    type: string
+  - name: model
+    type: string
+actor: Creator
+handled_by: ModelService
+rejections:
+  - Missing service type, provider or base URL

@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: ScriptRewriteCompleted
+description: The rewrite agent run finished and a script was saved; the script stage is done.
+fields:
+  - name: episodeId
+    type: ID
+  - name: jobId
+    type: ID
+raised_by: ScriptRewriteJob

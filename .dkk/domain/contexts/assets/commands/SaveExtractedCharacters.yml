@@ -1,0 +1,13 @@
+# Command — an instruction to change domain state.
+name: SaveExtractedCharacters
+description: Batch upsert from the extractor agent's save_dedup_characters tool. Each entry is matched against the drama by exact or near name; matches are merged (new non-empty fields win) and new ones created; every entry is linked to the current episode.
+fields:
+  - name: episodeId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: characters
+    type: "ExtractedCharacter[]"
+    description: name, role, appearance, styling, description
+actor: AgentRuntime
+handled_by: Character

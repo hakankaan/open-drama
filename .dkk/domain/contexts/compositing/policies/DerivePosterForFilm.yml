@@ -1,0 +1,6 @@
+# Policy — reactive logic that listens to events and emits commands.
+name: DerivePosterForFilm
+description: When a film is rendered, extract a poster frame (media.DeriveRenditions — cross-context) so the film list shows a cover without buffering the video.
+when:
+  events:
+    - FilmRendered

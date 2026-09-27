@@ -1,0 +1,30 @@
+# Read model — a query-optimised projection.
+name: GenerationTaskStatus
+description: One task's current state for polling from the UI — status, error, local result path, provider and model, timestamps.
+fields:
+  - name: taskId
+    type: ID
+  - name: type
+    type: string
+  - name: status
+    type: string
+  - name: provider
+    type: string
+  - name: model
+    type: string
+  - name: localPath
+    type: string
+  - name: error
+    type: string
+  - name: createdAt
+    type: datetime
+  - name: completedAt
+    type: datetime
+subscribes_to:
+  - GenerationTaskSubmitted
+  - GenerationTaskDispatched
+  - ImageGenerated
+  - VideoGenerated
+  - GenerationTaskFailed
+used_by:
+  - Creator

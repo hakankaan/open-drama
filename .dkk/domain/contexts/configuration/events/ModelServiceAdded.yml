@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: ModelServiceAdded
+description: A new service exists for a type and may now be the active choice.
+fields:
+  - name: serviceId
+    type: ID
+  - name: serviceType
+    type: string
+  - name: provider
+    type: string
+raised_by: ModelService

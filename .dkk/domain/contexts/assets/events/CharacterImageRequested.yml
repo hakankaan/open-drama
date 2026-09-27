@@ -1,0 +1,15 @@
+# Domain event — something that happened in the domain.
+name: CharacterImageRequested
+description: A reference image generation was requested for a character with a resolved prompt and image service.
+fields:
+  - name: characterId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: prompt
+    type: string
+  - name: imageServiceId
+    type: ID
+  - name: model
+    type: string
+raised_by: Character

@@ -1,0 +1,26 @@
+# Command — an instruction to change domain state.
+name: CreateDrama
+description: Create a new drama project with a title, an aspect ratio and a visual style. No episodes are pre-created; the creator adds them from the project page.
+fields:
+  - name: title
+    type: string
+  - name: description
+    type: string
+    description: Optional synopsis
+  - name: genre
+    type: string
+  - name: style
+    type: string
+    description: StylePreset value (e.g. 3d, anime)
+  - name: aspectRatio
+    type: string
+    description: 16:9 or 9:16, fixed after creation
+  - name: tags
+    type: "string[]"
+actor: Creator
+handled_by: Drama
+preconditions:
+  - style refers to an active StylePreset
+rejections:
+  - Empty title
+  - Unknown or disabled style preset

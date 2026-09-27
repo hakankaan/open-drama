@@ -1,0 +1,25 @@
+name: ModelService
+description: >-
+  One configured provider endpoint for a service type. Selected at runtime by explicit id, by an episode's lock, or as
+  the highest-priority active service of its type.
+handles:
+  commands:
+    - AddModelService
+    - UpdateModelService
+    - DeleteModelService
+    - TestModelService
+    - ApplyQuickSetup
+emits:
+  events:
+    - ModelServiceAdded
+    - ModelServiceUpdated
+    - ModelServiceDeleted
+    - ModelServiceProbed
+    - QuickSetupApplied
+invariants:
+  - provider must be one the app supports for the service type.
+  - models is an ordered list; the first entry is the default model for the service.
+  - temperature, when set, is between 0 and 2 and is sent with every text request.
+  - Deleting a service is a hard delete; episodes that locked it fall back to the active service of the type.
+adr_refs:
+  - adr-0013

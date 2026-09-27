@@ -1,0 +1,39 @@
+name: SubmitVideoGeneration
+description: Create a video generation task for a shot with the prompt, reference images/videos/audio, duration, aspect ratio, resolution and audio flag. Validated against the resolved provider's reference limits before the row is created.
+fields:
+- name: shotId
+  type: ID
+- name: dramaId
+  type: ID
+- name: prompt
+  type: string
+- name: referenceImageUrls
+  type: string[]
+- name: referenceVideoUrls
+  type: string[]
+- name: referenceAudioUrls
+  type: string[]
+- name: firstFrameUrl
+  type: string
+- name: lastFrameUrl
+  type: string
+- name: durationSeconds
+  type: number
+- name: aspectRatio
+  type: string
+- name: resolution
+  type: string
+- name: generateAudio
+  type: boolean
+- name: seed
+  type: number
+- name: model
+  type: string
+- name: videoServiceId
+  type: ID
+actor: GenerationWorker
+handled_by: GenerationTask
+rejections:
+- Neither prompt nor any reference supplied
+- Reference counts exceed the provider limits
+- No video model service resolvable

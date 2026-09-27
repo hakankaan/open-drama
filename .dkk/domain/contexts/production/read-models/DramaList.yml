@@ -1,0 +1,32 @@
+# Read model — a query-optimised projection.
+name: DramaList
+description: The project launcher — every non-deleted drama with its status, aspect ratio, style, counts of episodes, characters and scenes, and last update time. Supports search by title, status filter and sort by updated or title.
+fields:
+  - name: dramaId
+    type: ID
+  - name: title
+    type: string
+  - name: status
+    type: string
+  - name: aspectRatio
+    type: string
+  - name: style
+    type: string
+  - name: episodeCount
+    type: number
+  - name: characterCount
+    type: number
+  - name: sceneCount
+    type: number
+  - name: thumbnail
+    type: string
+  - name: updatedAt
+    type: datetime
+subscribes_to:
+  - DramaCreated
+  - DramaUpdated
+  - DramaDeleted
+  - EpisodeCreated
+  - EpisodeDeleted
+used_by:
+  - Creator

@@ -1,0 +1,10 @@
+# Command — an instruction to change domain state.
+name: SaveSceneFinalPrompt
+description: Persist the scene final prompt written by the agent with the drama's style prefix prepended.
+fields:
+  - name: sceneId
+    type: ID
+  - name: prompt
+    type: string
+actor: AgentRuntime
+handled_by: Scene

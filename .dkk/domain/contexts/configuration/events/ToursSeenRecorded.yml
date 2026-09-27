@@ -1,0 +1,7 @@
+# Domain event — something that happened in the domain.
+name: ToursSeenRecorded
+description: The set of completed onboarding tours was updated.
+fields:
+  - name: seen
+    type: "string[]"
+raised_by: AppSettings

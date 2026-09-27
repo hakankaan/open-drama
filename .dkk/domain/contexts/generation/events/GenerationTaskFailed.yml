@@ -1,0 +1,11 @@
+# Domain event — something that happened in the domain.
+name: GenerationTaskFailed
+description: A task ended in failure with a message the creator can act on (for example switch models after a moderation rejection).
+fields:
+  - name: taskId
+    type: ID
+  - name: error
+    type: string
+  - name: ownerRef
+    type: string
+raised_by: GenerationTask

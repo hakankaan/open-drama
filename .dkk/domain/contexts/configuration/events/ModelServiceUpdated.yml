@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: ModelServiceUpdated
+description: A service changed; the default model or the active service of its type may have changed with it.
+fields:
+  - name: serviceId
+    type: ID
+  - name: changedFields
+    type: "string[]"
+raised_by: ModelService

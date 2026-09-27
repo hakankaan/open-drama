@@ -1,0 +1,24 @@
+# Read model — a query-optimised projection.
+name: DramaAssetLibrary
+description: The drama-wide asset library tab on the project page — every character, scene and prop of the drama regardless of episode, with image, final prompt and edit/generate affordances.
+fields:
+  - name: dramaId
+    type: ID
+  - name: characters
+    type: "CharacterCard[]"
+  - name: scenes
+    type: "SceneCard[]"
+  - name: props
+    type: "PropCard[]"
+subscribes_to:
+  - CharacterCreated
+  - CharacterUpdated
+  - CharacterDeleted
+  - SceneCreated
+  - SceneUpdated
+  - SceneDeleted
+  - PropCreated
+  - PropUpdated
+  - PropDeleted
+used_by:
+  - Creator

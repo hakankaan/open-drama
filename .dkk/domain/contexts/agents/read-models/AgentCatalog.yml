@@ -1,0 +1,11 @@
+# Read model — a query-optimised projection.
+name: AgentCatalog
+description: The agent configuration page — every agent with its display name, model override, whether its prompt is the built-in default, and its effective prompt for the selected language (with a flag when the language falls back).
+fields:
+  - name: agents
+    type: "AgentRow[]"
+subscribes_to:
+  - AgentPromptSaved
+  - AgentPromptReset
+used_by:
+  - Creator

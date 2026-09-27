@@ -1,0 +1,21 @@
+# Command — an instruction to change domain state.
+name: CreateScene
+description: Manually add a scene (location, time, description, lighting) to a drama, optionally linking it to an episode.
+fields:
+  - name: dramaId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: location
+    type: string
+  - name: time
+    type: string
+  - name: prompt
+    type: string
+    description: Set-dressing description
+  - name: lighting
+    type: string
+actor: Creator
+handled_by: Scene
+rejections:
+  - Empty location

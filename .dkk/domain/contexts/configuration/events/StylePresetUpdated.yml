@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: StylePresetUpdated
+description: A style's prompt or metadata changed; future prompts of dramas using it pick up the new fragment.
+fields:
+  - name: presetId
+    type: ID
+  - name: changedFields
+    type: "string[]"
+raised_by: StylePreset

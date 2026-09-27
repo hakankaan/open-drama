@@ -1,0 +1,29 @@
+name: media
+description: >-
+  Local media storage under the data directory. Uploads and persisted generation results are stored as immutable
+  uuid-named files, served statically with long cache lifetimes, with derived thumbnails for images and poster frames
+  for videos.
+glossary:
+  - term: Media file
+    definition: >-
+      A file under the static storage root, addressed by a relative path such as static/images/<uuid>.png. Immutable
+      once written.
+  - term: Rendition
+    definition: >-
+      A derived file next to the original — a 400px WebP thumbnail for images, a 640px JPEG poster frame for videos —
+      addressed by naming convention.
+  - term: Public base URL
+    definition: >-
+      The externally reachable origin of the API, needed when a provider must fetch a local reference video or audio
+      file.
+  - term: Data directory
+    definition: The root holding the database, static media and the writable agent workspace; overridable by environment.
+adr_refs:
+  - adr-0001
+  - adr-0002
+  - adr-0003
+  - adr-0004
+  - adr-0007
+  - adr-0009
+  - adr-0010
+  - adr-0012

@@ -1,0 +1,26 @@
+# Command — an instruction to change domain state.
+name: CreateEpisode
+description: Add the next episode to a drama. Assigns the next episode number, defaults the title, fixes the video resolution and locks the image and video model services that will be used for this episode.
+fields:
+  - name: dramaId
+    type: ID
+  - name: title
+    type: string
+    description: Optional; defaults to "Episode N"
+  - name: resolution
+    type: string
+    description: 480p | 720p | 1080p (default 720p)
+  - name: imageServiceId
+    type: ID
+    description: Optional explicit lock; defaults to the active image service
+  - name: videoServiceId
+    type: ID
+    description: Optional explicit lock; defaults to the active video service
+actor: Creator
+handled_by: Episode
+preconditions:
+  - The drama exists and is not deleted
+  - An active image model service and an active video model service exist
+rejections:
+  - No active image service configured
+  - No active video service configured

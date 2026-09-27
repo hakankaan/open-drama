@@ -1,0 +1,29 @@
+name: AddModelService
+description: >-
+  Add a provider endpoint for a service type with its base URL, API key, models, priority and optional temperature. New
+  services are active by default.
+fields:
+  - name: serviceType
+    type: string
+    description: text | image | video
+  - name: provider
+    type: string
+  - name: name
+    type: string
+  - name: baseUrl
+    type: string
+  - name: apiKey
+    type: string
+  - name: models
+    type: string[]
+  - name: priority
+    type: number
+  - name: temperature
+    type: number
+actor: Creator
+handled_by: ModelService
+rejections:
+  - Unsupported provider for the service type
+  - Temperature outside 0-2
+adr_refs:
+  - adr-0013
