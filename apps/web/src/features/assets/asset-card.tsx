@@ -1,9 +1,10 @@
 'use client';
 
-import { ImageOff, Loader2, TriangleAlert, Upload } from 'lucide-react';
+import { ImageOff, Loader2, Sparkles, Trash2, TriangleAlert, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Tag } from '@/components/ui/tag';
+import { Tooltip } from '@/components/ui/tooltip';
 import { mediaUrl, thumbOf } from '@/lib/media';
 import { readinessOf, summaryOf, titleOf, type AnyAsset } from './model';
 
@@ -12,11 +13,20 @@ export function AssetCard({
   onOpen,
   onUpload,
   uploading,
+  onGenerate,
+  generating,
+  generateDisabled,
+  onDelete,
 }: {
   item: AnyAsset;
   onOpen: () => void;
   onUpload: () => void;
   uploading?: boolean;
+  /** Present when the image can be generated here; `generateDisabled` explains why it cannot right now. */
+  onGenerate?: () => void;
+  generating?: boolean;
+  generateDisabled?: string;
+  onDelete?: () => void;
 }) {
   const t = useTranslations('assets.card');
   const { asset } = item;
@@ -85,11 +95,51 @@ export function AssetCard({
         {readiness === 'failed' && asset.latestImageTask?.error ? (
           <p className="line-clamp-1 text-xs text-danger">{asset.latestImageTask.error}</p>
         ) : null}
-        <div className="mt-auto flex justify-end pt-1">
-          <Button size="sm" variant="ghost" onClick={onUpload} loading={uploading} disabled={readiness === 'generating'}>
-            <Upload className="h-3.5 w-3.5" aria-hidden />
-            {asset.imagePath ? t('replaceImage') : t('uploadImage')}
-          </Button>
+        <div className="mt-auto flex items-center justify-end gap-1 pt-1">
+          {onDelete ? (
+            <Tooltip content={t('delete')}>
+              <Button size="icon" variant="ghost" className="mr-auto h-8 w-8 opacity-0 group-hover:opacity-100 focus-visible:opacity-100" onClick={onDelete} aria-label={t('delete')}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </Tooltip>
+          ) : null}
+          {onGenerate ? (
+            <Tooltip content={asset.imagePath ? t('replaceImage') : t('uploadImage')}>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={onUpload}
+                loading={uploading}
+                disabled={readiness === 'generating'}
+                aria-label={asset.imagePath ? t('replaceImage') : t('uploadImage')}
+              >
+                {uploading ? null : <Upload className="h-3.5 w-3.5" />}
+              </Button>
+            </Tooltip>
+          ) : (
+            <Button size="sm" variant="ghost" onClick={onUpload} loading={uploading} disabled={readiness === 'generating'}>
+              <Upload className="h-3.5 w-3.5" aria-hidden />
+              {asset.imagePath ? t('replaceImage') : t('uploadImage')}
+            </Button>
+          )}
+          {onGenerate ? (
+            generateDisabled ? (
+              <Tooltip content={generateDisabled}>
+                <span>
+                  <Button size="sm" variant="quiet" disabled>
+                    <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                    {asset.imagePath ? t('regenerate') : t('generate')}
+                  </Button>
+                </span>
+              </Tooltip>
+            ) : (
+              <Button size="sm" variant="quiet" onClick={onGenerate} loading={generating} disabled={readiness === 'generating'}>
+                <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                {asset.imagePath ? t('regenerate') : t('generate')}
+              </Button>
+            )
+          ) : null}
         </div>
       </div>
     </article>

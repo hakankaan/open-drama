@@ -1,98 +1,131 @@
 'use client';
 
-import { ArrowLeft, Check } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, ChevronDown, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import type { EpisodeView } from '@open-drama/contracts';
+import { useEffect } from 'react';
+import { Resolution as ResolutionEnum, type EpisodePipelineStatus, type EpisodeView } from '@open-drama/contracts';
 import { LocaleSwitcher } from '@/components/locale-switcher';
+import { ModelSelect } from '@/components/model-select';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/input';
+import { Menu, MenuContent, MenuItem, MenuTrigger } from '@/components/ui/menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tag } from '@/components/ui/tag';
+import { Tooltip } from '@/components/ui/tooltip';
 import { useToastError } from '@/lib/errors';
-import { useDramaDetail, useEpisode, usePipelineStatus, useSkipRewrite, useUpdateEpisode } from '../api';
+import { usePersistedState } from '@/lib/persisted-state';
+import { AssetsStage } from '../../assets/assets-stage';
+import { useModelPicks } from '../../configuration/model-picks';
+import { useDramaDetail, useEpisode, usePipelineStatus, useUpdateEpisode } from '../api';
+import { useSettleRefresh } from '../use-settle-refresh';
+import { RawContentPanel, RewritePanel } from './script-stage';
+import { StudioSidebar, deriveStages, type Panel } from './sidebar';
 
-/** Raw content with an explicit, awaited Save; the draft resets whenever the saved content changes. */
-function ScriptStage({ episode }: { episode: EpisodeView }) {
-  const t = useTranslations('studio.script');
+/** The first step that still needs work, used when the episode has no remembered panel. */
+function firstOpenPanel(p: EpisodePipelineStatus | undefined): Panel {
+  const s = deriveStages(p);
+  if (!s.raw) return 'raw';
+  if (!s.script) return 'rewrite';
+  return 'assets';
+}
+
+function TopBar({ dramaTitle, dramaId, episode, stage }: { dramaTitle: string; dramaId: number; episode: EpisodeView; stage: string }) {
+  const t = useTranslations('studio');
+  const qc = useQueryClient();
   const toastError = useToastError();
   const update = useUpdateEpisode();
-  const skip = useSkipRewrite();
-  const [draft, setDraft] = useState(episode.content);
-  const [base, setBase] = useState(episode.content);
-  // Follow server changes, but never overwrite text typed while a save was in flight.
-  if (base !== episode.content) {
-    setBase(episode.content);
-    if (draft === base) setDraft(episode.content);
-  }
-  const dirty = draft !== episode.content;
+  const { picks, setPick } = useModelPicks();
+  return (
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3">
+      <Link
+        href={`/drama/${dramaId}`}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-2 hover:bg-surface-2 hover:text-ink"
+        aria-label={t('backToProject')}
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </Link>
+      <span className="max-w-56 truncate font-display text-xl font-semibold tracking-wide">{dramaTitle}</span>
+      <Tag tone="accent">{t('episodeChip', { number: episode.episodeNumber })}</Tag>
+      <span className="hidden truncate text-sm text-ink-2 lg:inline">{stage}</span>
+      <div className="ml-auto flex items-center gap-2">
+        <ModelSelect type="text" value={picks.text} onChange={(p) => setPick('text', p)} className="hidden w-44 xl:block" />
+        <ModelSelect type="image" value={picks.image} onChange={(p) => setPick('image', p)} className="hidden w-44 xl:block" />
+        <ModelSelect type="video" value={picks.video} onChange={(p) => setPick('video', p)} className="hidden w-44 xl:block" />
+        <Menu>
+          <MenuTrigger asChild>
+            <Button size="sm" variant="ghost" aria-label={t('resolution', { resolution: episode.resolution })}>
+              <span className="font-mono text-xs">{episode.resolution}</span>
+              <ChevronDown className="h-3 w-3" aria-hidden />
+            </Button>
+          </MenuTrigger>
+          <MenuContent>
+            {ResolutionEnum.options.map((r) => (
+              <MenuItem
+                key={r}
+                checked={r === episode.resolution}
+                onSelect={() =>
+                  r !== episode.resolution && update.mutate({ id: episode.id, resolution: r }, { onError: (err) => toastError(err) })
+                }
+              >
+                {r}
+              </MenuItem>
+            ))}
+          </MenuContent>
+        </Menu>
+        <Tooltip content={t('refresh')}>
+          <Button size="icon" variant="ghost" onClick={() => void qc.invalidateQueries()} aria-label={t('refresh')}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </Tooltip>
+        <ThemeToggle />
+        <LocaleSwitcher />
+      </div>
+    </header>
+  );
+}
 
-  const save = async () => {
-    try {
-      await update.mutateAsync({ id: episode.id, content: draft });
-      toast.success(t('saved'));
-    } catch (err) {
-      toastError(err);
-    }
-  };
+function LaterPanel({ title, body }: { title: string; body: string }) {
+  return (
+    <section className="mx-auto flex max-w-2xl flex-col items-start gap-3 pt-10">
+      <h2 className="font-display text-3xl font-semibold tracking-wide">{title}</h2>
+      <p className="text-ink-2">{body}</p>
+    </section>
+  );
+}
 
-  const skipRewrite = async () => {
-    try {
-      if (dirty) await update.mutateAsync({ id: episode.id, content: draft });
-      await skip.mutateAsync(episode.id);
-    } catch (err) {
-      toastError(err);
-    }
-  };
+/** The loaded studio: one owner for the current panel, shared by the top bar and the sidebar. */
+function StudioBody({ dramaId, dramaTitle, episode }: { dramaId: number; dramaTitle: string; episode: EpisodeView }) {
+  const t = useTranslations('studio');
+  const pipeline = usePipelineStatus(episode.id);
+  useSettleRefresh(episode.id, dramaId);
+  const [stored, setPanel, loaded] = usePersistedState<Panel | null>(`studio-panel:${episode.id}`, null);
+  const [collapsed, setCollapsed] = usePersistedState('studio-sidebar-collapsed', false);
+  // The creator's step is kept across refreshes; an episode without a remembered step opens on the first open one.
+  const panel: Panel = stored ?? firstOpenPanel(pipeline.data);
+  // Pin the first computed step, so saving data never moves the creator to another panel.
+  useEffect(() => {
+    if (loaded && stored === null && pipeline.data) setPanel(firstOpenPanel(pipeline.data));
+  }, [loaded, stored, pipeline.data, setPanel]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <section className="flex flex-col gap-3" aria-labelledby="raw-content">
-        <div className="flex items-center gap-3">
-          <h2 id="raw-content" className="font-display text-2xl font-semibold tracking-wide">
-            {t('raw')}
-          </h2>
-          <span className="text-xs text-muted tabular-nums">{t('chars', { count: draft.length })}</span>
-          <Button size="sm" className="ml-auto" onClick={save} loading={update.isPending && !skip.isPending} disabled={!dirty}>
-            {t('save')}
-          </Button>
+    <div className="flex h-dvh flex-col">
+      <TopBar dramaTitle={dramaTitle} dramaId={dramaId} episode={episode} stage={t(`panels.${panel}`)} />
+      {!loaded ? (
+        <Skeleton className="m-6 h-[70dvh]" />
+      ) : (
+        <div className="flex min-h-0 flex-1">
+          <StudioSidebar panel={panel} onPanel={setPanel} pipeline={pipeline.data} collapsed={collapsed} onCollapse={setCollapsed} />
+          <main className="min-w-0 flex-1 overflow-y-auto p-6">
+            {panel === 'raw' ? <RawContentPanel episode={episode} onNext={() => setPanel('rewrite')} /> : null}
+            {panel === 'rewrite' ? <RewritePanel episode={episode} onRaw={() => setPanel('raw')} /> : null}
+            {panel === 'assets' ? <AssetsStage episode={episode} onScript={() => setPanel('rewrite')} /> : null}
+            {panel === 'video' ? <LaterPanel title={t('panels.video')} body={t('laterVideo')} /> : null}
+            {panel === 'export' ? <LaterPanel title={t('panels.export')} body={t('laterExport')} /> : null}
+          </main>
         </div>
-        <Textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder={t('rawPlaceholder')}
-          className="min-h-[55dvh] text-[15px]"
-          aria-labelledby="raw-content"
-        />
-      </section>
-      <section className="flex flex-col gap-3" aria-labelledby="script">
-        <div className="flex items-center gap-3">
-          <h2 id="script" className="font-display text-2xl font-semibold tracking-wide">
-            {t('script')}
-          </h2>
-          {episode.scriptContent ? (
-            <Tag tone="success">
-              <Check className="h-3 w-3" aria-hidden />
-              {t('ready')}
-            </Tag>
-          ) : null}
-        </div>
-        {episode.scriptContent ? (
-          <pre className="min-h-[55dvh] overflow-auto rounded-md border border-line bg-surface p-4 font-sans text-[15px] leading-relaxed whitespace-pre-wrap">
-            {episode.scriptContent}
-          </pre>
-        ) : (
-          <div className="flex min-h-[55dvh] flex-col items-start justify-center gap-3 rounded-md border border-dashed border-line-strong p-6">
-            <p className="max-w-sm text-sm text-ink-2">{t('emptyScript')}</p>
-            <Button onClick={skipRewrite} loading={skip.isPending} disabled={!draft.trim()}>
-              {t('useRaw')}
-            </Button>
-          </div>
-        )}
-      </section>
+      )}
     </div>
   );
 }
@@ -102,11 +135,8 @@ export function EpisodeStudio({ dramaId, episodeNumber }: { dramaId: number; epi
   const drama = useDramaDetail(dramaId);
   const summary = drama.data?.episodes.find((e) => e.episodeNumber === episodeNumber);
   const episode = useEpisode(summary?.id);
-  const pipeline = usePipelineStatus(summary?.id);
 
-  if (drama.isLoading || (summary && episode.isLoading)) {
-    return <Skeleton className="m-6 h-[70dvh]" />;
-  }
+  if (drama.isLoading || (summary && episode.isLoading)) return <Skeleton className="m-6 h-[70dvh]" />;
   if (!drama.data || !summary || !episode.data) {
     return (
       <div className="flex flex-col items-start gap-3 p-8">
@@ -117,32 +147,5 @@ export function EpisodeStudio({ dramaId, episodeNumber }: { dramaId: number; epi
       </div>
     );
   }
-  const ep = episode.data;
-
-  return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="flex h-14 items-center gap-3 border-b border-line bg-surface px-4">
-        <Link
-          href={`/drama/${dramaId}`}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-2 hover:bg-surface-2 hover:text-ink"
-          aria-label={t('backToProject')}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <span className="truncate font-display text-xl font-semibold tracking-wide">{drama.data.title}</span>
-        <Tag tone="accent">{t('episodeChip', { number: ep.episodeNumber })}</Tag>
-        <span className="truncate text-sm text-ink-2">{ep.title}</span>
-        <div className="ml-auto flex items-center gap-2">
-          {ep.services.video ? <Tag mono>{ep.services.video.defaultModel ?? ep.services.video.name}</Tag> : null}
-          <Tag mono>{ep.resolution}</Tag>
-          {pipeline.data?.script.state === 'done' ? <Tag tone="success">{t('scriptDone')}</Tag> : null}
-          <ThemeToggle />
-          <LocaleSwitcher />
-        </div>
-      </header>
-      <main className="flex-1 p-6">
-        <ScriptStage episode={ep} />
-      </main>
-    </div>
-  );
+  return <StudioBody dramaId={dramaId} dramaTitle={drama.data.title} episode={episode.data} />;
 }

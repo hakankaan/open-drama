@@ -23,7 +23,7 @@ logger.info('migrations applied');
 const { seedStylePresets } = await import('./db/seeds/style-presets');
 logger.info(seedStylePresets(), 'style presets seeded');
 
-const { ensureWorkspace } = await import('./modules/agents/workspace');
+const { ensureWorkspace } = await import('./modules/agents/workspace/copy');
 logger.info(ensureWorkspace(), 'workspace ready');
 
 // The probe can take seconds on a cold binary, so it only warns and never delays startup.

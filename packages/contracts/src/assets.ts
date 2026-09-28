@@ -128,3 +128,36 @@ export const UpdateProp = z.strictObject({
   ...common,
 });
 export type UpdateProp = z.input<typeof UpdateProp>;
+
+// Agent- and generation-backed asset commands
+
+export const StartExtraction = z.object({
+  target: ExtractionTarget,
+  model: z.string().trim().max(200).optional(),
+  textServiceId: z.number().int().positive().optional(),
+});
+export type StartExtraction = z.input<typeof StartExtraction>;
+
+/** Generate*FinalPrompt: runs the prompt generator in the episode's context; synchronous. */
+export const GenerateFinalPrompt = z.object({
+  episodeId: z.number().int().positive(),
+  force: z.boolean().optional(),
+  model: z.string().trim().max(200).optional(),
+  textServiceId: z.number().int().positive().optional(),
+});
+export type GenerateFinalPrompt = z.input<typeof GenerateFinalPrompt>;
+
+export const FinalPromptResult = z.object({ finalPrompt: z.string() });
+
+/** Request*Image: ensures the final prompt (text model), then submits an image task (image model). */
+export const RequestAssetImage = z.object({
+  episodeId: z.number().int().positive(),
+  model: z.string().trim().max(200).optional(),
+  imageServiceId: z.number().int().positive().optional(),
+  textModel: z.string().trim().max(200).optional(),
+  textServiceId: z.number().int().positive().optional(),
+});
+export type RequestAssetImage = z.input<typeof RequestAssetImage>;
+
+export const TaskStarted = z.object({ taskId: z.number().int() });
+export type TaskStarted = z.infer<typeof TaskStarted>;

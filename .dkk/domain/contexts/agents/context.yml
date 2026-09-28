@@ -39,4 +39,5 @@ adr_refs:
   - adr-0012
 code_refs:
   - apps/api/src/modules/agents/**
-  - workspace/.template-version
+  - workspace/**
+  - apps/web/src/features/agents/**

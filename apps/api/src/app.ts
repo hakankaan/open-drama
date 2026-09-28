@@ -5,6 +5,7 @@ import { API_BASE, STATIC_PREFIX } from '@open-drama/contracts';
 import { env } from './env';
 import { ApiError } from './http/errors';
 import { logger, requestLogger } from './http/logger';
+import { agentsRoutes } from './modules/agents/routes';
 import { assetsRoutes } from './modules/assets/routes';
 import { configurationRoutes } from './modules/configuration/routes';
 import { mediaRoutes } from './modules/media/routes';
@@ -24,7 +25,8 @@ export function createApp() {
     .route('/', configurationRoutes)
     .route('/', productionRoutes)
     .route('/', assetsRoutes)
-    .route('/', mediaRoutes);
+    .route('/', mediaRoutes)
+    .route('/', agentsRoutes);
   app.route(API_BASE, api);
 
   app.on(['GET', 'HEAD'], `${STATIC_PREFIX}/*`, (c) => serveStatic(c));

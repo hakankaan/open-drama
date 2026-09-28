@@ -93,7 +93,7 @@ export function ProjectPage({ dramaId }: { dramaId: number }) {
         ))}
       </div>
 
-      {tab === 'episodes' ? <EpisodesTab drama={drama} onAdd={() => setAdding(true)} /> : <AssetLibrary dramaId={drama.id} />}
+      {tab === 'episodes' ? <EpisodesTab drama={drama} onAdd={() => setAdding(true)} /> : <AssetLibrary dramaId={drama.id} episodeId={drama.episodes[0]?.id} />}
       {adding ? <AddEpisodeDialog drama={drama} onClose={() => setAdding(false)} /> : null}
     </div>
   );

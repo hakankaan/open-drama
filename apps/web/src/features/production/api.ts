@@ -8,9 +8,12 @@ import {
   DramaListResponse,
   DramaStats,
   EpisodePipelineStatus,
+  EpisodeJobs,
   EpisodeView,
+  JobStarted,
   type CreateDrama,
   type CreateEpisode,
+  type TextModelOverride,
   type UpdateDrama,
   type UpdateEpisode,
 } from '@open-drama/contracts';
@@ -22,6 +25,7 @@ export const productionKeys = {
   drama: (id: number) => ['production', 'drama', id] as const,
   episode: (id: number) => ['production', 'episode', id] as const,
   pipeline: (id: number) => ['production', 'pipeline', id] as const,
+  jobs: (id: number) => ['production', 'jobs', id] as const,
 };
 
 
@@ -126,5 +130,28 @@ export function useDeleteEpisode(dramaId: number) {
   return useMutation({
     mutationFn: (id: number) => request(z.object({ id: z.number() }), 'DELETE', `/episodes/${id}`),
     onSettled: () => invalidate(dramaId),
+  });
+}
+
+// Jobs (EpisodeJobs): polled every 2.5 s while anything runs (Plan 3 §4.7).
+
+const anyRunning = (jobs: EpisodeJobs | undefined) =>
+  !!jobs &&
+  [jobs.rewrite, jobs.breakdown, jobs.videoPromptBatch, ...Object.values(jobs.extraction)].some((j) => j?.status === 'running');
+
+export const useEpisodeJobs = (id: number | undefined) =>
+  useQuery({
+    queryKey: productionKeys.jobs(id ?? 0),
+    queryFn: () => request(EpisodeJobs, 'GET', `/episodes/${id}/jobs`),
+    enabled: id !== undefined,
+    refetchInterval: (query) => (anyRunning(query.state.data) ? 2500 : false),
+  });
+
+/** Starting a job (or finding one already running) invalidates the jobs query so polling starts at once. */
+export function useStartRewrite(episodeId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: TextModelOverride) => request(JobStarted, 'POST', `/episodes/${episodeId}/rewrite`, body),
+    onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.jobs(episodeId) }),
   });
 }

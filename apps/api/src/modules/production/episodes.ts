@@ -5,7 +5,6 @@ import { db } from '../../db/client';
 import { episodes } from '../../db/schema';
 import { assertSomething, notFound, precondition } from '../../http/errors';
 import { resolveService } from '../configuration/services';
-import { runJob } from '../jobs/run-job';
 import { getDramaRow, touchDrama } from './dramas';
 
 type Row = typeof episodes.$inferSelect;
@@ -106,12 +105,4 @@ export function skipRewrite(id: number): EpisodeView {
   return getEpisodeView(id);
 }
 
-/** RewriteScript: a job. The script-rewriter agent arrives with the AI pipeline; until then the job fails clearly. */
-export function startRewrite(id: number) {
-  const row = getEpisodeRow(id);
-  if (!row.content.trim()) throw precondition('Paste the raw content before rewriting it');
-  return runJob({ kind: 'rewrite', episodeId: row.id, dramaId: row.dramaId }, async () => {
-    throw new Error('The script-rewriter agent is not available yet. Skip the rewrite to continue.');
-  });
-}
 

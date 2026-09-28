@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { env } from '../../env';
-import { WORKSPACE_TEMPLATE_DIR } from '../../lib/roots';
+import { env } from '../../../env';
+import { WORKSPACE_TEMPLATE_DIR } from '../../../lib/roots';
 
 const MARKER = '.template-version';
 

@@ -1,5 +1,13 @@
 import { Hono } from 'hono';
-import { CreateDrama, CreateEpisode, DramaListQuery, IdParam, UpdateDrama, UpdateEpisode } from '@open-drama/contracts';
+import {
+  CreateDrama,
+  CreateEpisode,
+  DramaListQuery,
+  IdParam,
+  TextModelOverride,
+  UpdateDrama,
+  UpdateEpisode,
+} from '@open-drama/contracts';
 import { created, ok } from '../../http/envelope';
 import { v } from '../../http/validate';
 import { getEpisodeJobs } from '../jobs/run-job';
@@ -10,9 +18,9 @@ import {
   getEpisodeRow,
   getEpisodeView,
   skipRewrite,
-  startRewrite,
   updateEpisode,
 } from './episodes';
+import { startRewrite } from '../agents/services/rewrite';
 import { getPipelineStatus } from './pipeline';
 
 export const productionRoutes = new Hono()
@@ -30,7 +38,9 @@ export const productionRoutes = new Hono()
     ok(c, updateEpisode(c.req.valid('param').id, c.req.valid('json'))),
   )
   .delete('/episodes/:id', v('param', IdParam), (c) => ok(c, deleteEpisode(c.req.valid('param').id)))
-  .post('/episodes/:id/rewrite', v('param', IdParam), (c) => ok(c, startRewrite(c.req.valid('param').id)))
+  .post('/episodes/:id/rewrite', v('param', IdParam), v('json', TextModelOverride.default({})), (c) =>
+    ok(c, startRewrite(c.req.valid('param').id, c.req.valid('json'))),
+  )
   .post('/episodes/:id/skip-rewrite', v('param', IdParam), (c) => ok(c, skipRewrite(c.req.valid('param').id)))
   .get('/episodes/:id/pipeline-status', v('param', IdParam), (c) =>
     ok(c, getPipelineStatus(c.req.valid('param').id)),

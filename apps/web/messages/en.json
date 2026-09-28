@@ -129,7 +129,8 @@
       "general": "General",
       "styles": "Visual styles",
       "storage": "Storage",
-      "about": "About"
+      "about": "About",
+      "agents": "Agents"
     },
     "ai": {
       "types": {
@@ -268,6 +269,37 @@
       "exposureBody": "Anyone who can open this page can use every feature, including your stored API keys. Keep Open Drama on a private network, or put a reverse proxy with authentication in front of it.",
       "source": "Source code",
       "licence": "Licence: CC BY-NC-SA 4.0"
+    },
+    "agents": {
+      "languageNote": "You are editing the {language} texts. Switch the language to edit another one; a language without its own text uses the English one.",
+      "skillCount": "{count, plural, one {# skill} other {# skills}}",
+      "prompt": "System prompt",
+      "skills": "Skills ({count})",
+      "addSkill": "Add skill",
+      "noSkills": "This agent has no skills yet.",
+      "saved": "Saved. The next run uses it.",
+      "savedState": "Saved",
+      "fallback": "Uses English",
+      "builtIn": "Built-in text",
+      "reset": "Reset",
+      "resetTitle": "Reset this prompt?",
+      "resetBodyEn": "The English prompt goes back to the version shipped with Open Drama. Your edits are lost.",
+      "resetBodyVariant": "This language's prompt is removed and the English one is used again.",
+      "deleteVariant": "Remove this language",
+      "deleteSkillTitle": "Delete {name}?",
+      "deleteSkillBody": "The skill and all its language versions are deleted. The agent stops using it from the next run.",
+      "deleteVariantBody": "This language's text is removed and the English one is used again.",
+      "add": {
+        "title": "Add a skill",
+        "description": "A skill is guidance the agent reads on every run. Write its text after creating it.",
+        "dir": "Folder name",
+        "dirHint": "Saved as {path}",
+        "invalidDir": "Use lowercase letters, digits and dashes.",
+        "name": "Name",
+        "required": "Required.",
+        "descriptionField": "Description",
+        "submit": "Add skill"
+      }
     }
   },
   "assets": {
@@ -288,7 +320,10 @@
       "noImage": "No image",
       "stale": "out of date",
       "replaceImage": "Replace image",
-      "uploadImage": "Upload image"
+      "uploadImage": "Upload image",
+      "delete": "Delete",
+      "generate": "Generate image",
+      "regenerate": "Regenerate"
     },
     "fields": {
       "name": "Name",
@@ -325,6 +360,17 @@
       "character": "No characters yet. They are extracted from the script, or you can add them here.",
       "scene": "No scenes yet. Scenes are places at a time of day.",
       "prop": "No props yet. Only objects the plot depends on belong here."
+    },
+    "needEpisode": "Create an episode first: prompts are written in an episode's context.",
+    "alreadyGenerating": "An image is already being generated for this asset.",
+    "saveFirst": "Save your edits first.",
+    "generatePrompt": "Write prompt",
+    "regeneratePrompt": "Rewrite prompt",
+    "copy": "Copy",
+    "copied": "Copied.",
+    "batch": {
+      "progress": "Starting image generation: {done} of {total}",
+      "summary": "{started} started, {already} already generating, {failed} failed"
     }
   },
   "project": {
@@ -369,11 +415,86 @@
       "chars": "{count, plural, one {# character} other {# characters}}",
       "save": "Save",
       "saved": "Saved.",
+      "rawHint": "Paste the source for this episode: a novel chapter, an outline or notes. The AI rewrites it into a shooting script next.",
       "rawPlaceholder": "Paste a novel chapter, an outline or notes for this episode.",
+      "toRewrite": "Continue to the script",
+      "toRaw": "Go to raw content",
+      "rewriteTitle": "Script",
+      "needRaw": "Paste the raw content first; the script is written from it.",
+      "rewriteBody": "The AI turns the raw content into a shooting script with scene headings, action and dialogue. You can also use the raw content as it is.",
+      "running": "Writing the script. This usually takes under a minute.",
+      "start": "Write the script",
+      "skip": "Use raw content as the script",
+      "failed": "The rewrite failed: {error}",
+      "failedKept": "The last rewrite failed, so the script below was kept: {error}",
       "script": "Script",
-      "ready": "Ready",
-      "emptyScript": "The AI rewrite into a shooting script arrives with the AI pipeline. For now you can use the raw content as the script.",
-      "useRaw": "Use raw content as the script"
+      "again": "Rewrite again",
+      "againTitle": "Rewrite the script?",
+      "againBody": "The AI writes a new script from the raw content and replaces the current one, including your edits."
+    },
+    "models": {
+      "default": "Default model",
+      "text": "Text model",
+      "image": "Image model",
+      "video": "Video model"
+    },
+    "resolution": "Resolution {resolution}. Change resolution",
+    "refresh": "Refresh",
+    "panels": {
+      "raw": "Raw content",
+      "rewrite": "Script",
+      "assets": "Assets",
+      "video": "Video production",
+      "export": "Merge and export"
+    },
+    "laterVideo": "Storyboard breakdown and shot videos arrive in the next milestone.",
+    "laterExport": "Merging the shots into the episode film arrives after video production.",
+    "sidebar": {
+      "label": "Production steps",
+      "progress": "Episode progress",
+      "expand": "Expand sidebar",
+      "collapse": "Collapse",
+      "stage": {
+        "script": "Script",
+        "assets": "Assets",
+        "video": "Video",
+        "export": "Export"
+      },
+      "section": {
+        "script": "Script",
+        "production": "Production",
+        "export": "Export"
+      },
+      "panel": {
+        "raw": "Raw content",
+        "rewrite": "AI rewrite",
+        "assets": "Assets",
+        "video": "Video production",
+        "export": "Merge and export"
+      },
+      "state": {
+        "done": "Done",
+        "active": "Current step",
+        "idle": "Not started"
+      }
+    },
+    "assets": {
+      "title": "Assets",
+      "needScript": "Finish the script first: assets are extracted from it.",
+      "toScript": "Go to the script",
+      "emptyBody": "Extract the characters, places and key props from the script, or add them yourself.",
+      "extractAll": "Extract all",
+      "extract": "Extract",
+      "reextract": "Extract again",
+      "extracting": "Extracting",
+      "extractingBody": "Reading the script. New assets appear here when it finishes.",
+      "extractFailed": "Extraction failed",
+      "ready": "{ready} of {total} ready",
+      "generateMissing": "{count, plural, =0 {All images ready} one {Generate # missing image} other {Generate # missing images}}",
+      "generateKind": "{count, plural, =0 {All ready} other {Generate missing (#)}}",
+      "deleteTitle": "Delete {name}?",
+      "deleteBody": "The asset is removed from every episode of the project. Its image stays in the data folder.",
+      "deleteConfirm": "Delete asset"
     }
   }
 }

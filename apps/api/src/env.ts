@@ -19,6 +19,13 @@ const EnvSchema = z.object({
   FFMPEG_BIN: z.string().optional(),
   FFPROBE_BIN: z.string().optional(),
   OPEN_DRAMA_STUB_PROVIDERS: flag,
+  // Text transport patches for relays (Plan 2 §4).
+  OPEN_DRAMA_AI_DISABLE_THINKING: z
+    .enum(['0', '1', 'true', 'false'])
+    .default('1')
+    .transform((v) => v === '1' || v === 'true'),
+  OPEN_DRAMA_AI_MAX_TOKENS: z.coerce.number().int().min(256).max(1_000_000).default(16384),
+  OPEN_DRAMA_AI_THINKING_OFF_PATCH: z.string().optional(),
   WEB_ORIGIN: z.string().default('http://localhost:3000'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   OPEN_DRAMA_VERSION: z.string().default(API_VERSION),

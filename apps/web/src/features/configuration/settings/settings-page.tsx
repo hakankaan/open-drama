@@ -4,14 +4,14 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/cn';
+import { AgentsTab } from '../../agents/agents-tab';
 import { AboutTab } from './about-tab';
 import { AiTab } from './ai-tab';
 import { GeneralTab } from './general-tab';
 import { StorageTab } from './storage-tab';
 import { StylesTab } from './styles-tab';
 
-// The agents tab (prompts and skills) arrives with the AI pipeline workspace.
-const TABS = { ai: AiTab, general: GeneralTab, styles: StylesTab, storage: StorageTab, about: AboutTab } as const;
+const TABS = { ai: AiTab, general: GeneralTab, styles: StylesTab, agents: AgentsTab, storage: StorageTab, about: AboutTab } as const;
 type TabKey = keyof typeof TABS;
 
 export function SettingsPage() {

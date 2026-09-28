@@ -1,6 +1,7 @@
 'use client';
 
-import { ImageOff, Upload } from 'lucide-react';
+import { Copy, ImageOff, Sparkles, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -23,12 +24,20 @@ export function AssetDetailDialog({
   onClose,
   onUpload,
   uploading,
+  generation,
 }: {
   item: AnyAsset;
   dramaId: number;
   onClose: () => void;
   onUpload: () => void;
   uploading: boolean;
+  /** Prompt and image generation, available when an episode gives the agent its context. */
+  generation?: {
+    onGeneratePrompt: () => Promise<string | null>;
+    promptPending: boolean;
+    onGenerateImage: () => void;
+    imagePending: boolean;
+  };
 }) {
   const t = useTranslations('assets');
   const tc = useTranslations('common');
@@ -82,6 +91,19 @@ export function AssetDetailDialog({
               <Upload className="h-3.5 w-3.5" aria-hidden />
               {item.asset.imagePath ? t('card.replaceImage') : t('card.uploadImage')}
             </Button>
+            {generation ? (
+              <Button
+                size="sm"
+                variant="quiet"
+                onClick={generation.onGenerateImage}
+                loading={generation.imagePending}
+                disabled={dirty || item.asset.latestImageTask?.status === 'processing'}
+                title={dirty ? t('saveFirst') : undefined}
+              >
+                <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                {item.asset.imagePath ? t('card.regenerate') : t('card.generate')}
+              </Button>
+            ) : null}
           </div>
           <div className="flex min-w-0 flex-col gap-4">
             {fields.map((f) => {
@@ -122,6 +144,35 @@ export function AssetDetailDialog({
                   className="min-h-28 font-mono text-[13px]"
                   maxLength={8000}
                 />
+                <div className="flex gap-1.5">
+                  {generation ? (
+                    <Button
+                      size="sm"
+                      variant="quiet"
+                      loading={generation.promptPending}
+                      disabled={Object.keys(changed).length > 0}
+                      title={Object.keys(changed).length > 0 ? t('saveFirst') : undefined}
+                      onClick={async () => {
+                        const next = await generation.onGeneratePrompt();
+                        if (next !== null) setPrompt(next);
+                      }}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                      {item.asset.finalPrompt ? t('regeneratePrompt') : t('generatePrompt')}
+                    </Button>
+                  ) : null}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={!prompt.trim()}
+                    onClick={() => {
+                      void navigator.clipboard.writeText(prompt).then(() => toast.success(t('copied')));
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" aria-hidden />
+                    {t('copy')}
+                  </Button>
+                </div>
               </div>
             </Field>
             <DialogFooter>

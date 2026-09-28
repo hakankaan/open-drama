@@ -18,7 +18,7 @@ export function failInterrupted(): BootCleanupResult {
   const now = nowIso();
   const tasks = db
     .update(generationTasks)
-    .set({ status: 'failed', error: RESTART_MESSAGE, completedAt: now })
+    .set({ status: 'failed', error: RESTART_MESSAGE, errorClass: 'timeout', completedAt: now })
     .where(eq(generationTasks.status, 'processing'))
     .run().changes;
   const filmCount = db

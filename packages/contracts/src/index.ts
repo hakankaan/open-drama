@@ -9,3 +9,4 @@ export * from './generation';
 export * from './production';
 export * from './assets';
 export * from './media';
+export * from './agents';
