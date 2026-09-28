@@ -62,3 +62,14 @@ export async function ffmpegAvailable(): Promise<boolean> {
   }
   return available;
 }
+
+/** Container duration in seconds via ffprobe, or null when the file is not a readable media file. */
+export async function probeDurationSeconds(absPath: string): Promise<number | null> {
+  try {
+    const result = await run(ffprobeBin(), ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1', absPath], 30_000);
+    const seconds = Number(result.stdout.trim());
+    return result.code === 0 && Number.isFinite(seconds) && seconds > 0 ? seconds : null;
+  } catch {
+    return null;
+  }
+}

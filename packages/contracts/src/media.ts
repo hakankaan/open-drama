@@ -26,3 +26,8 @@ export type StorageUsage = z.infer<typeof StorageUsage>;
 
 export const IMAGE_UPLOAD_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'] as const;
 export const IMAGE_UPLOAD_MAX_BYTES = 20 * 1024 * 1024;
+
+export const VIDEO_UPLOAD_EXTENSIONS = ['.mp4', '.mov', '.webm', '.m4v'] as const;
+export const VIDEO_UPLOAD_MAX_BYTES = 50 * 1024 * 1024;
+export const AUDIO_UPLOAD_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac'] as const;
+export const AUDIO_UPLOAD_MAX_BYTES = 20 * 1024 * 1024;

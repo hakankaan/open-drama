@@ -8,9 +8,11 @@ import { logger, requestLogger } from './http/logger';
 import { agentsRoutes } from './modules/agents/routes';
 import { assetsRoutes } from './modules/assets/routes';
 import { configurationRoutes } from './modules/configuration/routes';
+import { generationRoutes } from './modules/generation/routes';
 import { mediaRoutes } from './modules/media/routes';
 import { productionRoutes } from './modules/production/routes';
 import { serveStatic } from './modules/media/static';
+import { storyboardRoutes } from './modules/storyboard/routes';
 import { systemRoutes } from './modules/system/routes';
 
 export function createApp() {
@@ -25,6 +27,8 @@ export function createApp() {
     .route('/', configurationRoutes)
     .route('/', productionRoutes)
     .route('/', assetsRoutes)
+    .route('/', storyboardRoutes)
+    .route('/', generationRoutes)
     .route('/', mediaRoutes)
     .route('/', agentsRoutes);
   app.route(API_BASE, api);

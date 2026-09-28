@@ -38,6 +38,8 @@ export const shots = sqliteTable(
     videoDurationSeconds: real(),
     // Set while a breakdown job has parked this row; parked rows are restored if the job fails (adr-0008).
     parkedByJobId: integer(),
+    // The breakdown job that wrote this row; a failed job removes exactly its own rows.
+    createdByJobId: integer(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

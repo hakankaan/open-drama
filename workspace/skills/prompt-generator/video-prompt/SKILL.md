@@ -32,5 +32,5 @@ For a 10-second shot bound to Mei, the stranger, the red lantern and the night m
 
 ## Tool protocol
 
-1. `read_storyboard_context` to see the shot, its bindings and the asset names.
+1. `read_storyboard_context` with `{ "shotId": … }` to see the shot and the names you may mention (`mentionable`).
 2. `update_shot` with `{ "shotId": …, "videoPrompt": "…" }` and nothing else.

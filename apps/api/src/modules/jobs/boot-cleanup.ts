@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../db/client';
 import { agentJobs, films, generationTasks } from '../../db/schema';
 import { nowIso } from '../../db/schema/columns';
-import { restoreParkedShots } from '../storyboard/parking';
+import { restoreParkedShots } from '../storyboard/service';
 
 const RESTART_MESSAGE = 'Interrupted by a server restart';
 
@@ -30,11 +30,10 @@ export function failInterrupted(): BootCleanupResult {
   const running = db.select().from(agentJobs).where(eq(agentJobs.status, 'running')).all();
   let restoredShots = 0;
   for (const job of running) {
-    if (job.kind === 'breakdown') restoredShots += restoreParkedShots(job.id, job.episodeId);
-    db.update(agentJobs)
-      .set({ status: 'failed', error: RESTART_MESSAGE, finishedAt: now })
-      .where(eq(agentJobs.id, job.id))
-      .run();
+    db.transaction((tx) => {
+      if (job.kind === 'breakdown') restoredShots += restoreParkedShots(tx, job.id, job.episodeId);
+      tx.update(agentJobs).set({ status: 'failed', error: RESTART_MESSAGE, finishedAt: now }).where(eq(agentJobs.id, job.id)).run();
+    });
   }
   return { tasks, films: filmCount, jobs: running.length, restoredShots };
 }

@@ -1,5 +1,8 @@
+import { existsSync } from 'node:fs';
 import sharp from 'sharp';
+import { env } from '../../../env';
 import { toAbsolute } from '../../../lib/paths';
+import { ConfigError } from './errors';
 
 const MAX_EDGE = 768;
 
@@ -27,4 +30,21 @@ export async function normalizeReferenceImages(refs: string[], max: number): Pro
     } else out.push(await compress(toAbsolute(ref)));
   }
   return out;
+}
+
+/**
+ * Reference videos and audio (Plan 2 §8): providers fetch them by URL. http(s) and data URLs pass through; a stored
+ * `static/…` file needs PUBLIC_BASE_URL so the provider can reach it, otherwise the task fails with a config error.
+ */
+export function resolvePublicMediaUrls(refs: string[], what: 'video' | 'audio'): string[] {
+  return [...new Set(refs.filter(Boolean))].map((ref) => {
+    if (/^(https?:|data:)/.test(ref)) return ref;
+    if (!existsSync(toAbsolute(ref))) throw new ConfigError(`The reference ${what} ${ref} is no longer stored`);
+    if (!env.PUBLIC_BASE_URL) {
+      throw new ConfigError(
+        `The video provider must download the reference ${what} ${ref}, so set PUBLIC_BASE_URL to an address it can reach`,
+      );
+    }
+    return `${env.PUBLIC_BASE_URL.replace(/\/+$/, '')}/${ref.replace(/^\/+/, '')}`;
+  });
 }

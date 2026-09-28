@@ -24,10 +24,28 @@ export interface ImageRecord {
   resolution?: Resolution;
 }
 
-/** A provider result: an URL to download, or inline base64 bytes. */
+export interface VideoRecord {
+  taskId: number;
+  /** The prompt with mentions already rendered in the provider's token syntax. */
+  prompt: string;
+  /** Reference images as data URLs, in slot order (slot N is index N-1). */
+  referenceImages: string[];
+  /** Reference videos and audio as URLs the provider can fetch. */
+  referenceVideos: string[];
+  referenceAudios: string[];
+  /** Whole seconds, already clamped into the provider's range. */
+  durationSeconds: number;
+  aspectRatio: AspectRatio;
+  resolution: Resolution;
+  generateAudio: boolean;
+}
+
+/** A provider result: an URL to download, inline base64 bytes, or a file an offline adapter already stored. */
 export interface ResultMedia {
   url?: string;
   base64?: { data: string; mimeType: string };
+  /** A stored media path (`static/…`). */
+  file?: string;
   durationSeconds?: number;
 }
 
@@ -36,20 +54,29 @@ export type GenerateOutcome = { kind: 'async'; providerTaskId: string } | ({ kin
 export type PollOutcome =
   | { status: 'pending' }
   | ({ status: 'completed' } & ResultMedia)
-  | { status: 'failed'; error: string };
+  | { status: 'failed'; error: string; code?: string };
 
 /**
- * One provider dialect for images (adr-0005): builds requests and parses responses; the engine owns the
- * lifecycle. `generateLocal` replaces HTTP for offline adapters.
+ * One provider dialect (adr-0005): builds requests and parses responses; the engine owns the lifecycle.
+ * `generateLocal` replaces HTTP for offline adapters.
  */
-export interface ImageAdapter {
+export interface Dialect<R> {
   provider: string;
-  limits: { images: number };
-  generateLocal?(record: ImageRecord): Promise<GenerateOutcome>;
-  buildGenerateRequest?(config: ServiceConfig, record: ImageRecord): ProviderRequest;
+  generateLocal?(record: R): Promise<GenerateOutcome>;
+  buildGenerateRequest?(config: ServiceConfig, record: R): ProviderRequest;
   parseGenerateResponse?(body: unknown): GenerateOutcome;
   buildPollRequest?(config: ServiceConfig, providerTaskId: string): ProviderRequest;
   parsePollResponse?(body: unknown): PollOutcome;
+}
+
+export interface ImageAdapter extends Dialect<ImageRecord> {
+  limits: { images: number };
+}
+
+/** Video adapters take their reference limits from the shared caps table (`videoCapsFor` in contracts). */
+export interface VideoAdapter extends Dialect<VideoRecord> {
+  /** The provider's token for reference image slot N (1-based), or the plain name when it has none. */
+  formatMention(slot: number, name: string): string;
 }
 
 /** An error the provider reported, with its HTTP status when there was one. */

@@ -57,7 +57,8 @@ export async function runToolLoop(opts: {
   maxSteps: number;
   temperature?: number;
   abortSignal?: AbortSignal;
-  stopAfterTool?: string;
+  /** Ends the loop as soon as this holds (the result is already saved). */
+  isDone?: (calls: ToolCallRecord[]) => boolean;
 }): Promise<RunLoopResult> {
   const toolCalls: ToolCallRecord[] = [];
   const tools = Object.fromEntries(
@@ -88,12 +89,9 @@ export async function runToolLoop(opts: {
     instructions: opts.instructions,
     prompt: opts.message,
     tools,
-    // Stop at the step budget, or right after the save tool succeeded: a trailing "saved" turn adds nothing
-    // and its failure must not fail a run whose result is already persisted.
-    stopWhen: [
-      isStepCount(opts.maxSteps),
-      () => !!opts.stopAfterTool && toolCalls.some((c) => c.tool === opts.stopAfterTool && c.ok),
-    ],
+    // Stop at the step budget, or as soon as the result is saved: a trailing "saved" turn adds nothing and its
+    // failure must not fail a run whose result is already persisted.
+    stopWhen: [isStepCount(opts.maxSteps), () => !!opts.isDone?.(toolCalls)],
     temperature: opts.temperature,
     abortSignal: opts.abortSignal,
   });

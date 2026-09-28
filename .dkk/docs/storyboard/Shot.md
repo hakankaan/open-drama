@@ -16,7 +16,8 @@ One storyboard segment of an episode. Owns its description, atmosphere, duration
 - sceneId, characterIds and propIds must belong to the drama; binding an asset not yet linked to the episode links it.
 - durationSeconds is between 2 and 30 (agents target 8-15); the episode's derived duration is the sum of live shot durations.
 - A video request needs at least one reference asset or a non-empty video prompt.
-- The current video is the most recent successful generation unless the creator picks another from history.
+- The current video is the most recent successful generation unless the creator picks another from history; the task behind the current video cannot be deleted from history.
+- Reference images beyond the video provider's limit are left out (bound assets first) and reported to the creator.
 
 
 ## Relationships

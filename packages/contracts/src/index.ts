@@ -10,3 +10,6 @@ export * from './production';
 export * from './assets';
 export * from './media';
 export * from './agents';
+export * from './compositing';
+export * from './storyboard';
+export * from './video-providers';

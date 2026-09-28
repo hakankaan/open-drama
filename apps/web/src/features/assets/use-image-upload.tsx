@@ -5,7 +5,7 @@ import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useToastError } from '@/lib/errors';
-import { useUploadImage } from '../media/api';
+import { useUploadMedia } from '../media/api';
 import { useUpdateAsset } from './api';
 import type { AnyAsset } from './model';
 
@@ -16,7 +16,7 @@ import type { AnyAsset } from './model';
 export function useImageUpload(dramaId: number) {
   const t = useTranslations('assets');
   const toastError = useToastError();
-  const upload = useUploadImage();
+  const upload = useUploadMedia('image');
   const update = useUpdateAsset(dramaId);
   const input = useRef<HTMLInputElement | null>(null);
   const target = useRef<AnyAsset | null>(null);

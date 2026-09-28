@@ -87,6 +87,59 @@ function stubScenes(script: string): Json[] {
   }));
 }
 
+interface ContextAsset {
+  id: number;
+  name?: string;
+  location?: string;
+}
+
+/** Splits a script into story paragraphs (headings dropped) and groups them into shots of up to three sub-shots. */
+function stubShots(script: string, chars: ContextAsset[], scenesList: ContextAsset[], propsList: ContextAsset[]): Json[] {
+  const paragraphs = script
+    .split(/\n\s*\n/)
+    .map((p) => p.replace(/\s+/g, ' ').trim())
+    .filter((p) => p && !p.startsWith('#'));
+  const groups: string[][] = [];
+  for (let i = 0; i < paragraphs.length && groups.length < 8; i += 3) groups.push(paragraphs.slice(i, i + 3));
+  const scene = scenesList[0];
+  return groups.map((group, index) => {
+    const text = group.join(' ');
+    const seen = chars.filter((c) => c.name && text.includes(c.name));
+    const shown = propsList.filter((p) => p.name && text.toLowerCase().includes(p.name.toLowerCase()));
+    const seconds = Math.min(15, Math.max(8, group.length * 4));
+    const header = [...seen.map((c) => `@[${c.name}]`), ...shown.map((p) => `@[${p.name}]`)].join(' and ');
+    const lines = group.map((p, i) => `${i * 3}-${i * 3 + 3}s: ${p.slice(0, 160)}`);
+    return {
+      shotNumber: index + 1,
+      title: text.split(' ').slice(0, 6).join(' '),
+      durationSeconds: seconds,
+      shotType: 'medium',
+      angle: 'eye level',
+      movement: 'static',
+      sceneId: scene?.id,
+      characterIds: seen.map((c) => c.id),
+      propIds: shown.map((p) => p.id),
+      description: group.map((p, i) => `[Shot ${i + 1}] ${p}`).join('\n'),
+      atmosphere: 'natural light, quiet ambience',
+      videoPrompt: [`${header || 'The scene'}${scene?.location ? ` at @[${scene.location}]` : ''}.`, ...lines].join('\n'),
+    };
+  });
+}
+
+/** A video prompt from a shot's context: header of mentionable names, then one 3-second line per sub-shot. */
+function stubVideoPrompt(read: { shot?: Json; mentionable?: { scene?: string | null; characters?: string[]; props?: string[] } } | null): string {
+  const shot = read?.shot ?? {};
+  const m = read?.mentionable ?? {};
+  const names = [...(m.characters ?? []), ...(m.props ?? [])].map((n) => `@[${n}]`).join(' and ');
+  const header = `${names || 'The scene'}${m.scene ? ` at @[${m.scene}]` : ''}.`;
+  const blocks = String(shot.description ?? '')
+    .split(/\[Shot \d+\]/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+  const lines = (blocks.length ? blocks : [String(shot.title ?? 'The shot plays out.')]).map((b, i) => `${i * 3}-${i * 3 + 3}s: ${b.slice(0, 160)}`);
+  return [header, ...lines].join('\n');
+}
+
 const firstId = (text: string) => Number(/\(id (\d+)\)/.exec(text)?.[1] ?? /\bid[:= ]+(\d+)/i.exec(text)?.[1] ?? 0);
 
 function plan(options: CallOptions): Step {
@@ -117,6 +170,27 @@ function plan(options: CallOptions): Step {
       return next(`save_dedup_${target}`, { items });
     }
     return { text: `Saved the ${target}.` };
+  }
+
+  if (tools.has('save_shots')) {
+    if (!done.has('read_storyboard_context')) return next('read_storyboard_context');
+    if (!done.has('save_shots')) {
+      const ctx = (done.get('read_storyboard_context') ?? {}) as { script?: string; characters?: ContextAsset[]; scenes?: ContextAsset[]; props?: ContextAsset[] };
+      const shots = stubShots(ctx.script ?? '', ctx.characters ?? [], ctx.scenes ?? [], ctx.props ?? []);
+      // A script containing #partial never marks its last batch, to exercise the unfinished-breakdown path.
+      return next('save_shots', { replaceExisting: true, final: !(ctx.script ?? '').includes('#partial'), shots });
+    }
+    return { text: 'Saved the storyboard.' };
+  }
+
+  if (tools.has('update_shot') && /\bvideo prompt\b/i.test(message)) {
+    const id = firstId(message);
+    if (!done.has('read_storyboard_context')) return next('read_storyboard_context', { shotId: id });
+    if (!done.has('update_shot')) {
+      const read = done.get('read_storyboard_context') as Parameters<typeof stubVideoPrompt>[0];
+      return next('update_shot', { shotId: id, videoPrompt: stubVideoPrompt(read) });
+    }
+    return { text: 'Saved the video prompt.' };
   }
 
   for (const kind of ['character', 'scene', 'prop'] as const) {

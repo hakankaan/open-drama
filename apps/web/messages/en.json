@@ -447,7 +447,6 @@
       "video": "Video production",
       "export": "Merge and export"
     },
-    "laterVideo": "Storyboard breakdown and shot videos arrive in the next milestone.",
     "laterExport": "Merging the shots into the episode film arrives after video production.",
     "sidebar": {
       "label": "Production steps",
@@ -495,6 +494,135 @@
       "deleteTitle": "Delete {name}?",
       "deleteBody": "The asset is removed from every episode of the project. Its image stays in the data folder.",
       "deleteConfirm": "Delete asset"
+    },
+    "video": {
+      "title": "Video production",
+      "needScript": "Finish the script first: shots are cut from it.",
+      "toScript": "Go to the script",
+      "toAssets": "Go to assets",
+      "emptyBody": "Break the script into shots of 8 to 15 seconds. Each shot gets a description, bound assets and a video prompt.",
+      "breakingBody": "Breaking the script into shots. They appear here when it finishes.",
+      "lockedModel": "Videos use {model} from {name}. Pick another video model in the top bar.",
+      "noVideoService": "No active video service. Add one in Settings before generating videos.",
+      "breakdown": "Break into shots",
+      "breaking": "Breaking down",
+      "breakdownFailed": "The breakdown failed: {error}",
+      "breakdownFailedKept": "The last breakdown failed, so these shots were kept: {error}",
+      "promptsFailed": "The last prompt batch failed: {error}",
+      "summary": "{count, plural, one {# shot} other {# shots}} · {seconds} s",
+      "generated": "{done} of {total} generated",
+      "breakAgain": "Break again",
+      "breakAgainTitle": "Break the script again?",
+      "breakAgainBody": "The current shots and their generated videos are replaced by a new breakdown. If it fails, the current shots come back.",
+      "breakAgainConfirm": "Break again",
+      "fillPrompts": "Write {count, plural, one {# prompt} other {# prompts}}",
+      "promptsDone": "Prompts done",
+      "promptProgress": "Prompts {done}/{total}",
+      "retryFailed": "Retry failed ({count})",
+      "selectMode": "Select",
+      "generateMissing": "Generate videos ({count})",
+      "generateSelected": "Generate selected ({count})",
+      "resizeList": "Resize the shot list",
+      "resizeInspector": "Resize the player",
+      "unmatched": "Not bound to this shot, sent as plain text: {names}",
+      "dropped": "Over the model's reference limit, left out: {names}",
+      "alreadyGenerating": "This shot is already generating.",
+      "moderationHint": "The provider refused this content; switch the video model and retry.",
+      "shotN": "Shot #{number}",
+      "selectShot": "Select shot #{number}",
+      "generateShot": "Generate shot #{number}",
+      "seconds": "{seconds} s",
+      "state": {
+        "pending": "Not generated",
+        "generating": "Generating",
+        "done": "Done",
+        "failed": "Failed"
+      },
+      "filter": {
+        "label": "Filter shots",
+        "all": "All",
+        "pending": "Pending",
+        "generating": "Generating",
+        "done": "Done",
+        "failed": "Failed",
+        "none": "No shots in this filter."
+      },
+      "quick": {
+        "all": "All",
+        "pending": "Not generated",
+        "failed": "Failed",
+        "none": "None"
+      },
+      "fields": {
+        "description": "Shot description",
+        "atmosphere": "Atmosphere",
+        "videoPrompt": "Video prompt"
+      },
+      "refs": {
+        "title": "Reference assets",
+        "goGenerate": "Generate {count, plural, one {# missing image} other {# missing images}}",
+        "characters": "Characters",
+        "scene": "Scene",
+        "props": "Props",
+        "noScene": "No scene",
+        "usable": "Usable",
+        "notGenerated": "Not generated",
+        "unbound": "Not bound",
+        "none": "None in this episode",
+        "noneBound": "Nothing bound to this shot.",
+        "character": "Character",
+        "prop": "Prop"
+      },
+      "extra": {
+        "title": "Extra references",
+        "addImage": "Add a reference image",
+        "addVideo": "Add a reference video",
+        "addAudio": "Add reference audio",
+        "uploading": "Uploading…",
+        "empty": "Uploaded images, videos or audio are sent after the bound assets.",
+        "video": "Reference video",
+        "audio": "Reference audio",
+        "remove": "Remove"
+      },
+      "prompt": {
+        "generate": "AI write",
+        "regenerate": "AI rewrite",
+        "placeholder": "Type @ to mention a bound character, scene or prop.",
+        "picker": "Bound assets",
+        "pickerEmpty": "Nothing bound matches.",
+        "unbound": "Not bound to this shot",
+        "hint": "Mentions like @[Name] send that asset's image as a reference.",
+        "noBindings": "Bind assets to mention them."
+      },
+      "inspector": {
+        "setMain": "Set as main",
+        "download": "Download",
+        "noVideo": "No video yet",
+        "history": "Versions ({count})",
+        "previewClip": "Preview the {seconds} s version",
+        "main": "Main video",
+        "deleteClip": "Delete this version",
+        "noHistory": "Generated versions appear here.",
+        "references": "Sent as references",
+        "duration": "Seconds",
+        "config": "{model} · {resolution} · {seconds} s",
+        "defaultModel": "default model",
+        "generate": "Generate video",
+        "regenerate": "Regenerate"
+      },
+      "batch": {
+        "progress": "Requesting videos {done}/{total}",
+        "summary": "{started} started, {already} already generating, {failed} failed",
+        "confirmTitle": "Generate {count, plural, one {# video} other {# videos}}?",
+        "confirmBody": "Each shot is sent to the video model once. Generation is billed by the provider.",
+        "shots": "Shots",
+        "seconds": "Seconds in total",
+        "model": "Model",
+        "defaultModel": "Episode default",
+        "resolution": "Resolution",
+        "cancel": "Cancel",
+        "confirm": "Generate {count}"
+      }
     }
   }
 }

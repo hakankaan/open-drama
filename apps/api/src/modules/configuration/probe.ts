@@ -1,4 +1,6 @@
 import type { ModelServiceProbe, ProviderName, ServiceType } from '@open-drama/contracts';
+import { minimaxBase } from '../generation/adapters/minimax-video';
+import { joinProviderUrl } from '../generation/adapters/url';
 
 const TIMEOUT_MS = 15_000;
 
@@ -32,7 +34,7 @@ function buildProbe({ serviceType, provider, baseUrl, apiKey }: ProbeTarget): Pr
       return { url: `${base}/${path}`, init: { method: 'POST', headers: bearer(apiKey), body: json({}) } };
     }
     case 'minimax':
-      return { url: `${base}/video_generation`, init: { method: 'POST', headers: bearer(apiKey), body: json({}) } };
+      return { url: joinProviderUrl(minimaxBase(base), '/v2', 'video_generation'), init: { method: 'POST', headers: bearer(apiKey), body: json({}) } };
     case 'aliyun':
       return {
         url: `${base}/services/aigc/video-generation/video-synthesis`,

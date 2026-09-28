@@ -5,7 +5,7 @@ import { extname, join } from 'node:path';
 import sharp from 'sharp';
 import { env } from '../../env';
 import { logger } from '../../http/logger';
-import { ffmpegBin, run } from '../../lib/ffmpeg';
+import { ffmpegBin, probeDurationSeconds, run } from '../../lib/ffmpeg';
 import { toAbsolute, toMediaPath } from '../../lib/paths';
 
 export type Bucket = 'uploads' | 'images' | 'videos' | 'merged' | 'temp';
@@ -80,6 +80,17 @@ export async function assertImage(mediaPath: string): Promise<void> {
     await rm(abs, { force: true });
     throw new Error('The provider returned a file that is not a valid image');
   }
+}
+
+/** Refuses a stored result that is not a playable video and returns its duration; the file is removed on refusal. */
+export async function assertVideo(mediaPath: string): Promise<number> {
+  const abs = toAbsolute(mediaPath);
+  const seconds = await probeDurationSeconds(abs);
+  if (seconds === null) {
+    await rm(abs, { force: true });
+    throw new Error('The provider returned a file that is not a valid video');
+  }
+  return seconds;
 }
 
 /** StoreRemoteFile: downloads a provider result so the provider URL is never the source of truth (adr-0009). */

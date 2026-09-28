@@ -1,0 +1,1 @@
+ALTER TABLE `shots` ADD `created_by_job_id` integer;

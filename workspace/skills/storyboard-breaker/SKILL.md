@@ -39,3 +39,4 @@ An ordered list of shots covering the whole script. Each shot has:
 1. `read_storyboard_context`.
 2. `save_shots` with `{ "replaceExisting": true, "shots": [ …up to 8… ] }` for the first batch.
 3. `save_shots` with `{ "shots": [ …up to 8… ] }` for each following batch, continuing the numbering.
+4. The batch with the last shot adds `"final": true` (a single batch sets both `replaceExisting` and `final`). The breakdown only counts once the final batch is saved.

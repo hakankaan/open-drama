@@ -33,3 +33,4 @@ code_refs:
   - apps/api/src/modules/generation/**
   - apps/api/src/db/schema/generation.ts
   - packages/contracts/src/generation.ts
+  - packages/contracts/src/video-providers.ts

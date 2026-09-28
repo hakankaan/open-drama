@@ -18,8 +18,9 @@ import {
   saveSceneFinalPrompt,
 } from './image-prompts';
 import { readEpisodeScript, saveScript } from './script';
+import { readStoryboardContext, saveShotsTool, updateShotTool } from './storyboard';
 
-/** Each agent's fixed tool set. The storyboard tools arrive with the breakdown (M3). */
+/** Each agent's fixed tool set. */
 export const AGENT_TOOLS: Record<AgentType, ToolSpec[]> = {
   script_rewriter: [readEpisodeScript, saveScript],
   extractor: [
@@ -31,6 +32,15 @@ export const AGENT_TOOLS: Record<AgentType, ToolSpec[]> = {
     saveDedupScenes,
     saveDedupProps,
   ],
-  storyboard_breaker: [],
-  prompt_generator: [readCharacters, readScenes, readProps, saveCharacterFinalPrompt, saveSceneFinalPrompt, savePropFinalPrompt],
+  storyboard_breaker: [readStoryboardContext, saveShotsTool, updateShotTool],
+  prompt_generator: [
+    readCharacters,
+    readScenes,
+    readProps,
+    saveCharacterFinalPrompt,
+    saveSceneFinalPrompt,
+    savePropFinalPrompt,
+    readStoryboardContext,
+    updateShotTool,
+  ],
 };

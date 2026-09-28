@@ -17,6 +17,8 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { useToastError } from '@/lib/errors';
 import { usePersistedState } from '@/lib/persisted-state';
 import { AssetsStage } from '../../assets/assets-stage';
+import { VideoStage } from '../../storyboard/video-stage/video-stage';
+import { useVideoTarget } from '../../storyboard/use-video-target';
 import { useModelPicks } from '../../configuration/model-picks';
 import { useDramaDetail, useEpisode, usePipelineStatus, useUpdateEpisode } from '../api';
 import { useSettleRefresh } from '../use-settle-refresh';
@@ -37,6 +39,9 @@ function TopBar({ dramaTitle, dramaId, episode, stage }: { dramaTitle: string; d
   const toastError = useToastError();
   const update = useUpdateEpisode();
   const { picks, setPick } = useModelPicks();
+  // The tiers the selected (or locked) video provider offers; the stored one stays listed so it can be seen.
+  const { caps } = useVideoTarget(episode, picks);
+  const tiers = ResolutionEnum.options.filter((r) => caps.resolutions.includes(r) || r === episode.resolution);
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3">
       <Link
@@ -61,7 +66,7 @@ function TopBar({ dramaTitle, dramaId, episode, stage }: { dramaTitle: string; d
             </Button>
           </MenuTrigger>
           <MenuContent>
-            {ResolutionEnum.options.map((r) => (
+            {tiers.map((r) => (
               <MenuItem
                 key={r}
                 checked={r === episode.resolution}
@@ -121,7 +126,9 @@ function StudioBody({ dramaId, dramaTitle, episode }: { dramaId: number; dramaTi
             {panel === 'raw' ? <RawContentPanel episode={episode} onNext={() => setPanel('rewrite')} /> : null}
             {panel === 'rewrite' ? <RewritePanel episode={episode} onRaw={() => setPanel('raw')} /> : null}
             {panel === 'assets' ? <AssetsStage episode={episode} onScript={() => setPanel('rewrite')} /> : null}
-            {panel === 'video' ? <LaterPanel title={t('panels.video')} body={t('laterVideo')} /> : null}
+            {panel === 'video' ? (
+              <VideoStage episode={episode} onScript={() => setPanel('rewrite')} onAssets={() => setPanel('assets')} />
+            ) : null}
             {panel === 'export' ? <LaterPanel title={t('panels.export')} body={t('laterExport')} /> : null}
           </main>
         </div>

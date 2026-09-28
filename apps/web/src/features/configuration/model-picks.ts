@@ -25,3 +25,7 @@ export const imageOverride = (picks: ModelPicks) => ({
   ...(picks.image ? { imageServiceId: picks.image.serviceId, model: picks.image.model } : {}),
   ...(picks.text ? { textServiceId: picks.text.serviceId, textModel: picks.text.model } : {}),
 });
+
+/** Overrides for video requests. */
+export const videoOverride = (picks: ModelPicks) =>
+  picks.video ? { videoServiceId: picks.video.serviceId, model: picks.video.model } : {};

@@ -18,8 +18,9 @@ export interface RunAgentInput {
   textServiceId?: number;
   maxSteps?: number;
   target?: AgentContext['target'];
-  /** Ends the loop as soon as this tool succeeds (the result is already saved). */
-  stopAfterTool?: string;
+  jobId?: number;
+  /** Ends the loop as soon as this holds (the result is already saved). */
+  isDone?: (calls: ToolCallRecord[]) => boolean;
 }
 
 /** A provider-side failure worded for the creator; the key never appears in it. */
@@ -51,6 +52,7 @@ export async function runAgent(input: RunAgentInput): Promise<AgentRunResult & {
     language,
     log: logger.child({ agent: input.agentType, episodeId: input.episodeId, model: resolved.modelId }),
     target: input.target,
+    jobId: input.jobId,
   };
   const started = performance.now();
   ctx.log.info({ language }, 'agent run started');
@@ -63,7 +65,7 @@ export async function runAgent(input: RunAgentInput): Promise<AgentRunResult & {
       ctx,
       maxSteps: input.maxSteps ?? def.maxSteps,
       temperature: resolved.temperature,
-      stopAfterTool: input.stopAfterTool,
+      isDone: input.isDone,
     });
     const elapsedMs = Math.round(performance.now() - started);
     ctx.log.info({ steps: result.steps, tools: result.toolCalls.length, elapsedMs }, 'agent run finished');
@@ -75,19 +77,21 @@ export async function runAgent(input: RunAgentInput): Promise<AgentRunResult & {
   }
 }
 
-const REMINDER =
-  '\n\nImportant: the previous attempt ended without saving. You must call the save tool described above with the complete result; the task only counts once it is saved.';
+const REMINDER = 'You must call the save tool described above with the complete result; the task only counts once it is saved.';
 
 /**
- * Runs an agent and checks the expected side effect: the named save tool must have succeeded. One retry with a
- * reminder, then a failure naming the problem (Plan 2 §4, domain AgentRun).
+ * Runs an agent and checks the expected side effect: `isDone` must hold after the run (for most agents, the save
+ * tool succeeded). One retry with a reminder, then a failure naming the problem (Plan 2 §4, domain AgentRun).
  */
-export async function runAgentUntilSaved(input: RunAgentInput, saveTool: string) {
-  const saved = (calls: ToolCallRecord[]) => calls.some((c) => c.tool === saveTool && c.ok);
-  const first = await runAgent({ ...input, stopAfterTool: saveTool });
-  if (saved(first.toolCalls)) return first;
-  logger.warn({ agent: input.agentType, saveTool }, 'agent finished without saving; retrying once');
-  const second = await runAgent({ ...input, stopAfterTool: saveTool, message: input.message + REMINDER });
-  if (saved(second.toolCalls)) return second;
-  throw new ApiError('PROVIDER_ERROR', `The agent finished without calling ${saveTool}. Try again or pick another model.`);
+export async function runAgentUntilDone(input: RunAgentInput, isDone: (calls: ToolCallRecord[]) => boolean, missing: string) {
+  const first = await runAgent({ ...input, isDone });
+  if (isDone(first.toolCalls)) return first;
+  logger.warn({ agent: input.agentType, missing }, 'agent finished without saving; retrying once');
+  const second = await runAgent({ ...input, isDone, message: `${input.message}\n\nImportant: the previous attempt ended before ${missing}. ${REMINDER}` });
+  if (isDone(second.toolCalls)) return second;
+  throw new ApiError('PROVIDER_ERROR', `The agent finished before ${missing}. Try again or pick another model.`);
 }
+
+/** runAgentUntilDone for the usual case: done once the named save tool succeeded. */
+export const runAgentUntilSaved = (input: RunAgentInput, saveTool: string) =>
+  runAgentUntilDone(input, (calls) => calls.some((c) => c.tool === saveTool && c.ok), `calling ${saveTool}`);

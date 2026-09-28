@@ -40,3 +40,5 @@ adr_refs:
 code_refs:
   - apps/api/src/modules/storyboard/**
   - apps/api/src/db/schema/storyboard.ts
+  - packages/contracts/src/storyboard.ts
+  - apps/web/src/features/storyboard/**

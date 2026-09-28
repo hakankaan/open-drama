@@ -4,12 +4,15 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { StorageUsage, UploadedMedia } from '@open-drama/contracts';
 import { request } from '@/lib/api';
 
-export function useUploadImage() {
+export type UploadKind = 'image' | 'video' | 'audio';
+
+/** UploadMedia: the stored path comes back; attaching it to an asset or shot is the caller's next request. */
+export function useUploadMedia(kind: UploadKind) {
   return useMutation({
     mutationFn: (file: File) => {
       const body = new FormData();
       body.set('file', file);
-      return request(UploadedMedia, 'POST', '/media/upload/image', body);
+      return request(UploadedMedia, 'POST', `/media/upload/${kind}`, body);
     },
   });
 }

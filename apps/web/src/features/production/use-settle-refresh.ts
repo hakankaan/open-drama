@@ -3,16 +3,18 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { useEpisodeAssets } from '../assets/api';
+import { storyboardKeys, useEpisodeShots } from '../storyboard/api';
 import { productionKeys, useEpisodeJobs } from './api';
 
 /**
- * When a job or an image task of the episode settles, the data it changed (script, assets, stage rail) is
+ * When a job, an image task or a video task of the episode settles, the data it changed (script, assets, stage rail) is
  * refetched once. Polling itself stays limited to the lists that carry the running state.
  */
 export function useSettleRefresh(episodeId: number, dramaId: number) {
   const qc = useQueryClient();
   const jobs = useEpisodeJobs(episodeId);
   const assets = useEpisodeAssets(episodeId);
+  const shots = useEpisodeShots(episodeId);
   // Last seen state per job kind and per running image task; null until the first data arrives.
   const previous = useRef<Map<string, string> | null>(null);
 
@@ -31,6 +33,10 @@ export function useSettleRefresh(episodeId: number, dramaId: number) {
       const task = card.latestImageTask;
       if (task) current.set(`image:${task.id}`, task.status);
     }
+    for (const shot of shots.data?.shots ?? []) {
+      const task = shot.latestVideoTask;
+      if (task) current.set(`video:${task.id}`, task.status);
+    }
     const before = previous.current;
     previous.current = current;
     if (before === null) return;
@@ -43,5 +49,6 @@ export function useSettleRefresh(episodeId: number, dramaId: number) {
     void qc.invalidateQueries({ queryKey: productionKeys.pipeline(episodeId) });
     void qc.invalidateQueries({ queryKey: productionKeys.drama(dramaId) });
     void qc.invalidateQueries({ queryKey: ['assets'] });
-  }, [jobs.data, assets.data, qc, episodeId, dramaId]);
+    void qc.invalidateQueries({ queryKey: storyboardKeys.shots(episodeId) });
+  }, [jobs.data, assets.data, shots.data, qc, episodeId, dramaId]);
 }

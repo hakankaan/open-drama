@@ -331,7 +331,7 @@ Each phase ends with a "done when" that is checked by running the system (`pnpm 
 - Done when: a manual `POST /shots` + `POST /shots/:id/video` with the stub video adapter creates a task and, on completion, the shot's `videoPath` is set; a binding to a character of another drama is rejected; killing the API during a breakdown job and restarting restores the parked shots and marks the job `failed`.
 
 ### Phase 6 — generation task API (½ day, engine in Plan 2)
-- `generation_tasks` repo, list/get/delete endpoints, `EpisodeGenerationTasks` aggregation through shot/asset ownership with the default caps, generic `POST /generation-tasks`.
+- `generation_tasks` repo, list/get/delete endpoints, `EpisodeGenerationTasks` aggregation through shot/asset ownership with the default caps. The generic `POST /generation-tasks` is left out until something needs it: every generation goes through the owner's command (`Request*Image`, `RequestShotVideo`), which resolves prompts, references and locks.
 - Done when: the task list filters by `shotId` and the episode aggregation includes films and stops at the cap.
 
 ### Phase 7 — compositing (1 day)

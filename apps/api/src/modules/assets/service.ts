@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   isNarrator,
@@ -12,7 +12,6 @@ import {
   type EpisodeAssets,
   type PropCard,
   type SceneCard,
-  type TaskSummary,
   type UpdateCharacter,
   type UpdateProp,
   type UpdateScene,
@@ -32,6 +31,7 @@ import {
 } from '../../db/schema';
 import { assertSomething, conflict, invalid, notFound } from '../../http/errors';
 import { toAbsolute } from '../../lib/paths';
+import { latestTasks } from '../generation/tasks';
 import { latestExtractionJobs } from '../jobs/run-job';
 import { getDramaRow, touchDrama } from '../production/dramas';
 import { getEpisodeRow } from '../production/episodes';
@@ -51,29 +51,7 @@ const OWNER_COLUMN = {
   prop: generationTasks.propId,
 } as const;
 
-function latestImageTasks(kind: AssetKind, ids: number[]): Map<number, TaskSummary> {
-  const map = new Map<number, TaskSummary>();
-  if (ids.length === 0) return map;
-  const column = OWNER_COLUMN[kind];
-  const rows = db
-    .select({
-      ownerId: column,
-      id: generationTasks.id,
-      status: generationTasks.status,
-      error: generationTasks.error,
-      errorClass: generationTasks.errorClass,
-      createdAt: generationTasks.createdAt,
-      completedAt: generationTasks.completedAt,
-    })
-    .from(generationTasks)
-    .where(and(eq(generationTasks.type, 'image'), inArray(column, ids)))
-    .orderBy(desc(generationTasks.id))
-    .all();
-  for (const { ownerId, ...task } of rows) {
-    if (ownerId !== null && !map.has(ownerId)) map.set(ownerId, task);
-  }
-  return map;
-}
+const latestImageTasks = (kind: AssetKind, ids: number[]) => latestTasks('image', OWNER_COLUMN[kind], ids);
 
 const strip = <T extends { deletedAt: string | null }>({ deletedAt: _d, ...row }: T) => row;
 

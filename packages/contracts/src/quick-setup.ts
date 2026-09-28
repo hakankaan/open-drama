@@ -70,8 +70,8 @@ export const PROVIDER_PRESETS: Record<ProviderName, { label: string; baseUrl: st
       video: ['doubao-seedance-2-0-260128'],
     },
   },
-  minimax: { label: 'MiniMax', baseUrl: 'https://api.minimaxi.com/v1', models: {} },
-  aliyun: { label: 'Alibaba Bailian', baseUrl: 'https://dashscope.aliyuncs.com/api/v1', models: {} },
+  minimax: { label: 'MiniMax', baseUrl: 'https://api.minimaxi.com', models: { video: ['MiniMax-H3'] } },
+  aliyun: { label: 'Alibaba Bailian', baseUrl: 'https://dashscope.aliyuncs.com/api/v1', models: { video: ['wan3.0-video'] } },
   byteplus: { label: 'BytePlus ModelArk', baseUrl: 'https://ark.ap-southeast.bytepluses.com/api/v3', models: {} },
   modelrunner: { label: 'ModelRunner', baseUrl: 'https://modelrunner.run', models: {} },
 };

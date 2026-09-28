@@ -6,7 +6,7 @@
 
 ## Summary
 
-Batch upsert of shots from the agent's save_shots tool (at most 8 per call). replaceExisting on the first batch parks the episode's current shots under the running job id (purged on completion, restored on failure); rows are matched by shotNumber; bindings are validated against the drama and auto-linked to the episode; the episode's duration is recomputed.
+Batch upsert of shots from the agent's save_shots tool (at most 8 per call). The first batch of a breakdown must set replaceExisting, which parks the episode's current shots under the running job id (purged on completion, restored on failure); the batch holding the last shot is marked final; rows are matched by shotNumber; bindings are validated against the drama and auto-linked to the episode; the episode's duration is recomputed.
 
 
 ## Fields

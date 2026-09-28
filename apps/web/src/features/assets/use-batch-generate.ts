@@ -54,7 +54,7 @@ export function useBatchGenerate(dramaId: number, episodeId: number, picks: Mode
         }
       };
       await Promise.all(Array.from({ length: Math.min(CONCURRENCY, items.length) }, worker));
-      toast.success(t('summary', counts), { id });
+      toast.success(t('summary', counts), { id, duration: 5000 });
       if (!cancelled.current) setRunning(false);
     },
     [request, episodeId, picks, t, toastError],
