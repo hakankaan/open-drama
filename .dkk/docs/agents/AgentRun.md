@@ -30,4 +30,4 @@ One execution of an agent — resolves instructions and model, runs the tool-cal
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | proposed |
+| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | accepted |

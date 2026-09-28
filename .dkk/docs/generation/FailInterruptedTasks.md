@@ -23,5 +23,5 @@ At API startup, mark every task still in processing as failed with a restart mes
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | proposed |
-| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | proposed |
+| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |
+| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |

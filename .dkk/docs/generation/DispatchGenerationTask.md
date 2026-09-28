@@ -33,5 +33,5 @@ Normalise the task's reference material, build the provider request through the 
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | proposed |
+| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |
 | [adr-0013](../../adr/adr-0013.md) | Model providers: official endpoints of supported models, plus BytePlus and ModelRunner | accepted |

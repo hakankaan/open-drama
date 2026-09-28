@@ -29,4 +29,4 @@ A batch job that runs the prompt-generator agent once per shot to fill missing v
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | proposed |
+| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |

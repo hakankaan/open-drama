@@ -44,3 +44,9 @@ adr_refs:
   - adr-0004
   - adr-0007
   - adr-0012
+code_refs:
+  - apps/api/src/modules/assets/**
+  - apps/api/src/db/schema/assets.ts
+  - packages/contracts/src/assets.ts
+  - packages/contracts/src/narrator.ts
+  - apps/web/src/features/assets/**

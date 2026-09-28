@@ -24,4 +24,4 @@ Whenever an image or video is stored or uploaded, derive its thumbnail or poster
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | proposed |
+| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | accepted |

@@ -29,4 +29,4 @@ A running extraction for one episode and one target type (characters, scenes or 
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | proposed |
+| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |

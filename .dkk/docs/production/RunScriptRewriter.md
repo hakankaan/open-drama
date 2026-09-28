@@ -22,4 +22,4 @@ When a script rewrite is requested, run the script_rewriter agent scoped to the 
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | proposed |
+| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | accepted |

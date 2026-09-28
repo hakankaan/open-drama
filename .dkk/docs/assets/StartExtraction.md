@@ -36,4 +36,4 @@ Start an asynchronous extraction of one target type (characters, scenes or props
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | proposed |
+| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |

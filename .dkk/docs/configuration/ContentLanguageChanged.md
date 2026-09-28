@@ -27,4 +27,4 @@ The AI content language changed; subsequent agent runs load that language's prom
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | proposed |
+| [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | accepted |

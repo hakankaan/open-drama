@@ -4,7 +4,20 @@
 
 Open Drama is built on **Next.js** (web) and **Node.js** (API), with a documented domain model and architecture decisions, and is released under CC BY-NC-SA 4.0 (see `.dkk/adr/adr-0012.md`).
 
-> **Status: planning.** This repository currently holds the domain model, the architecture decisions and three implementation plans. No application code has been written yet.
+> **Status: early development.** The skeleton runs: API, database, web shell. Features land milestone by milestone (`docs/plans/README.md`).
+
+## Quick start
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Open http://localhost:3000. The API listens on `127.0.0.1:4000` and the web server forwards `/api` and `/static` to it. Data (SQLite, media, agent workspace) lives in `./data`. If port 3000 is taken, run `WEB_PORT=3100 pnpm dev`. Configuration is optional; see `.env.example`.
+
+Requires Node.js 22+ and pnpm 12. No database server and no FFmpeg install are needed.
+
+> Open Drama has no user accounts. Anyone who can reach the web port can use the whole tool, including your API keys. Keep it on a private network, or put a reverse proxy with authentication in front.
 
 ---
 
@@ -24,7 +37,7 @@ Raw content  ──►  Script  ──►  Assets  ──►  Storyboard & Video
 - **Bring your own models** – text, image and video providers are configured in the UI: the official endpoints of the supported model families (OpenAI, Gemini, Volcengine Seedance, MiniMax, Alibaba Wan), with BytePlus and ModelRunner adapters following in iteration 2. Keys live in the local database, never in files.
 - **Editable agents** – every agent's system prompt and skills are Markdown files you can edit from Settings, with per-language variants.
 
-## Architecture (planned)
+## Architecture
 
 ```
 apps/web         Next.js (App Router, TypeScript, Tailwind) — launcher, settings, project page, episode studio
@@ -50,9 +63,9 @@ The web app is its own Node process and proxies `/api` and `/static` to the API,
 | Plan 3 — Frontend (Next.js launcher, settings, project page, episode studio) | `docs/plans/03-frontend.md` |
 | Milestones across the three plans | `docs/plans/README.md` |
 
-## Requirements (planned)
+## Requirements
 
-- Node.js 20+ (22 LTS recommended) and pnpm 9+
+- Node.js 22+ and pnpm 12
 - No database server: bundled SQLite
 - No FFmpeg install: `ffmpeg-static` / `ffprobe-static` are bundled (override with `FFMPEG_BIN` / `FFPROBE_BIN`)
 

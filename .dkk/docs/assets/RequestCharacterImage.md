@@ -38,4 +38,4 @@ Generate the character's reference image. Ensures a final prompt exists first (g
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | proposed |
+| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |

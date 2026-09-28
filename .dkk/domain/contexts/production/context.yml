@@ -32,3 +32,11 @@ adr_refs:
   - adr-0004
   - adr-0007
   - adr-0012
+code_refs:
+  - apps/api/src/modules/production/**
+  - apps/api/src/modules/jobs/**
+  - apps/api/src/db/schema/production.ts
+  - apps/api/src/db/schema/jobs.ts
+  - packages/contracts/src/production.ts
+  - packages/contracts/src/jobs.ts
+  - apps/web/src/features/production/**

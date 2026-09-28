@@ -24,3 +24,10 @@ adr_refs:
 - adr-0010
 - adr-0012
 - adr-0013
+code_refs:
+  - apps/api/src/modules/configuration/**
+  - apps/api/src/db/schema/configuration.ts
+  - apps/api/src/db/seeds/**
+  - packages/contracts/src/configuration.ts
+  - packages/contracts/src/quick-setup.ts
+  - apps/web/src/features/configuration/**

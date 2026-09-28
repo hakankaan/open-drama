@@ -22,4 +22,4 @@ When an extraction starts, run the extractor agent scoped to the episode with a 
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | proposed |
+| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | accepted |

@@ -64,8 +64,8 @@ _No policies._
 |-----|-------|--------|
 | [adr-0001](../../adr/adr-0001.md) | Product scope and original work | accepted |
 | [adr-0002](../../adr/adr-0002.md) | Monorepo with a Next.js web app and a Node.js API | accepted |
-| [adr-0003](../../adr/adr-0003.md) | Hono on the Node adapter as the HTTP framework | proposed |
-| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | proposed |
-| [adr-0007](../../adr/adr-0007.md) | API contract: camelCase JSON validated by shared zod schemas | proposed |
-| [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | proposed |
+| [adr-0003](../../adr/adr-0003.md) | Hono on the Node adapter as the HTTP framework | accepted |
+| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | accepted |
+| [adr-0007](../../adr/adr-0007.md) | API contract: camelCase JSON validated by shared zod schemas | accepted |
+| [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | accepted |
 | [adr-0012](../../adr/adr-0012.md) | Licence: CC BY-NC-SA 4.0 | accepted |

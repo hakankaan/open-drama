@@ -31,4 +31,4 @@ Set the language every agent writes in. The UI switches its locale together with
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | proposed |
+| [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | accepted |

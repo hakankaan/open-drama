@@ -1,0 +1,4 @@
+pnpm-lock.yaml
+.dkk/
+apps/api/drizzle/
+data/

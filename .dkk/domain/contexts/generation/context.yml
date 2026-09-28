@@ -29,3 +29,6 @@ adr_refs:
   - adr-0007
   - adr-0012
   - adr-0013
+code_refs:
+  - apps/api/src/db/schema/generation.ts
+  - packages/contracts/src/generation.ts

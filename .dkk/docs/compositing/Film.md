@@ -32,5 +32,5 @@ A rendered episode film and the merge job that produced it — which shot clips 
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | proposed |
-| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | proposed |
+| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |
+| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | accepted |

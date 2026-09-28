@@ -1,0 +1,379 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "create": "Create",
+    "edit": "Edit",
+    "close": "Close",
+    "retry": "Retry",
+    "loading": "Loading…"
+  },
+  "nav": {
+    "label": "Main",
+    "projects": "Projects",
+    "settings": "Settings",
+    "github": "Source code on GitHub"
+  },
+  "theme": {
+    "light": "light",
+    "dark": "dark",
+    "system": "system",
+    "lightLabel": "Light",
+    "darkLabel": "Dark",
+    "systemLabel": "System",
+    "current": "Theme: {theme}",
+    "switchTo": "Switch to {theme} theme"
+  },
+  "language": {
+    "menu": "Language",
+    "confirmTitle": "Switch to {language}?",
+    "confirmBody": "The interface and everything the AI writes from now on (scripts, extracted assets, prompts) switch together. Existing content stays as it is.",
+    "confirm": "Switch language"
+  },
+  "readiness": {
+    "missing": "{count, plural, one {Add a {types} service} other {Add {types} services}} before producing an episode.",
+    "action": "Set up AI services"
+  },
+  "serviceType": {
+    "text": "text",
+    "image": "image",
+    "video": "video"
+  },
+  "status": {
+    "draft": "Not started",
+    "active": "In progress",
+    "completed": "Finished",
+    "change": "Status: {status}. Change status"
+  },
+  "aspectRatio": {
+    "16:9": "16:9",
+    "9:16": "9:16",
+    "1:1": "1:1",
+    "adaptive": "Adaptive"
+  },
+  "errors": {
+    "network": "Cannot reach the Open Drama server. Check that it is running.",
+    "moderation": "The provider refused this content. Switch the video model and retry.",
+    "auth": "The provider rejected the API key. Check it in Settings.",
+    "quota": "The provider's quota or rate limit was reached. Try again later.",
+    "timeout": "The provider took too long to answer.",
+    "provider": "The provider returned an error.",
+    "unknown": "Something went wrong. Try again."
+  },
+  "tour": {
+    "progress": "{current} of {total}",
+    "next": "Next",
+    "back": "Back",
+    "done": "Done"
+  },
+  "launcher": {
+    "title": "Projects",
+    "subtitle": "Each project is one short drama: a visual style, a frame shape, and its episodes.",
+    "summary": "{projects, plural, =0 {No projects yet} one {# project} other {# projects}}, {active} in progress, {styles} visual styles",
+    "help": "Show the tour again",
+    "newProject": "New project",
+    "search": "Search projects",
+    "filterLabel": "Filter by status",
+    "all": "All",
+    "sortUpdated": "Recently updated",
+    "sortName": "Name",
+    "loadError": "The projects could not be loaded.",
+    "retry": "Try again",
+    "empty": {
+      "title": "Start your first drama",
+      "body": "A project holds the episodes of one short drama. It fixes the frame shape and the visual style every image and clip will use."
+    },
+    "noMatch": "No project matches these filters.",
+    "clearFilters": "Clear filters",
+    "deleteTitle": "Delete {title}?",
+    "deleteBody": "The project disappears from Open Drama. Its files stay in the data folder.",
+    "deleteConfirm": "Delete project",
+    "tour": {
+      "welcomeTitle": "Welcome to Open Drama",
+      "welcomeBody": "Turn a story into a short drama: script, characters and places, shot-by-shot video, then one finished film.",
+      "settingsTitle": "Connect your models",
+      "settingsBody": "Add a text, an image and a video service in Settings. One Volcengine Ark key covers all three.",
+      "createTitle": "Create a project",
+      "createBody": "Pick a visual style and a frame shape. Both apply to every episode of the project."
+    },
+    "create": {
+      "title": "New project",
+      "description": "The frame shape and the style apply to every image and clip of the project.",
+      "name": "Name",
+      "nameRequired": "Give the project a name.",
+      "namePlaceholder": "The Lantern Seller",
+      "style": "Visual style",
+      "stylePlaceholder": "Choose a style",
+      "aspectRatio": "Frame shape",
+      "aspectRatioHint": "Fixed after creation. Use 9:16 for phone-first dramas.",
+      "submit": "Create project"
+    },
+    "card": {
+      "open": "Open {title}",
+      "more": "Project actions",
+      "openAction": "Open",
+      "delete": "Delete",
+      "episodes": "{count, plural, one {# episode} other {# episodes}}",
+      "episodesLabel": "Episodes",
+      "characters": "{count, plural, one {# character} other {# characters}}",
+      "charactersLabel": "Characters",
+      "scenes": "{count, plural, one {# scene} other {# scenes}}",
+      "scenesLabel": "Scenes"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "ai": "AI services",
+      "general": "General",
+      "styles": "Visual styles",
+      "storage": "Storage",
+      "about": "About"
+    },
+    "ai": {
+      "types": {
+        "text": "Text",
+        "image": "Image",
+        "video": "Video"
+      },
+      "ready": "Ready",
+      "missing": "Missing",
+      "addFrom": "Add",
+      "addProvider": "Add a {provider} service",
+      "comingLater": "Arrives in iteration 2",
+      "empty": "No {type} service yet. Add one from a provider above.",
+      "deleteTitle": "Delete {name}?",
+      "deleteBody": "Episodes that locked this service switch to the next active service of the same type.",
+      "deleteConfirm": "Delete service",
+      "quick": {
+        "title": "Quick setup with {gateway}",
+        "body": "One {gateway} API key sets up a text, an image and a video service at once. You can edit them afterwards.",
+        "getKey": "Get a key",
+        "key": "API key",
+        "keyPlaceholder": "Paste your key",
+        "apply": "Set up services",
+        "applied": "{count} services set up."
+      },
+      "models": {
+        "isDefault": "Default model",
+        "makeDefault": "Make this the default model",
+        "remove": "Remove {model}",
+        "placeholder": "Type a model ID and press Enter",
+        "addMore": "Add another"
+      },
+      "dialog": {
+        "createTitle": "Add a {type} service",
+        "editTitle": "Edit {type} service",
+        "presets": "Provider",
+        "iteration2": "iteration 2",
+        "name": "Name",
+        "provider": "Provider",
+        "apiKey": "API key",
+        "keyHint": "Stored on this server only and never shown again.",
+        "keyStored": "A key is stored. Leave this empty to keep it.",
+        "keyMissing": "No key stored yet.",
+        "replaceKey": "Enter a new key to replace it",
+        "keyRequired": "An API key is required.",
+        "baseUrl": "Base URL",
+        "models": "Models",
+        "modelsHint": "The first model is the default. Click a model to make it the default.",
+        "priority": "Priority",
+        "priorityHint": "The highest-priority active service of a type is used by default.",
+        "temperature": "Temperature",
+        "temperatureHint": "0 to 2. Leave empty to use the provider's default.",
+        "test": "Test connection",
+        "required": "Required.",
+        "invalidUrl": "Enter a URL starting with http:// or https://.",
+        "invalidTemperature": "Use a number from 0 to 2."
+      },
+      "row": {
+        "keySet": "Key set",
+        "noKey": "No key",
+        "disabled": "Disabled",
+        "priority": "Priority {priority}",
+        "test": "Test",
+        "active": "{name} active",
+        "edit": "Edit",
+        "delete": "Delete",
+        "noModels": "No models listed. Edit the service to add one.",
+        "defaultModel": "Default model",
+        "makeDefault": "Make this the default model"
+      }
+    },
+    "general": {
+      "language": "Language",
+      "languageBody": "The interface and the language the AI writes in switch together.",
+      "appearance": "Appearance",
+      "appearanceBody": "System follows your operating system."
+    },
+    "styles": {
+      "summary": "{active} of {total} styles offered when creating a project.",
+      "add": "Add style",
+      "builtIn": "Built in",
+      "disabled": "Disabled",
+      "active": "{name} offered for new projects",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteTitle": "Delete {name}?",
+      "deleteBody": "Projects keep their style key, but the prompt fragment is no longer added. Styles in use cannot be deleted; disable them instead.",
+      "deleteConfirm": "Delete style",
+      "dialog": {
+        "createTitle": "Add a visual style",
+        "editTitle": "Edit visual style",
+        "name": "Name",
+        "key": "Key",
+        "keyHint": "Lowercase letters, digits and dashes. Cannot change later.",
+        "keyImmutable": "The key cannot change after creation.",
+        "invalidKey": "Use lowercase letters, digits and dashes.",
+        "prompt": "Prompt fragment",
+        "promptHint": "Added in front of every image and video prompt of projects using this style.",
+        "description": "Description",
+        "sortOrder": "Order",
+        "required": "Required."
+      }
+    },
+    "storage": {
+      "dataDir": "Data folder",
+      "mode": {
+        "local": "Local",
+        "docker": "Docker"
+      },
+      "root": "Folder",
+      "database": "Database",
+      "media": "Media",
+      "workspace": "Agent workspace",
+      "backupNote": "Everything Open Drama keeps is in this folder. Copy it to back up or move your work.",
+      "usage": "Disk usage",
+      "counting": "Counting…",
+      "total": "{size} used",
+      "free": "{size} free",
+      "empty": "Nothing stored yet.",
+      "files": "{count, plural, one {# file} other {# files}}",
+      "bucket": {
+        "database": "Database",
+        "images": "Images",
+        "videos": "Videos",
+        "merged": "Films",
+        "uploads": "Uploads",
+        "temp": "Temporary",
+        "workspace": "Workspace",
+        "other": "Other"
+      }
+    },
+    "about": {
+      "version": "Version {version}",
+      "versionUnknown": "Version unknown",
+      "exposureTitle": "No user accounts",
+      "exposureBody": "Anyone who can open this page can use every feature, including your stored API keys. Keep Open Drama on a private network, or put a reverse proxy with authentication in front of it.",
+      "source": "Source code",
+      "licence": "Licence: CC BY-NC-SA 4.0"
+    }
+  },
+  "assets": {
+    "uploaded": "Image attached.",
+    "required": "Required.",
+    "finalPromptHint": "The exact prompt used to generate the reference image.",
+    "staleHint": "Out of date: the description changed after this prompt was written",
+    "kind": {
+      "character": "Character",
+      "scene": "Scene",
+      "prop": "Prop"
+    },
+    "card": {
+      "open": "Open {name}",
+      "generating": "Generating",
+      "ready": "Ready",
+      "failed": "Failed",
+      "noImage": "No image",
+      "stale": "out of date",
+      "replaceImage": "Replace image",
+      "uploadImage": "Upload image"
+    },
+    "fields": {
+      "name": "Name",
+      "role": "Role",
+      "appearance": "Appearance",
+      "styling": "Clothing and styling",
+      "description": "Description",
+      "location": "Location",
+      "time": "Time of day",
+      "prompt": "Set dressing",
+      "lighting": "Lighting",
+      "type": "Type",
+      "finalPrompt": "Image prompt"
+    },
+    "create": {
+      "character": "Add a character",
+      "scene": "Add a scene",
+      "prop": "Add a prop"
+    },
+    "filter": {
+      "all": "All"
+    },
+    "group": {
+      "character": "Characters",
+      "scene": "Scenes",
+      "prop": "Props"
+    },
+    "add": {
+      "character": "Add character",
+      "scene": "Add scene",
+      "prop": "Add prop"
+    },
+    "empty": {
+      "character": "No characters yet. They are extracted from the script, or you can add them here.",
+      "scene": "No scenes yet. Scenes are places at a time of day.",
+      "prop": "No props yet. Only objects the plot depends on belong here."
+    }
+  },
+  "project": {
+    "notFound": "This project does not exist or was deleted.",
+    "back": "All projects",
+    "aspect": "Frame {ratio}",
+    "counts": "{episodes, plural, one {# episode} other {# episodes}}, {characters, plural, one {# character} other {# characters}}, {scenes, plural, one {# scene} other {# scenes}}, {props, plural, one {# prop} other {# props}}",
+    "addEpisode": "Add episode",
+    "addEpisodeN": "Add episode {number}",
+    "tabs": {
+      "episodes": "Episodes",
+      "assets": "Asset library"
+    },
+    "deleteEpisodeTitle": "Delete {title}?",
+    "deleteEpisodeBody": "The episode disappears from the project. Its files stay in the data folder.",
+    "deleteEpisodeConfirm": "Delete episode",
+    "newEpisode": {
+      "title": "Add episode {number}",
+      "lockNote": "The episode keeps the image and video services that are active now, even if you change them later.",
+      "name": "Title",
+      "nameHint": "Optional. Defaults to Episode {number}.",
+      "resolution": "Video resolution",
+      "resolutionHint": "Applies to every clip of the episode. You can change it later.",
+      "submit": "Add episode"
+    },
+    "episode": {
+      "more": "Episode actions",
+      "delete": "Delete",
+      "resolution": "Resolution {resolution}. Change resolution",
+      "scriptReady": "Script ready",
+      "merged": "Film ready",
+      "open": "Open studio"
+    }
+  },
+  "studio": {
+    "notFound": "This episode does not exist or was deleted.",
+    "backToProject": "Back to the project",
+    "episodeChip": "Episode {number}",
+    "scriptDone": "Script done",
+    "script": {
+      "raw": "Raw content",
+      "chars": "{count, plural, one {# character} other {# characters}}",
+      "save": "Save",
+      "saved": "Saved.",
+      "rawPlaceholder": "Paste a novel chapter, an outline or notes for this episode.",
+      "script": "Script",
+      "ready": "Ready",
+      "emptyScript": "The AI rewrite into a shooting script arrives with the AI pipeline. For now you can use the raw content as the script.",
+      "useRaw": "Use raw content as the script"
+    }
+  }
+}

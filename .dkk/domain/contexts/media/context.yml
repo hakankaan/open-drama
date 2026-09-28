@@ -27,3 +27,9 @@ adr_refs:
   - adr-0009
   - adr-0010
   - adr-0012
+code_refs:
+  - apps/api/src/modules/media/**
+  - apps/api/src/lib/paths.ts
+  - packages/contracts/src/media.ts
+  - apps/web/src/features/media/**
+  - apps/web/src/lib/media.ts

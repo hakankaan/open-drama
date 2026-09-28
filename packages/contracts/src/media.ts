@@ -1,0 +1,28 @@
+import { z } from 'zod';
+import { MediaPath, Timestamp } from './common';
+
+export const UploadedMedia = z.object({
+  path: MediaPath,
+  url: z.string(),
+});
+export type UploadedMedia = z.infer<typeof UploadedMedia>;
+
+export const StorageBucket = z.enum(['database', 'images', 'videos', 'merged', 'uploads', 'temp', 'workspace', 'other']);
+export type StorageBucket = z.infer<typeof StorageBucket>;
+
+export const StorageUsage = z.object({
+  mode: z.enum(['local', 'docker']),
+  dataDir: z.string(),
+  storageRoot: z.string(),
+  databasePath: z.string(),
+  workspaceDir: z.string(),
+  usageByBucket: z.array(z.object({ bucket: StorageBucket, bytes: z.number(), files: z.number().int() })),
+  totalBytes: z.number(),
+  freeBytes: z.number().nullable(),
+  computedAt: Timestamp.nullable(),
+  stale: z.boolean(),
+});
+export type StorageUsage = z.infer<typeof StorageUsage>;
+
+export const IMAGE_UPLOAD_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'] as const;
+export const IMAGE_UPLOAD_MAX_BYTES = 20 * 1024 * 1024;

@@ -30,4 +30,4 @@ A running breakdown job for an episode. Wraps the storyboard-breaker agent run s
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | proposed |
+| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |

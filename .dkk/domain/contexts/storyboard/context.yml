@@ -37,3 +37,6 @@ adr_refs:
   - adr-0004
   - adr-0007
   - adr-0012
+code_refs:
+  - apps/api/src/modules/storyboard/**
+  - apps/api/src/db/schema/storyboard.ts

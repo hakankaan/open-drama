@@ -29,5 +29,5 @@ The prompt file of one agent in one language. The base language file also carrie
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | proposed |
-| [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | proposed |
+| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | accepted |
+| [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | accepted |

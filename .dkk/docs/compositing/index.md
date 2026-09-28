@@ -53,9 +53,9 @@ Turning an episode's shot videos into a film. The creator selects shots, the ren
 |-----|-------|--------|
 | [adr-0001](../../adr/adr-0001.md) | Product scope and original work | accepted |
 | [adr-0002](../../adr/adr-0002.md) | Monorepo with a Next.js web app and a Node.js API | accepted |
-| [adr-0003](../../adr/adr-0003.md) | Hono on the Node adapter as the HTTP framework | proposed |
-| [adr-0004](../../adr/adr-0004.md) | SQLite through Drizzle ORM with migrations applied at startup | proposed |
-| [adr-0007](../../adr/adr-0007.md) | API contract: camelCase JSON validated by shared zod schemas | proposed |
-| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | proposed |
-| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | proposed |
+| [adr-0003](../../adr/adr-0003.md) | Hono on the Node adapter as the HTTP framework | accepted |
+| [adr-0004](../../adr/adr-0004.md) | SQLite through Drizzle ORM with migrations applied at startup | accepted |
+| [adr-0007](../../adr/adr-0007.md) | API contract: camelCase JSON validated by shared zod schemas | accepted |
+| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |
+| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | accepted |
 | [adr-0012](../../adr/adr-0012.md) | Licence: CC BY-NC-SA 4.0 | accepted |

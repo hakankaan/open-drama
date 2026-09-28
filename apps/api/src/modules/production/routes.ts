@@ -1,0 +1,42 @@
+import { Hono } from 'hono';
+import { CreateDrama, CreateEpisode, DramaListQuery, IdParam, UpdateDrama, UpdateEpisode } from '@open-drama/contracts';
+import { created, ok } from '../../http/envelope';
+import { v } from '../../http/validate';
+import { getEpisodeJobs } from '../jobs/run-job';
+import { createDrama, deleteDrama, getDramaDetail, getDramaStats, listDramas, updateDrama } from './dramas';
+import {
+  createEpisode,
+  deleteEpisode,
+  getEpisodeRow,
+  getEpisodeView,
+  skipRewrite,
+  startRewrite,
+  updateEpisode,
+} from './episodes';
+import { getPipelineStatus } from './pipeline';
+
+export const productionRoutes = new Hono()
+  .get('/dramas', v('query', DramaListQuery), (c) => ok(c, listDramas(c.req.valid('query'))))
+  .get('/dramas/stats', (c) => ok(c, getDramaStats()))
+  .post('/dramas', v('json', CreateDrama), (c) => created(c, createDrama(c.req.valid('json'))))
+  .get('/dramas/:id', v('param', IdParam), (c) => ok(c, getDramaDetail(c.req.valid('param').id)))
+  .patch('/dramas/:id', v('param', IdParam), v('json', UpdateDrama), (c) =>
+    ok(c, updateDrama(c.req.valid('param').id, c.req.valid('json'))),
+  )
+  .delete('/dramas/:id', v('param', IdParam), (c) => ok(c, deleteDrama(c.req.valid('param').id)))
+  .post('/episodes', v('json', CreateEpisode), (c) => created(c, createEpisode(c.req.valid('json'))))
+  .get('/episodes/:id', v('param', IdParam), (c) => ok(c, getEpisodeView(c.req.valid('param').id)))
+  .patch('/episodes/:id', v('param', IdParam), v('json', UpdateEpisode), (c) =>
+    ok(c, updateEpisode(c.req.valid('param').id, c.req.valid('json'))),
+  )
+  .delete('/episodes/:id', v('param', IdParam), (c) => ok(c, deleteEpisode(c.req.valid('param').id)))
+  .post('/episodes/:id/rewrite', v('param', IdParam), (c) => ok(c, startRewrite(c.req.valid('param').id)))
+  .post('/episodes/:id/skip-rewrite', v('param', IdParam), (c) => ok(c, skipRewrite(c.req.valid('param').id)))
+  .get('/episodes/:id/pipeline-status', v('param', IdParam), (c) =>
+    ok(c, getPipelineStatus(c.req.valid('param').id)),
+  )
+  .get('/episodes/:id/jobs', v('param', IdParam), (c) => {
+    const { id } = c.req.valid('param');
+    getEpisodeRow(id);
+    return ok(c, getEpisodeJobs(id));
+  });

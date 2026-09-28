@@ -33,4 +33,4 @@ A stored file with its relative path, kind (image, video, audio, film), MIME typ
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | proposed |
+| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | accepted |

@@ -44,5 +44,5 @@ Generate a video for the shot. Builds the ordered reference list — the bound s
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | proposed |
-| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | proposed |
+| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |
+| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | accepted |

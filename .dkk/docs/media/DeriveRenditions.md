@@ -29,4 +29,4 @@ Produce the thumbnail (images) or poster frame (videos, films) for a stored file
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | proposed |
+| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | accepted |

@@ -29,4 +29,4 @@ Decode a base64 image returned inline by a provider (for example Gemini) and sto
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | proposed |
+| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | accepted |

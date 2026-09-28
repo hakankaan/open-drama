@@ -32,4 +32,4 @@ Download a provider result URL into the images or videos directory and return th
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | proposed |
+| [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | accepted |

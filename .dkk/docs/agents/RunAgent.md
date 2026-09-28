@@ -39,4 +39,4 @@ Run one agent with a user message scoped to an episode and drama. Used by the pr
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | proposed |
+| [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | accepted |

@@ -31,3 +31,4 @@ temp/
 
 # dkk generated search index (rebuilt by `dkk render`)
 .dkk/index.db
+next-env.d.ts
