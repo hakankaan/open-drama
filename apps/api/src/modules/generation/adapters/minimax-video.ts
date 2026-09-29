@@ -46,10 +46,15 @@ export const minimaxVideo: VideoAdapter = {
   formatMention: (_slot, name) => name,
   buildGenerateRequest(config, record) {
     if (!record.prompt) throw new ConfigError('MiniMax needs a text prompt');
+    // H3-Max renders 480P and 768P only and starts at 5 seconds (V2 API reference); H3 offers 768P and 2K from 4 s.
+    const max = /-max\b/i.test(config.model);
+    if (max && record.resolution === '1080p') {
+      throw new ConfigError(`${config.model} has no 1080p (2K) output; set the episode to 720p or pick MiniMax-H3`);
+    }
     const content: unknown[] = [{ type: 'text', text: record.prompt.slice(0, 7000) }];
     for (const url of record.referenceImages) content.push({ type: 'image_url', image_url: { url }, role: 'reference_image' });
     for (const url of record.referenceVideos) content.push({ type: 'video_url', video_url: { url }, role: 'reference_video' });
-    for (const url of record.referenceAudios) content.push({ type: 'audio_url', audio_url: { url } });
+    for (const url of record.referenceAudios) content.push({ type: 'audio_url', audio_url: { url }, role: 'reference_audio' });
     return {
       url: joinProviderUrl(minimaxBase(config.baseUrl), '/v2', 'video_generation'),
       method: 'POST',
@@ -57,7 +62,7 @@ export const minimaxVideo: VideoAdapter = {
       body: JSON.stringify({
         model: config.model,
         content,
-        duration: record.durationSeconds,
+        duration: max ? Math.max(5, record.durationSeconds) : record.durationSeconds,
         resolution: record.resolution === '1080p' ? '2K' : '768P',
         ratio: RATIOS.has(record.aspectRatio) ? record.aspectRatio : '16:9',
       }),

@@ -115,7 +115,8 @@ export const saveShotsTool = defineTool({
     shots: z
       .array(z.object({ shotNumber: z.number().int().min(1), ...ShotFields }))
       .min(1)
-      .max(8),
+      .max(8)
+      .refine((list) => new Set(list.map((s) => s.shotNumber)).size === list.length, 'Each shotNumber may appear only once per batch'),
   }),
   execute: ({ replaceExisting, final, shots }, ctx) => {
     if (!ctx.jobId) return { error: 'save_shots only runs inside a storyboard breakdown' };
@@ -123,7 +124,20 @@ export const saveShotsTool = defineTool({
       { episodeId: ctx.episodeId, dramaId: ctx.dramaId, jobId: ctx.jobId },
       { replaceExisting: replaceExisting === true, shots: shots.map((s) => ({ ...clean(s), shotNumber: s.shotNumber })) },
     );
-    if (final) finished.add(ctx.jobId);
+    if (final) {
+      // The breakdown replaces the storyboard only when it is complete: shots numbered 1…N with no gap.
+      const numbers = liveShotRows(ctx.episodeId).map((s) => s.shotNumber);
+      const gap = numbers.findIndex((n, i) => n !== i + 1);
+      if (gap !== -1) {
+        return {
+          saved: result.saved.length,
+          shotNumbers: result.saved,
+          finished: false,
+          error: `The storyboard is not complete: shot numbers must run from 1 without gaps, and shot ${gap + 1} is missing (saved: ${numbers.join(', ')}). Save the missing shots, then send final: true again.`,
+        };
+      }
+      finished.add(ctx.jobId);
+    }
     return { saved: result.saved.length, shotNumbers: result.saved, finished: final === true };
   },
 });

@@ -58,9 +58,23 @@ async function complete(taskId: number, owner: SubmitImageInput['owner'], media:
   logger.info({ taskId, owner, path }, 'image task completed');
 }
 
+/**
+ * Right before the provider is paid, the task re-checks that it is still wanted: false when it no longer runs,
+ * throws when its asset was deleted while the references were being prepared.
+ */
+function stillWanted(taskId: number, owner: SubmitImageInput['owner']): boolean {
+  const task = db.select({ status: generationTasks.status }).from(generationTasks).where(eq(generationTasks.id, taskId)).get();
+  if (task?.status !== 'processing') return false;
+  const table = owner.kind === 'character' ? characters : owner.kind === 'scene' ? scenes : props;
+  const asset = db.select({ deletedAt: table.deletedAt }).from(table).where(eq(table.id, owner.id)).get();
+  if (!asset || asset.deletedAt) throw new Error(`The ${owner.kind} was deleted before its image was requested; nothing was sent to the provider`);
+  return true;
+}
+
 async function run(taskId: number, resolved: ResolvedGeneration<ImageAdapter>, input: SubmitImageInput) {
   const referenceImages = await normalizeReferenceImages(input.referenceImages ?? [], resolved.adapter.limits.images);
   const record = { taskId, prompt: input.prompt, referenceImages, aspectRatio: input.aspectRatio };
+  if (!stillWanted(taskId, input.owner)) return;
   await complete(taskId, input.owner, await generate(taskId, resolved, record, POLL, 'image'));
 }
 

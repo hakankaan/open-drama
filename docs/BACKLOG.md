@@ -17,5 +17,8 @@ Items the product owner has decided on but pushed out of the current iteration, 
 - SSE/WebSocket push instead of polling — `adr-0008` alternatives, Plan 3 "Later".
 - Shot frame images (first/last frame stills) for image-to-video providers — cut from v1, Plan 1 §10.
 - Multi-user authentication (`ownerId` on dramas and model services) — Plan 1 §9.
-- Orphaned-media cleanup command — `adr-0009` consequences.
+- Orphaned-media cleanup command — `adr-0009` consequences. Also covers uploads whose shot attachment failed afterwards (the upload is immutable and stays behind).
+- Video capabilities per model, not only per provider (`videoCapsFor`): Seedance 2.5 and MiniMax-H3-Max differ from their families in resolutions, durations and reference counts. Confirm against the providers with live keys, then key the caps table by provider + model so the studio offers only what the model accepts.
+- Aggregate reference-duration limits (total seconds of reference video/audio per request) for MiniMax, Seedance 2.x and Wan: probe uploaded media, keep the duration, validate before a task is claimed.
+- Seedance mention token: the adapter writes `@ImageN`; official examples also show `@imageN`. Confirm the accepted form with a keyed smoke call.
 - Drag-and-drop shot reordering, workbench keyboard shortcuts — Plan 3 "Later".

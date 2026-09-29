@@ -2,9 +2,12 @@ import { existsSync } from 'node:fs';
 import sharp from 'sharp';
 import { env } from '../../../env';
 import { toAbsolute } from '../../../lib/paths';
+import { fetchPublic } from '../../../lib/remote';
 import { ConfigError } from './errors';
 
 const MAX_EDGE = 768;
+/** Remote reference images are read into memory before compression; the upload limit applies to them too. */
+const REMOTE_IMAGE_MAX_BYTES = 20 * 1024 * 1024;
 
 async function compress(input: Buffer | string): Promise<string> {
   const jpeg = await sharp(input).rotate().resize({ width: MAX_EDGE, height: MAX_EDGE, fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 68 }).toBuffer();
@@ -14,6 +17,7 @@ async function compress(input: Buffer | string): Promise<string> {
 /**
  * Reference images for a provider (Plan 2 §8): data URLs pass through, stored `static/…` paths and remote URLs
  * become compressed JPEG data URLs (fit in 768 px, quality 68); duplicates are dropped and the list is capped.
+ * Remote URLs go through fetchPublic (no loopback or cloud-metadata targets, bounded size, image content only).
  */
 export async function normalizeReferenceImages(refs: string[], max: number): Promise<string[]> {
   const out: string[] = [];
@@ -24,9 +28,8 @@ export async function normalizeReferenceImages(refs: string[], max: number): Pro
     seen.add(ref);
     if (ref.startsWith('data:')) out.push(ref);
     else if (/^https?:\/\//.test(ref)) {
-      const res = await fetch(ref, { signal: AbortSignal.timeout(30_000) });
-      if (!res.ok) throw new Error(`Fetching a reference image failed (${res.status})`);
-      out.push(await compress(Buffer.from(await res.arrayBuffer())));
+      const { bytes } = await fetchPublic(ref, { maxBytes: REMOTE_IMAGE_MAX_BYTES, accept: /^image\//i, timeoutMs: 30_000 });
+      out.push(await compress(bytes));
     } else out.push(await compress(toAbsolute(ref)));
   }
   return out;
