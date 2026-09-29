@@ -41,7 +41,7 @@ export const ContentLanguage = z.enum(['en', 'zh', 'ja', 'ko']);
 export type ContentLanguage = z.infer<typeof ContentLanguage>;
 export const DEFAULT_CONTENT_LANGUAGE: ContentLanguage = 'en';
 
-// Providers (adr-0013). modelrunner is reserved; its adapter lands in iteration 2.
+// Providers (adr-0013).
 export const ProviderName = z.enum(['openai', 'gemini', 'volcengine', 'minimax', 'aliyun', 'byteplus', 'modelrunner']);
 export type ProviderName = z.infer<typeof ProviderName>;
 
@@ -52,7 +52,7 @@ export const PROVIDERS_BY_TYPE: Record<ServiceType, readonly ProviderName[]> = {
 };
 
 /** Providers whose adapters are not available yet; the UI shows them disabled. */
-export const DEFERRED_PROVIDERS: readonly ProviderName[] = ['modelrunner'];
+export const DEFERRED_PROVIDERS: readonly ProviderName[] = [];
 
 export const DEFAULT_RESOLUTION: Resolution = '720p';
 export const DEFAULT_DURATION_SECONDS = 10;

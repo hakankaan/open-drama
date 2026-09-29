@@ -18,6 +18,11 @@ interface ProbeRequest {
   init: RequestInit;
   /** The request names the model on an official Ark host, so the answer says whether the model is available. */
   checksModel?: boolean;
+  /**
+   * The request reads a record that never exists: the gateway's own "Request not found" means the key passed. Other
+   * answers (redirects, pages from a wrong host) fall through to the generic verdict.
+   */
+  authOnly?: boolean;
 }
 
 const ARK_HOST = /(^|\.)(volces\.com|bytepluses\.com)$/i;
@@ -53,6 +58,16 @@ function buildProbe({ serviceType, provider, baseUrl, apiKey, model }: ProbeTarg
         url: `${base}/${path}`,
         init: { method: 'POST', headers: bearer(apiKey), body: json(checksModel ? { model } : {}) },
         checksModel,
+      };
+    }
+    case 'modelrunner': {
+      if (serviceType === 'text') return { url: `${base}/models`, init: { headers: bearer(apiKey) } };
+      // The status of a request id that was never issued: authenticated, never billable, and nothing is submitted.
+      const app = (model ?? 'bytedance/seedream-v5-pro').replace(/^\/+/, '').split('/').slice(0, 2).join('/');
+      return {
+        url: `${base}/${app}/requests/00000000-0000-4000-8000-000000000000/status`,
+        init: { headers: { Authorization: `Key ${apiKey}` } },
+        authOnly: true,
       };
     }
     case 'minimax':
@@ -93,6 +108,16 @@ const MODEL_UNAVAILABLE = /^(InvalidEndpointOrModel|ModelNotOpen|OperationDenied
 /** Ark's validation codes: returned only after the key and the model passed their checks. */
 const BODY_INVALID = /^(MissingParameter|InvalidParameter)/;
 
+const errorMessage = (body: string): string => {
+  try {
+    const parsed = JSON.parse(body) as { message?: unknown; error?: unknown };
+    const message = parsed.message ?? parsed.error;
+    return typeof message === 'string' ? message : '';
+  } catch {
+    return '';
+  }
+};
+
 const errorCode = (body: string): string => {
   try {
     const code = (JSON.parse(body) as { error?: { code?: unknown } }).error?.code;
@@ -104,7 +129,7 @@ const errorCode = (body: string): string => {
 
 export async function probeService(target: ProbeTarget): Promise<ModelServiceProbe> {
   const started = performance.now();
-  const { url, init, checksModel } = buildProbe(target);
+  const { url, init, checksModel, authOnly } = buildProbe(target);
   const elapsed = () => Math.round(performance.now() - started);
   try {
     const res = await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS), redirect: 'manual' });
@@ -131,6 +156,16 @@ export async function probeService(target: ProbeTarget): Promise<ModelServicePro
           message: `Connected. The API key was accepted and ${target.model} is available.`,
         };
       }
+    }
+    if (authOnly && res.status === 404 && /request not found/i.test(errorMessage(body))) {
+      return {
+        reachable: true,
+        keyAccepted: true,
+        modelAvailable: null,
+        status: res.status,
+        latencyMs: elapsed(),
+        message: 'Connected. The API key was accepted.',
+      };
     }
     const keyAccepted = keyVerdict(res.status, body);
     const reachable = [200, 204, 400, 401, 403, 422].includes(res.status);

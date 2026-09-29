@@ -12,7 +12,7 @@ export const isOfficialHost = (baseUrl: string) => {
   }
 };
 
-function thinkingOffPatch(): Record<string, unknown> {
+function thinkingOffPatch(provider: string): Record<string, unknown> {
   if (env.OPEN_DRAMA_AI_THINKING_OFF_PATCH) {
     try {
       const parsed: unknown = JSON.parse(env.OPEN_DRAMA_AI_THINKING_OFF_PATCH);
@@ -21,7 +21,9 @@ function thinkingOffPatch(): Record<string, unknown> {
       logger.warn('OPEN_DRAMA_AI_THINKING_OFF_PATCH is not valid JSON; using the default');
     }
   }
-  // The documented switch of OpenAI-compatible platforms such as Ark; set the env var for relays that differ.
+  // ModelRunner's chat models take OpenAI's effort switch; Ark and most OpenAI-compatible platforms take `thinking`.
+  // Set the env var for relays that differ.
+  if (provider === 'modelrunner') return { reasoning_effort: 'none' };
   return { thinking: { type: 'disabled' } };
 }
 
@@ -55,7 +57,7 @@ export function patchedFetch(provider: string, baseUrl: string): typeof fetch {
       }
     } else {
       if (env.OPEN_DRAMA_AI_DISABLE_THINKING) {
-        for (const [k, v] of Object.entries(thinkingOffPatch())) if (!(k in body)) body[k] = v;
+        for (const [k, v] of Object.entries(thinkingOffPatch(provider))) if (!(k in body)) body[k] = v;
       }
       if (!('max_tokens' in body) && !('max_completion_tokens' in body)) body.max_tokens = env.OPEN_DRAMA_AI_MAX_TOKENS;
     }

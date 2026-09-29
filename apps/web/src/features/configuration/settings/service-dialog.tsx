@@ -52,7 +52,7 @@ function initialForm(state: ServiceDialogState): Form {
   return {
     provider: state.provider,
     name: preset.label,
-    baseUrl: preset.baseUrl,
+    baseUrl: preset.baseUrlByType?.[state.serviceType] ?? preset.baseUrl,
     apiKey: '',
     models: preset.models[state.serviceType] ?? [],
     priority: '0',
@@ -81,7 +81,7 @@ export function ServiceDialog({ state, onClose }: { state: ServiceDialogState; o
     setForm((f) => ({
       ...f,
       provider,
-      baseUrl: preset.baseUrl,
+      baseUrl: preset.baseUrlByType?.[serviceType] ?? preset.baseUrl,
       name: editing ? f.name : preset.label,
       models: f.models.length > 0 && editing ? f.models : (preset.models[serviceType] ?? []),
     }));

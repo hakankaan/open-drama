@@ -2,6 +2,7 @@ import { env } from '../../../env';
 import { aliyunVideo } from './aliyun-video';
 import { geminiImage } from './gemini-image';
 import { minimaxVideo } from './minimax-video';
+import { modelrunnerImage, modelrunnerVideo } from './modelrunner';
 import { openaiImage } from './openai-image';
 import { stubImage } from './stub-image';
 import { stubVideo } from './stub-video';
@@ -15,6 +16,7 @@ const IMAGE: Record<string, ImageAdapter> = {
   gemini: geminiImage,
   volcengine: volcengineImage,
   byteplus: { ...volcengineImage, provider: 'byteplus' },
+  modelrunner: modelrunnerImage,
 };
 
 const VIDEO: Record<string, VideoAdapter> = {
@@ -22,6 +24,7 @@ const VIDEO: Record<string, VideoAdapter> = {
   byteplus: { ...volcengineVideo, provider: 'byteplus' },
   minimax: minimaxVideo,
   aliyun: aliyunVideo,
+  modelrunner: modelrunnerVideo,
 };
 
 /** The image adapter for a provider. With OPEN_DRAMA_STUB_PROVIDERS=1 every provider is served offline. */

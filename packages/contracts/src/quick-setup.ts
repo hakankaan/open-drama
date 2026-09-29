@@ -18,6 +18,8 @@ export interface QuickSetupTemplate {
 
 const ARK = 'https://ark.cn-beijing.volces.com/api/v3';
 const MODELARK = 'https://ark.ap-southeast.bytepluses.com/api/v3';
+const MODELRUNNER_TEXT = 'https://modelrunner.run/v1';
+const MODELRUNNER_QUEUE = 'https://queue.modelrunner.run';
 
 export const QUICK_SETUP_TEMPLATES: QuickSetupTemplate[] = [
   {
@@ -76,10 +78,44 @@ export const QUICK_SETUP_TEMPLATES: QuickSetupTemplate[] = [
       },
     ],
   },
+  {
+    gateway: 'modelrunner',
+    label: 'ModelRunner',
+    keyUrl: 'https://modelrunner.ai/settings/api-keys',
+    services: [
+      {
+        serviceType: 'text',
+        provider: 'modelrunner',
+        name: 'Text (ModelRunner)',
+        baseUrl: MODELRUNNER_TEXT,
+        models: ['deepseek/v4.1-flash'],
+      },
+      {
+        serviceType: 'image',
+        provider: 'modelrunner',
+        name: 'Seedream (ModelRunner)',
+        baseUrl: MODELRUNNER_QUEUE,
+        models: ['bytedance/seedream-v5-pro/text-to-image'],
+      },
+      {
+        serviceType: 'video',
+        provider: 'modelrunner',
+        name: 'Seedance (ModelRunner)',
+        baseUrl: MODELRUNNER_QUEUE,
+        models: ['bytedance/seedance-v2/reference-to-video'],
+      },
+    ],
+  },
 ];
 
-/** Starting points for the manual service dialog: provider base URL and, where stable, a default model. */
-export const PROVIDER_PRESETS: Record<ProviderName, { label: string; baseUrl: string; models: Partial<Record<ServiceType, string[]>> }> = {
+/**
+ * Starting points for the manual service dialog: provider base URL (per service type where the provider serves
+ * types from different hosts) and, where stable, a default model.
+ */
+export const PROVIDER_PRESETS: Record<
+  ProviderName,
+  { label: string; baseUrl: string; baseUrlByType?: Partial<Record<ServiceType, string>>; models: Partial<Record<ServiceType, string[]>> }
+> = {
   openai: {
     label: 'OpenAI',
     baseUrl: 'https://api.openai.com/v1',
@@ -110,5 +146,14 @@ export const PROVIDER_PRESETS: Record<ProviderName, { label: string; baseUrl: st
       video: ['dreamina-seedance-2-0-260128'],
     },
   },
-  modelrunner: { label: 'ModelRunner', baseUrl: 'https://modelrunner.run', models: {} },
+  modelrunner: {
+    label: 'ModelRunner',
+    baseUrl: MODELRUNNER_QUEUE,
+    baseUrlByType: { text: MODELRUNNER_TEXT },
+    models: {
+      text: ['deepseek/v4.1-flash'],
+      image: ['bytedance/seedream-v5-pro/text-to-image'],
+      video: ['bytedance/seedance-v2/reference-to-video'],
+    },
+  },
 };

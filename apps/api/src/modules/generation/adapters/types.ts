@@ -12,6 +12,8 @@ export interface ProviderRequest {
   method: 'GET' | 'POST';
   headers: Record<string, string>;
   body?: string | FormData;
+  /** Redirect handling; `error` for requests that carry a key a redirect target must not receive. */
+  redirect?: 'follow' | 'error' | 'manual';
 }
 
 export interface ImageRecord {
@@ -54,7 +56,9 @@ export type GenerateOutcome = { kind: 'async'; providerTaskId: string } | ({ kin
 export type PollOutcome =
   | { status: 'pending' }
   | ({ status: 'completed' } & ResultMedia)
-  | { status: 'failed'; error: string; code?: string };
+  | { status: 'failed'; error: string; code?: string }
+  /** The provider finished; the result is read with a separate request (`buildResultRequest`). */
+  | { status: 'ready' };
 
 /**
  * One provider dialect (adr-0005): builds requests and parses responses; the engine owns the lifecycle.
@@ -69,9 +73,12 @@ export interface Dialect<R> {
   submitTimeoutMs?: number;
   generateLocal?(record: R): Promise<GenerateOutcome>;
   buildGenerateRequest?(config: ServiceConfig, record: R): ProviderRequest;
-  parseGenerateResponse?(body: unknown): GenerateOutcome;
+  parseGenerateResponse?(body: unknown, config: ServiceConfig): GenerateOutcome;
   buildPollRequest?(config: ServiceConfig, providerTaskId: string): ProviderRequest;
   parsePollResponse?(body: unknown): PollOutcome;
+  /** For providers whose status endpoint does not carry the result: read it once the poll says `ready`. */
+  buildResultRequest?(config: ServiceConfig, providerTaskId: string): ProviderRequest;
+  parseResultResponse?(body: unknown): PollOutcome;
 }
 
 export interface ImageAdapter extends Dialect<ImageRecord> {

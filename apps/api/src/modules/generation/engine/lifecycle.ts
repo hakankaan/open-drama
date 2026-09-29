@@ -93,6 +93,7 @@ export async function send(req: ProviderRequest, timeoutMs: number): Promise<unk
     method: req.method,
     headers: req.headers,
     body: req.body,
+    redirect: req.redirect,
     signal: AbortSignal.timeout(timeoutMs),
   });
   const text = await res.text();
@@ -104,9 +105,17 @@ export async function send(req: ProviderRequest, timeoutMs: number): Promise<unk
   }
   if (!res.ok) {
     // Providers put the reason in { error: string | { message, code } } or at the top level ({ message, code }).
-    const b = (typeof body === 'object' && body ? body : {}) as { error?: { message?: string; code?: string } | string; message?: string; code?: string };
+    const b = (typeof body === 'object' && body ? body : {}) as {
+      error?: { message?: string; code?: string } | string;
+      message?: string;
+      code?: string;
+      detail?: string | { msg?: string }[];
+    };
     const err = b.error;
-    const message = typeof err === 'string' ? err : (err?.message ?? b.message ?? (typeof body === 'string' ? body.slice(0, 300) : ''));
+    // fal-style gateways put validation errors in `detail`: a string or a list of { msg }.
+    const detail = typeof b.detail === 'string' ? b.detail : Array.isArray(b.detail) ? b.detail.map((d) => d?.msg).filter(Boolean).join('; ') : '';
+    const message =
+      typeof err === 'string' ? err : (err?.message ?? b.message ?? (detail || (typeof body === 'string' ? body.slice(0, 300) : '')));
     const code = typeof err === 'object' ? err.code : b.code;
     throw new ProviderError(message || `The provider answered ${res.status}`, res.status, code);
   }
@@ -130,12 +139,21 @@ async function poll<R>(
     let result;
     try {
       result = adapter.parsePollResponse(await send(adapter.buildPollRequest(config, providerTaskId), POLL_TIMEOUT_MS));
+      if (result.status === 'ready') {
+        if (!adapter.buildResultRequest || !adapter.parseResultResponse) {
+          throw new ProviderError('The provider finished but its adapter cannot read the result');
+        }
+        // The provider already did (and billed) the work, so a hiccup reading the result is retried like a poll.
+        result = adapter.parseResultResponse(await send(adapter.buildResultRequest(config, providerTaskId), POLL_TIMEOUT_MS));
+      }
     } catch (err) {
       // Transport hiccups are retried; the provider's own failure verdicts come back as status 'failed'.
       if (err instanceof ProviderError && err.status && err.status < 500 && err.status !== 429 && err.status !== 408) throw err;
+      if (err instanceof ProviderError && !err.status) throw err;
       logger.debug({ taskId, err: messageOf(err) }, 'poll attempt failed');
       continue;
     }
+    if (result.status === 'pending' || result.status === 'ready') continue;
     if (result.status === 'completed') return result;
     if (result.status === 'failed') throw new ProviderError(result.error, undefined, result.code);
   }
@@ -164,6 +182,7 @@ export async function generate<R>(
   }
   const outcome = adapter.parseGenerateResponse(
     await send(adapter.buildGenerateRequest(config, record), adapter.submitTimeoutMs ?? SUBMIT_TIMEOUT_MS),
+    config,
   );
   if (outcome.kind === 'result') return outcome;
   db.update(generationTasks).set({ providerTaskId: outcome.providerTaskId }).where(eq(generationTasks.id, taskId)).run();

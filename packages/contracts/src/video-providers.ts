@@ -21,6 +21,8 @@ export const VIDEO_PROVIDER_CAPS: Partial<Record<ProviderName, VideoProviderCaps
   volcengine: { images: 9, videos: 3, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p'] },
   // The same Seedance 2.0 family on BytePlus ModelArk.
   byteplus: { images: 9, videos: 3, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p'] },
+  // ModelRunner's Seedance 2.0 reference-to-video endpoint: images and audio only.
+  modelrunner: { images: 9, videos: 0, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'] },
   minimax: { images: 9, videos: 3, audios: 3, total: 12, audioNeedsVisual: false, durationRange: [4, 15], resolutions: ['720p', '1080p'] },
   aliyun: { images: 10, videos: 5, audios: 5, total: 20, audioNeedsVisual: false, durationRange: [2, 30], resolutions: ['480p', '720p', '1080p'] },
 };
