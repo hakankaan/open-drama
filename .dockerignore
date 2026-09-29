@@ -1,0 +1,13 @@
+# Only sources go into the build context; dependencies and outputs are rebuilt for Linux inside the image.
+**/node_modules
+**/.next
+**/dist
+**/data
+**/*.tsbuildinfo
+.git
+.env
+.env.*
+!.env.example
+.dkk/docs
+.dkk/index.db
+*.log

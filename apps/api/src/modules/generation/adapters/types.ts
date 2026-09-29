@@ -62,6 +62,11 @@ export type PollOutcome =
  */
 export interface Dialect<R> {
   provider: string;
+  /**
+   * How long the generate request may take. Asynchronous providers answer with a task id within seconds, so they
+   * set a short one; synchronous image APIs render before answering and keep the engine's default.
+   */
+  submitTimeoutMs?: number;
   generateLocal?(record: R): Promise<GenerateOutcome>;
   buildGenerateRequest?(config: ServiceConfig, record: R): ProviderRequest;
   parseGenerateResponse?(body: unknown): GenerateOutcome;

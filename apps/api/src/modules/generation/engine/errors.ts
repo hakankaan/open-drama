@@ -1,4 +1,5 @@
 import type { TaskErrorClass } from '@open-drama/contracts';
+import { scrubSecrets } from '../../../lib/secrets';
 import { ProviderError } from '../adapters/types';
 
 const MODERATION =
@@ -21,4 +22,5 @@ export function classify(err: unknown): TaskErrorClass {
   return 'provider';
 }
 
-export const messageOf = (err: unknown) => (err instanceof Error ? err.message : String(err)).slice(0, 1000);
+/** The failure text stored on a task and shown in the UI, with any echoed secret scrubbed. */
+export const messageOf = (err: unknown) => scrubSecrets(err instanceof Error ? err.message : String(err)).slice(0, 1000);

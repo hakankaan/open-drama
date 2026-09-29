@@ -62,6 +62,7 @@ export function StudioSidebar({
         collapsed ? 'w-14 px-2' : 'w-60 px-3',
       )}
       aria-label={t('label')}
+      data-tour="studio-stages"
     >
       <div className={cn('flex gap-1', collapsed ? 'flex-col' : 'px-1')} role="group" aria-label={t('progress')}>
         {MARQUEE.map((m) => {

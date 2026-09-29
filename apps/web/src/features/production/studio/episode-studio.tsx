@@ -1,12 +1,13 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ChevronDown, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ChevronDown, CircleHelp, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Resolution as ResolutionEnum, type EpisodePipelineStatus, type EpisodeView } from '@open-drama/contracts';
 import { LocaleSwitcher } from '@/components/locale-switcher';
+import { useTour } from '@/components/tour';
 import { ModelSelect } from '@/components/model-select';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,8 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { useToastError } from '@/lib/errors';
 import { usePersistedState } from '@/lib/persisted-state';
 import { AssetsStage } from '../../assets/assets-stage';
+import { ExportStage } from '../../compositing/export-stage';
+import { TaskDrawer } from '../../generation/task-drawer';
 import { VideoStage } from '../../storyboard/video-stage/video-stage';
 import { useVideoTarget } from '../../storyboard/use-video-target';
 import { useModelPicks } from '../../configuration/model-picks';
@@ -33,7 +36,19 @@ function firstOpenPanel(p: EpisodePipelineStatus | undefined): Panel {
   return 'assets';
 }
 
-function TopBar({ dramaTitle, dramaId, episode, stage }: { dramaTitle: string; dramaId: number; episode: EpisodeView; stage: string }) {
+function TopBar({
+  dramaTitle,
+  dramaId,
+  episode,
+  stage,
+  onHelp,
+}: {
+  dramaTitle: string;
+  dramaId: number;
+  episode: EpisodeView;
+  stage: string;
+  onHelp: () => void;
+}) {
   const t = useTranslations('studio');
   const qc = useQueryClient();
   const toastError = useToastError();
@@ -55,12 +70,19 @@ function TopBar({ dramaTitle, dramaId, episode, stage }: { dramaTitle: string; d
       <Tag tone="accent">{t('episodeChip', { number: episode.episodeNumber })}</Tag>
       <span className="hidden truncate text-sm text-ink-2 lg:inline">{stage}</span>
       <div className="ml-auto flex items-center gap-2">
-        <ModelSelect type="text" value={picks.text} onChange={(p) => setPick('text', p)} className="hidden w-44 xl:block" />
-        <ModelSelect type="image" value={picks.image} onChange={(p) => setPick('image', p)} className="hidden w-44 xl:block" />
-        <ModelSelect type="video" value={picks.video} onChange={(p) => setPick('video', p)} className="hidden w-44 xl:block" />
+        <div className="hidden items-center gap-2 xl:flex" data-tour="studio-models">
+          <ModelSelect type="text" value={picks.text} onChange={(p) => setPick('text', p)} className="w-44" />
+          <ModelSelect type="image" value={picks.image} onChange={(p) => setPick('image', p)} className="w-44" />
+          <ModelSelect type="video" value={picks.video} onChange={(p) => setPick('video', p)} className="w-44" />
+        </div>
         <Menu>
           <MenuTrigger asChild>
-            <Button size="sm" variant="ghost" aria-label={t('resolution', { resolution: episode.resolution })}>
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-label={t('resolution', { resolution: episode.resolution })}
+              data-tour="studio-resolution"
+            >
               <span className="font-mono text-xs">{episode.resolution}</span>
               <ChevronDown className="h-3 w-3" aria-hidden />
             </Button>
@@ -79,6 +101,12 @@ function TopBar({ dramaTitle, dramaId, episode, stage }: { dramaTitle: string; d
             ))}
           </MenuContent>
         </Menu>
+        <TaskDrawer episodeId={episode.id} />
+        <Tooltip content={t('help')}>
+          <Button size="icon" variant="ghost" onClick={onHelp} aria-label={t('help')}>
+            <CircleHelp className="h-4 w-4" />
+          </Button>
+        </Tooltip>
         <Tooltip content={t('refresh')}>
           <Button size="icon" variant="ghost" onClick={() => void qc.invalidateQueries()} aria-label={t('refresh')}>
             <RefreshCw className="h-4 w-4" />
@@ -91,15 +119,6 @@ function TopBar({ dramaTitle, dramaId, episode, stage }: { dramaTitle: string; d
   );
 }
 
-function LaterPanel({ title, body }: { title: string; body: string }) {
-  return (
-    <section className="mx-auto flex max-w-2xl flex-col items-start gap-3 pt-10">
-      <h2 className="font-display text-3xl font-semibold tracking-wide">{title}</h2>
-      <p className="text-ink-2">{body}</p>
-    </section>
-  );
-}
-
 /** The loaded studio: one owner for the current panel, shared by the top bar and the sidebar. */
 function StudioBody({ dramaId, dramaTitle, episode }: { dramaId: number; dramaTitle: string; episode: EpisodeView }) {
   const t = useTranslations('studio');
@@ -109,6 +128,17 @@ function StudioBody({ dramaId, dramaTitle, episode }: { dramaId: number; dramaTi
   const [collapsed, setCollapsed] = usePersistedState('studio-sidebar-collapsed', false);
   // The creator's step is kept across refreshes; an episode without a remembered step opens on the first open one.
   const panel: Panel = stored ?? firstOpenPanel(pipeline.data);
+  // Runs once the sidebar has rendered, since the first step points at it.
+  const tourSteps = useMemo(
+    () => [
+      { target: 'studio-stages', title: t('tour.stagesTitle'), description: t('tour.stagesBody') },
+      { target: 'studio-models', title: t('tour.modelsTitle'), description: t('tour.modelsBody') },
+      { target: 'studio-resolution', title: t('tour.resolutionTitle'), description: t('tour.resolutionBody') },
+      { target: 'studio-tasks', title: t('tour.tasksTitle'), description: t('tour.tasksBody') },
+    ],
+    [t],
+  );
+  const replayTour = useTour('studio', tourSteps, loaded);
   // Pin the first computed step, so saving data never moves the creator to another panel.
   useEffect(() => {
     if (loaded && stored === null && pipeline.data) setPanel(firstOpenPanel(pipeline.data));
@@ -116,7 +146,7 @@ function StudioBody({ dramaId, dramaTitle, episode }: { dramaId: number; dramaTi
 
   return (
     <div className="flex h-dvh flex-col">
-      <TopBar dramaTitle={dramaTitle} dramaId={dramaId} episode={episode} stage={t(`panels.${panel}`)} />
+      <TopBar dramaTitle={dramaTitle} dramaId={dramaId} episode={episode} stage={t(`panels.${panel}`)} onHelp={replayTour} />
       {!loaded ? (
         <Skeleton className="m-6 h-[70dvh]" />
       ) : (
@@ -129,7 +159,7 @@ function StudioBody({ dramaId, dramaTitle, episode }: { dramaId: number; dramaTi
             {panel === 'video' ? (
               <VideoStage episode={episode} onScript={() => setPanel('rewrite')} onAssets={() => setPanel('assets')} />
             ) : null}
-            {panel === 'export' ? <LaterPanel title={t('panels.export')} body={t('laterExport')} /> : null}
+            {panel === 'export' ? <ExportStage episode={episode} onVideo={() => setPanel('video')} /> : null}
           </main>
         </div>
       )}

@@ -54,12 +54,13 @@
   },
   "errors": {
     "network": "Cannot reach the Open Drama server. Check that it is running.",
-    "moderation": "The provider refused this content. Switch the video model and retry.",
+    "moderation": "The provider refused this content. Switch the model and retry.",
     "auth": "The provider rejected the API key. Check it in Settings.",
     "quota": "The provider's quota or rate limit was reached. Try again later.",
     "timeout": "The provider took too long to answer.",
     "provider": "The provider returned an error.",
-    "unknown": "Something went wrong. Try again."
+    "unknown": "Something went wrong. Try again.",
+    "config": "The service is not set up correctly. Check it in Settings."
   },
   "tour": {
     "progress": "{current} of {total}",
@@ -200,6 +201,15 @@
         "noModels": "No models listed. Edit the service to add one.",
         "defaultModel": "Default model",
         "makeDefault": "Make this the default model"
+      },
+      "tour": {
+        "replay": "Show the tour",
+        "quickTitle": "Quick setup",
+        "quickBody": "One key sets up a text, an image and a video service in a single step.",
+        "servicesTitle": "Or add services one by one",
+        "servicesBody": "Each type needs one active service with an API key. The highest-priority one is used unless an episode keeps its own.",
+        "agentsTitle": "Tune the agents",
+        "agentsBody": "The Agents tab holds the prompts and skills that write scripts, find assets, cut shots and write video prompts."
       }
     },
     "general": {
@@ -447,7 +457,6 @@
       "video": "Video production",
       "export": "Merge and export"
     },
-    "laterExport": "Merging the shots into the episode film arrives after video production.",
     "sidebar": {
       "label": "Production steps",
       "progress": "Episode progress",
@@ -623,6 +632,78 @@
         "cancel": "Cancel",
         "confirm": "Generate {count}"
       }
+    },
+    "export": {
+      "title": "Merge and export",
+      "markDone": "Mark episode done",
+      "films": "{count, plural, =0 {Films} one {# film} other {# films}}",
+      "noFilms": "No film yet. Select the shots below and merge them into the episode film.",
+      "filmTitle": "Film #{id}",
+      "play": "Play film #{id}",
+      "current": "Episode film",
+      "clips": "{count, plural, one {# clip} other {# clips}}",
+      "download": "Download",
+      "merging": "Merging",
+      "merged": "The episode film is ready.",
+      "mergeFailed": "The merge failed.",
+      "alreadyMerging": "A merge of this episode is already running.",
+      "state": {
+        "processing": "Merging",
+        "completed": "Ready",
+        "failed": "Failed"
+      },
+      "shots": "Shot clips · {done} of {total} generated",
+      "selectAll": "Select all generated",
+      "clear": "Clear",
+      "mergeSelected": "Merge selected ({count})",
+      "noShots": "This episode has no shots yet. Break the script into shots in video production.",
+      "noClips": "No shot has a video yet. Generate shot videos first.",
+      "toVideo": "Go to video production",
+      "noVideo": "No video",
+      "previewShot": "Preview shot #{number}",
+      "shotPreview": "Shot #{number}"
+    },
+    "tasks": {
+      "open": "Generation tasks",
+      "title": "Tasks",
+      "close": "Close",
+      "empty": "Nothing has been generated for this episode yet.",
+      "cap": "Showing the latest {tasks} tasks and {films} merges.",
+      "count": {
+        "processing": "{count} running",
+        "completed": "{count} done",
+        "failed": "{count} failed"
+      },
+      "status": {
+        "processing": "Running",
+        "completed": "Done",
+        "failed": "Failed"
+      },
+      "kind": {
+        "image": "Image",
+        "video": "Video",
+        "merge": "Merge"
+      },
+      "owner": {
+        "shot": "Shot {label}",
+        "character": "Character · {label}",
+        "scene": "Scene · {label}",
+        "prop": "Prop · {label}",
+        "removed": "Removed item"
+      },
+      "mergeTarget": "Full-episode merge · {count, plural, one {# clip} other {# clips}}",
+      "openActive": "Generation tasks, {count} running"
+    },
+    "help": "Show the studio tour",
+    "tour": {
+      "stagesTitle": "Work down the steps",
+      "stagesBody": "Go from the script to assets, then shot videos, then the merged film. Each finished step gets a check.",
+      "modelsTitle": "Pick the models",
+      "modelsBody": "Choose the text, image and video model for this session. Without a pick, the episode's own services are used.",
+      "resolutionTitle": "Video resolution",
+      "resolutionBody": "Set the resolution of this episode's shot videos. The choices depend on the video model.",
+      "tasksTitle": "Follow the work",
+      "tasksBody": "Images, videos and merges run in the background. Open the task list to see what is running, done or failed, and why."
     }
   }
 }

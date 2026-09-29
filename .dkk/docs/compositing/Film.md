@@ -15,6 +15,8 @@ A rendered episode film and the merge job that produced it — which shot clips 
 - Clips are concatenated strictly in shot-number order regardless of selection order.
 - Every selected shot must have a video file that exists on disk, otherwise the merge is rejected naming the missing shots.
 - Output is H.264/AAC MP4 with faststart so it streams in the browser.
+- Clips that differ in size, frame rate or audio are joined without cropping: each is fitted into the first clip's frame and every clip contributes a sound track of its own length (silence when it has none).
+- At most one merge per episode is processing at a time.
 
 
 ## Relationships

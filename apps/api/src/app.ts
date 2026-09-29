@@ -5,8 +5,10 @@ import { API_BASE, STATIC_PREFIX } from '@open-drama/contracts';
 import { env } from './env';
 import { ApiError } from './http/errors';
 import { logger, requestLogger } from './http/logger';
+import { scrubSecrets } from './lib/secrets';
 import { agentsRoutes } from './modules/agents/routes';
 import { assetsRoutes } from './modules/assets/routes';
+import { compositingRoutes } from './modules/compositing/routes';
 import { configurationRoutes } from './modules/configuration/routes';
 import { generationRoutes } from './modules/generation/routes';
 import { mediaRoutes } from './modules/media/routes';
@@ -29,6 +31,7 @@ export function createApp() {
     .route('/', assetsRoutes)
     .route('/', storyboardRoutes)
     .route('/', generationRoutes)
+    .route('/', compositingRoutes)
     .route('/', mediaRoutes)
     .route('/', agentsRoutes);
   app.route(API_BASE, api);
@@ -47,7 +50,7 @@ export function createApp() {
     if (err instanceof HTTPException && err.status < 500) {
       return c.json({ error: { code: 'VALIDATION_FAILED', message: err.message } }, 400);
     }
-    logger.error({ err, method: c.req.method, path: c.req.path }, 'unhandled error');
+    logger.error({ err: scrubSecrets(err instanceof Error ? (err.stack ?? err.message) : String(err)), method: c.req.method, path: c.req.path }, 'unhandled error');
     return c.json({ error: { code: 'INTERNAL', message: 'Internal server error' } }, 500);
   });
 

@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { serve } from '@hono/node-server';
 import { env } from './env';
@@ -8,6 +8,8 @@ import { logger } from './http/logger';
 logger.info({ dataDir: env.dataDir, version: env.OPEN_DRAMA_VERSION }, 'env parsed');
 
 for (const dir of [env.dataDir, env.storageRoot, env.workspaceDir]) mkdirSync(dir, { recursive: true });
+// temp/ holds only work in progress (partial films, stub frames); nothing there survives a restart.
+rmSync(join(env.storageRoot, 'temp'), { recursive: true, force: true });
 for (const bucket of ['uploads', 'images', 'videos', 'merged', 'temp']) {
   mkdirSync(join(env.storageRoot, bucket), { recursive: true });
 }
@@ -27,7 +29,7 @@ const { ensureWorkspace } = await import('./modules/agents/workspace/copy');
 logger.info(ensureWorkspace(), 'workspace ready');
 
 // The probe can take seconds on a cold binary, so it only warns and never delays startup.
-const { ffmpegAvailable, ffmpegBin } = await import('./lib/ffmpeg');
+const { ffmpegAvailable, ffmpegBin, killRunning } = await import('./lib/ffmpeg');
 void ffmpegAvailable().then((available) => {
   if (available) logger.info({ bin: ffmpegBin() }, 'ffmpeg available');
   else logger.warn({ bin: ffmpegBin() }, 'ffmpeg not available: merges will fail until FFMPEG_BIN is set');
@@ -43,6 +45,8 @@ const server = serve({ fetch: createApp().fetch, hostname: env.HOST, port: env.P
 
 const shutdown = (signal: string) => {
   logger.info({ signal }, 'shutting down');
+  // A render cut short is failed by boot cleanup on the next start; its encoder must not keep running meanwhile.
+  killRunning();
   server.close(() => {
     sqlite.close();
     process.exit(0);

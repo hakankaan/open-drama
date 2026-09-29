@@ -32,7 +32,7 @@ Turning an episode's shot videos into a film. The creator selects shots, the ren
 |--------|-------------|----------|-------|
 | [DerivePosterForFilm](DerivePosterForFilm.md) | When a film is rendered, extract a poster frame (media.DeriveRenditions — cross-context) so the film list shows a cover without buffering the video. | FilmRendered | — |
 | [PublishFilmToEpisode](PublishFilmToEpisode.md) | When a film is rendered, attach it to the episode as its current video (production.AttachEpisodeFilm — cross-context, see flow MergeAndExport). | FilmRendered | — |
-| [RunFfmpegConcat](RunFfmpegConcat.md) | When a merge starts, write the concat list, run FFmpeg (concat demuxer, re-encode to H.264/AAC, faststart) into the merged media directory, probe the duration, then complete or fail the merge. | MergeStarted | CompleteMerge, FailMerge |
+| [RunFfmpegConcat](RunFfmpegConcat.md) | When a merge starts, probe every clip, run FFmpeg's concat filter into the merged media directory (each clip fitted into the first clip's frame and frame rate, letterboxed, with a stereo track trimmed to its length or silence when it has none; re-encoded to H.264/AAC with faststart), probe the film's duration, then complete or fail the merge. | MergeStarted | CompleteMerge, FailMerge |
 
 ## Aggregates
 
@@ -44,7 +44,7 @@ Turning an episode's shot videos into a film. The creator selects shots, the ren
 
 | Read Model | Description | Subscribes To | Used By |
 |------------|-------------|---------------|---------|
-| [EpisodeFilms](EpisodeFilms.md) | The export stage — the episode's films newest first (status, duration, poster, path for play/download) and the shot assets available for selection with their generated state. | MergeStarted, FilmRendered, MergeFailed | Creator |
+| [EpisodeFilms](EpisodeFilms.md) | The export stage — the episode's films newest first (status, duration, poster, path for play/download). The stage reads the selectable shots and their generated state from storyboard.EpisodeShotList. | MergeStarted, FilmRendered, MergeFailed | Creator |
 | [LatestMergeStatus](LatestMergeStatus.md) | The most recent merge of an episode for polling while rendering (status, film path, duration, error). | MergeStarted, FilmRendered, MergeFailed | Creator |
 
 ## Linked ADRs

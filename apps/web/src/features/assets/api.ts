@@ -84,6 +84,8 @@ function useAssetMutation<TVars, TData>(dramaId: number, fn: (vars: TVars) => Pr
       void qc.invalidateQueries({ queryKey: productionKeys.drama(dramaId) });
       void qc.invalidateQueries({ queryKey: productionKeys.dramas });
       void qc.invalidateQueries({ queryKey: ['production', 'pipeline'] });
+      // The task drawer's badge only polls while it knows of running work.
+      void qc.invalidateQueries({ queryKey: ['generation'] });
     },
   });
 }

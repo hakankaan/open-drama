@@ -40,10 +40,12 @@ export const useHealth = () =>
 
 // Model services
 
-export const useModelServices = (type?: ServiceType, activeOnly = false) =>
+/** `usableOnly` lists what a run can use (active and keyed), the same rule as readiness; model pickers use it. */
+export const useModelServices = (type?: ServiceType, usableOnly = false) =>
   useQuery({
-    queryKey: [...configurationKeys.services, type ?? 'all', activeOnly],
-    queryFn: () => request(z.array(ModelService), 'GET', '/model-services' + qs({ type, activeOnly: activeOnly ? 1 : undefined })),
+    queryKey: [...configurationKeys.services, type ?? 'all', usableOnly],
+    queryFn: () => request(z.array(ModelService), 'GET', '/model-services' + qs({ type, activeOnly: usableOnly ? 1 : undefined })),
+    select: usableOnly ? (list: ModelService[]) => list.filter((s) => s.hasKey) : undefined,
   });
 
 /** Every model-service change refreshes the lists and the readiness banner. */

@@ -6,7 +6,7 @@
 
 ## Summary
 
-The export stage — the episode's films newest first (status, duration, poster, path for play/download) and the shot assets available for selection with their generated state.
+The export stage — the episode's films newest first (status, duration, poster, path for play/download). The stage reads the selectable shots and their generated state from storyboard.EpisodeShotList.
 
 
 ## Fields
@@ -15,7 +15,6 @@ The export stage — the episode's films newest first (status, duration, poster,
 |------|------|-------------|
 | `episodeId` | `ID` | — |
 | `films` | `FilmRow[]` | — |
-| `shots` | `ShotSelectionRow[]` | — |
 
 
 

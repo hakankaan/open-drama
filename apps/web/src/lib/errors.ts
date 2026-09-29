@@ -27,8 +27,9 @@ export function useToastError() {
           return toast.error(t('quota'), { description: err.message });
         case 'timeout':
           return toast.error(t('timeout'), { description: err.message });
-        case 'provider':
         case 'config':
+          return toast.error(t('config'), { description: err.message });
+        case 'provider':
           return toast.error(t('provider'), { description: err.message });
       }
       if (err.code === 'INTERNAL') return toast.error(fallback ?? t('unknown'));

@@ -262,6 +262,7 @@ Read model → endpoint map for the implicit ones: `VideoPromptBatchStatus` and 
 | `FFMPEG_BIN`, `FFPROBE_BIN` | bundled | override binaries |
 | `OPEN_DRAMA_AI_DISABLE_THINKING`, `OPEN_DRAMA_AI_MAX_TOKENS`, `OPEN_DRAMA_AI_THINKING_OFF_PATCH` | see Plan 2 | transport patches |
 | `OPEN_DRAMA_STUB_PROVIDERS` | unset | `1` registers the stub adapters (Plan 2) for offline development |
+| `OPEN_DRAMA_VIDEO_CONCURRENCY` | `4` | shot videos one episode generates at once; further requests wait for a slot (Plan 2 Phase G) |
 | `LOG_LEVEL` | `info` | pino |
 | `OPEN_DRAMA_VERSION` | from package.json | reported by `/health` |
 
@@ -273,7 +274,7 @@ Read model → endpoint map for the implicit ones: `VideoPromptBatchStatus` and 
 
 **Media** (`modules/media`): uuid file names with the original extension under `static/{uploads|images|videos|merged|temp}`; `storeRemoteFile(url, kind)`, `storeInlineImage(b64, mime)`, `deriveRenditions(path, kind)` (400 px WebP thumbnail via sharp; 640 px JPEG poster at 0.5 s via FFmpeg; never throws), `toAbsolute(rel)` that refuses paths escaping `STORAGE_ROOT`, upload validation (image by extension; video ≤ 50 MB `.mp4/.mov/.webm/.m4v`; audio ≤ 20 MB `.mp3/.wav/.m4a/.aac`; MIME checked when present and not `octet-stream`), and `storageUsage()` walking the data dir by bucket with a 60 s cache.
 
-**Compositing** (`modules/compositing`): `mergeShots(episodeId, shotIds?)` → load live shots in shot order, filter to those with `videoPath`, verify each file exists (reject naming missing shot numbers), verify the FFmpeg suite, reject with `409` if a film for the episode is processing, insert `films` row `processing`, then detached: write the concat list under `static/temp`, spawn `ffmpeg-static` directly (`-f concat -safe 0 -i list -fflags +genpts -c:v libx264 -preset medium -crf 23 -c:a aac -ar 48000 -b:a 192k -movflags +faststart`), ffprobe the duration, `deriveRenditions(film, 'video')`, update the film row, `AttachEpisodeFilm`. Failures set `error`. No `fluent-ffmpeg` (unmaintained); `lib/ffmpeg.ts` wraps `child_process.spawn` with timeouts and stderr capture.
+**Compositing** (`modules/compositing`): `mergeShots(episodeId, shotIds?)` → load live shots in shot order, filter to those with `videoPath`, verify each file exists (reject naming missing shot numbers), verify the FFmpeg suite, reject with `409` if a film for the episode is processing, insert `films` row `processing`, then detached: ffprobe every clip (size, frame rate, audio, duration), spawn `ffmpeg-static` directly with the concat filter — each clip scaled and padded into the first clip's frame at its frame rate, with its own audio resampled to 48 kHz stereo and padded/trimmed to the clip's length, or generated silence when it has none (the concat demuxer cannot join clips that differ in any of these, which mixed providers and uploads do) — encoding `-c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p -c:a aac -ar 48000 -b:a 192k -movflags +faststart`, then ffprobe the duration, `deriveRenditions(film, 'video')`, update the film row, `AttachEpisodeFilm`. Failures set `error`. No `fluent-ffmpeg` (unmaintained); `lib/ffmpeg.ts` wraps `child_process.spawn` with timeouts and stderr capture.
 
 **Style prompt injection**: `getDramaStylePrompt(dramaId)` returns the preset fragment or `''`. It is prepended by the assets final-prompt save tools and by `RequestShotVideo`; the frontend never adds style words.
 
@@ -339,9 +340,9 @@ Each phase ends with a "done when" that is checked by running the system (`pnpm 
 - Done when: two short stub clips merge into an MP4 under `static/merged/`, the film has a duration and a poster, and the episode's `filmPath` points at it; a merge with a deleted clip file fails fast naming the shot.
 
 ### Phase 8 — deployment (1 day)
-- `docker/Dockerfile`: stage 1 build contracts + api (`tsc`), stage 2 build web (`next build`, `output: 'standalone'`), runtime stage on `node:22-bookworm-slim` with both apps, `ffmpeg-static` binaries, `entrypoint.sh` that exports `API_ORIGIN=http://127.0.0.1:4000`, starts the API on `127.0.0.1:4000` and the web on `0.0.0.0:3000`, forwards `SIGTERM` to both and exits when either child exits (`wait -n`), healthcheck on `/api/v1/health` through the API, `VOLUME /app/data`.
+- `docker/Dockerfile`: stage 1 build contracts + api (`tsc`), stage 2 build web (`next build`, `output: 'standalone'`), runtime stage on `node:22-bookworm-slim` with both apps and Debian's `ffmpeg` package (`FFMPEG_BIN`/`FFPROBE_BIN` point at it: `ffprobe-static` ships no linux/arm64 binary, so the bundled npm binaries are removed from the image), `entrypoint.sh` that exports `API_ORIGIN=http://127.0.0.1:4000`, starts the API on `127.0.0.1:4000` and the web on `0.0.0.0:3000`, forwards `SIGTERM` to both and exits when either child exits (`wait -n`), healthcheck on `/api/v1/health` through the API, `VOLUME /app/data`.
 - `docker-compose.yml`: one service, named volume `open-drama-data`, port `3000`.
-- Non-Docker: `pnpm build && pnpm start` runs both with `concurrently`; document `PUBLIC_BASE_URL`, `HOST` and the exposure warning.
+- Non-Docker: `pnpm build && pnpm start` runs both with `concurrently` (the API with `NODE_ENV=production`, the web through its standalone `server.js`, the same runtime path as the image); document `PUBLIC_BASE_URL`, `HOST` and the exposure warning.
 - Done when: `docker compose up --build` serves the launcher on `:3000`, creates a drama, and the data persists across `down/up`; `docker stop` terminates both processes cleanly.
 
 Estimated total: 8–11 working days for one engineer, assuming Plan 2 phases A–E land in parallel.

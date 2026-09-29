@@ -41,6 +41,8 @@ export const minimaxBase = (baseUrl: string) => baseUrl.replace(/\/v1\/?$/, '');
  */
 export const minimaxVideo: VideoAdapter = {
   provider: 'minimax',
+  // Submits answer with a task id; two minutes covers uploading inline reference images on a slow link.
+  submitTimeoutMs: 120_000,
   formatMention: (_slot, name) => name,
   buildGenerateRequest(config, record) {
     if (!record.prompt) throw new ConfigError('MiniMax needs a text prompt');

@@ -1,0 +1,709 @@
+{
+  "common": {
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "create": "创建",
+    "edit": "编辑",
+    "close": "关闭",
+    "retry": "重试",
+    "loading": "加载中…"
+  },
+  "nav": {
+    "label": "主导航",
+    "projects": "项目",
+    "settings": "设置",
+    "github": "GitHub 上的源代码"
+  },
+  "theme": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "系统",
+    "lightLabel": "浅色",
+    "darkLabel": "深色",
+    "systemLabel": "跟随系统",
+    "current": "主题：{theme}",
+    "switchTo": "切换到{theme}主题"
+  },
+  "language": {
+    "menu": "语言",
+    "confirmTitle": "切换到“{language}”？",
+    "confirmBody": "界面和此后 AI 写的所有内容（剧本、提取的素材、提示词）会一起切换语言。已有内容保持不变。",
+    "confirm": "切换语言"
+  },
+  "readiness": {
+    "missing": "{count, plural, other {请先添加{types}服务并填写 API Key，才能开始制作剧集。}}",
+    "action": "配置 AI 服务"
+  },
+  "serviceType": {
+    "text": "文本",
+    "image": "图像",
+    "video": "视频"
+  },
+  "status": {
+    "draft": "未开始",
+    "active": "进行中",
+    "completed": "已完成",
+    "change": "状态：{status}。更改状态"
+  },
+  "aspectRatio": {
+    "16:9": "16:9",
+    "9:16": "9:16",
+    "1:1": "1:1",
+    "adaptive": "自适应"
+  },
+  "errors": {
+    "network": "无法连接 Open Drama 服务器，请确认它正在运行。",
+    "moderation": "服务商拒绝了该内容。换个模型再试试。",
+    "auth": "服务商拒绝了该 API Key，请到设置中检查。",
+    "quota": "已达到服务商的额度或限流上限，请稍后再试。",
+    "timeout": "服务商响应超时。",
+    "provider": "服务商返回了错误。",
+    "unknown": "出错了，请重试。",
+    "config": "服务配置有误，请到设置中检查。"
+  },
+  "tour": {
+    "progress": "{current}/{total}",
+    "next": "下一步",
+    "back": "上一步",
+    "done": "完成"
+  },
+  "launcher": {
+    "title": "项目",
+    "subtitle": "每个项目就是一部短剧，包含画风、画幅和它的所有剧集。",
+    "summary": "{projects, plural, =0 {还没有项目} other {# 个项目}}，{active} 个进行中，{styles} 种画风",
+    "help": "再看一遍引导",
+    "newProject": "新建项目",
+    "search": "搜索项目",
+    "filterLabel": "按状态筛选",
+    "all": "全部",
+    "sortUpdated": "最近更新",
+    "sortName": "名称",
+    "loadError": "项目加载失败。",
+    "retry": "重试",
+    "empty": {
+      "title": "开始你的第一部短剧",
+      "body": "一个项目收纳一部短剧的所有剧集，并固定画幅和画风，之后的每张图片、每段视频都会沿用。"
+    },
+    "noMatch": "没有符合筛选条件的项目。",
+    "clearFilters": "清除筛选",
+    "deleteTitle": "删除“{title}”？",
+    "deleteBody": "项目会从 Open Drama 中移除，文件仍保留在数据文件夹里。",
+    "deleteConfirm": "删除项目",
+    "tour": {
+      "welcomeTitle": "欢迎使用 Open Drama",
+      "welcomeBody": "把一个故事做成短剧：剧本、角色和场景、逐个分镜生成视频，最后合成一部成片。",
+      "settingsTitle": "连接你的模型",
+      "settingsBody": "在设置中添加文本、图像和视频服务。一个 Volcengine Ark 的 API Key 就能搞定这三项。",
+      "createTitle": "创建项目",
+      "createBody": "选择画风和画幅，两者都会应用到项目的每一集。"
+    },
+    "create": {
+      "title": "新建项目",
+      "description": "画幅和画风会应用到项目中的每张图片和每段视频。",
+      "name": "名称",
+      "nameRequired": "给项目起个名字吧。",
+      "namePlaceholder": "卖灯人",
+      "style": "画风",
+      "stylePlaceholder": "选择画风",
+      "aspectRatio": "画幅",
+      "aspectRatioHint": "创建后无法更改。竖屏短剧请选 9:16。",
+      "submit": "创建项目"
+    },
+    "card": {
+      "open": "打开“{title}”",
+      "more": "项目操作",
+      "openAction": "打开",
+      "delete": "删除",
+      "episodes": "{count, plural, other {# 集}}",
+      "episodesLabel": "剧集",
+      "characters": "{count, plural, other {# 个角色}}",
+      "charactersLabel": "角色",
+      "scenes": "{count, plural, other {# 个场景}}",
+      "scenesLabel": "场景"
+    }
+  },
+  "settings": {
+    "title": "设置",
+    "tabs": {
+      "ai": "AI 服务",
+      "general": "通用",
+      "styles": "画风",
+      "storage": "存储",
+      "about": "关于",
+      "agents": "智能体"
+    },
+    "ai": {
+      "types": {
+        "text": "文本",
+        "image": "图像",
+        "video": "视频"
+      },
+      "ready": "已就绪",
+      "missing": "未配置",
+      "addFrom": "添加",
+      "addProvider": "添加 {provider} 服务",
+      "comingLater": "将在迭代 2 开放",
+      "empty": "还没有{type}服务。从上方选一个服务商添加。",
+      "deleteTitle": "删除“{name}”？",
+      "deleteBody": "锁定了该服务的剧集会改用同类型的下一个已启用服务。",
+      "deleteConfirm": "删除服务",
+      "quick": {
+        "title": "通过 {gateway} 快速配置",
+        "body": "一个 {gateway} API Key 就能同时配置好文本、图像和视频服务，之后仍可修改。",
+        "getKey": "获取 API Key",
+        "key": "API Key",
+        "keyPlaceholder": "粘贴你的 API Key",
+        "apply": "一键配置",
+        "applied": "已配置 {count} 个服务。"
+      },
+      "models": {
+        "isDefault": "默认模型",
+        "makeDefault": "设为默认模型",
+        "remove": "移除 {model}",
+        "placeholder": "输入模型 ID 后按回车",
+        "addMore": "再加一个"
+      },
+      "dialog": {
+        "createTitle": "添加{type}服务",
+        "editTitle": "编辑{type}服务",
+        "presets": "服务商",
+        "iteration2": "迭代 2",
+        "name": "名称",
+        "provider": "服务商",
+        "apiKey": "API Key",
+        "keyHint": "仅保存在本服务器上，之后不会再显示。",
+        "keyStored": "已保存 API Key。留空即保持不变。",
+        "keyMissing": "尚未保存 API Key。",
+        "replaceKey": "输入新的 API Key 以替换",
+        "keyRequired": "请填写 API Key。",
+        "baseUrl": "Base URL",
+        "models": "模型",
+        "modelsHint": "第一个模型为默认模型。点击模型即可设为默认。",
+        "priority": "优先级",
+        "priorityHint": "默认使用同类型中优先级最高的已启用服务。",
+        "temperature": "温度",
+        "temperatureHint": "0 到 2。留空则使用服务商的默认值。",
+        "test": "测试连接",
+        "required": "必填。",
+        "invalidUrl": "请输入以 http:// 或 https:// 开头的 URL。",
+        "invalidTemperature": "请输入 0 到 2 之间的数字。"
+      },
+      "row": {
+        "keySet": "已设置 Key",
+        "noKey": "未设置 Key",
+        "disabled": "已停用",
+        "priority": "优先级 {priority}",
+        "test": "测试",
+        "active": "启用 {name}",
+        "edit": "编辑",
+        "delete": "删除",
+        "noModels": "未列出模型。编辑服务即可添加。",
+        "defaultModel": "默认模型",
+        "makeDefault": "设为默认模型"
+      },
+      "tour": {
+        "replay": "查看引导",
+        "quickTitle": "快速配置",
+        "quickBody": "一个 API Key，一步配置好文本、图像和视频服务。",
+        "servicesTitle": "或者逐个添加服务",
+        "servicesBody": "每种类型都需要一个填好 API Key 的已启用服务。默认使用优先级最高的那个，除非某一集保留了自己的服务。",
+        "agentsTitle": "调整智能体",
+        "agentsBody": "“智能体”标签页里是负责写剧本、提取素材、拆分镜和写视频提示词的提示词与技能。"
+      }
+    },
+    "general": {
+      "language": "语言",
+      "languageBody": "界面语言和 AI 写作使用的语言会一起切换。",
+      "appearance": "外观",
+      "appearanceBody": "“跟随系统”会沿用操作系统的外观设置。"
+    },
+    "styles": {
+      "summary": "共 {total} 种画风，其中 {active} 种可在创建项目时选择。",
+      "add": "添加画风",
+      "builtIn": "内置",
+      "disabled": "已停用",
+      "active": "在新项目中提供 {name}",
+      "edit": "编辑",
+      "delete": "删除",
+      "deleteTitle": "删除“{name}”？",
+      "deleteBody": "项目会保留原有的画风标识，但不再添加对应的提示词片段。正在使用的画风无法删除，可以改为停用。",
+      "deleteConfirm": "删除画风",
+      "dialog": {
+        "createTitle": "添加画风",
+        "editTitle": "编辑画风",
+        "name": "名称",
+        "key": "标识",
+        "keyHint": "只能用小写字母、数字和短横线，创建后不可更改。",
+        "keyImmutable": "标识创建后不可更改。",
+        "invalidKey": "请只使用小写字母、数字和短横线。",
+        "prompt": "提示词片段",
+        "promptHint": "使用该画风的项目中，每条图像和视频提示词前都会加上这段内容。",
+        "description": "描述",
+        "sortOrder": "排序",
+        "required": "必填。"
+      }
+    },
+    "storage": {
+      "dataDir": "数据文件夹",
+      "mode": {
+        "local": "本地",
+        "docker": "Docker"
+      },
+      "root": "文件夹",
+      "database": "数据库",
+      "media": "媒体文件",
+      "workspace": "智能体工作区",
+      "backupNote": "Open Drama 保存的所有内容都在这个文件夹里。复制它即可备份或迁移你的作品。",
+      "usage": "磁盘占用",
+      "counting": "统计中…",
+      "total": "已用 {size}",
+      "free": "可用 {size}",
+      "empty": "暂无存储内容。",
+      "files": "{count, plural, other {# 个文件}}",
+      "bucket": {
+        "database": "数据库",
+        "images": "图片",
+        "videos": "视频",
+        "merged": "成片",
+        "uploads": "上传文件",
+        "temp": "临时文件",
+        "workspace": "工作区",
+        "other": "其他"
+      }
+    },
+    "about": {
+      "version": "版本 {version}",
+      "versionUnknown": "版本未知",
+      "exposureTitle": "没有用户账号",
+      "exposureBody": "任何能打开此页面的人都能使用全部功能，包括你保存的 API Key。请把 Open Drama 放在私有网络中，或在它前面加一层带身份验证的反向代理。",
+      "source": "源代码",
+      "licence": "许可证：CC BY-NC-SA 4.0"
+    },
+    "agents": {
+      "languageNote": "你正在编辑“{language}”版本的文本。切换语言即可编辑其他版本；没有单独文本的语言会使用英文版本。",
+      "skillCount": "{count, plural, other {# 个技能}}",
+      "prompt": "系统提示词",
+      "skills": "技能（{count}）",
+      "addSkill": "添加技能",
+      "noSkills": "这个智能体还没有技能。",
+      "saved": "已保存，下次运行时生效。",
+      "savedState": "已保存",
+      "fallback": "使用英文版",
+      "builtIn": "内置文本",
+      "reset": "重置",
+      "resetTitle": "重置这条提示词？",
+      "resetBodyEn": "英文提示词将恢复为 Open Drama 自带的版本，你的修改会丢失。",
+      "resetBodyVariant": "将移除该语言的提示词，重新使用英文版本。",
+      "deleteVariant": "移除此语言",
+      "deleteSkillTitle": "删除“{name}”？",
+      "deleteSkillBody": "该技能及其所有语言版本都会被删除，智能体从下次运行起不再使用它。",
+      "deleteVariantBody": "将移除该语言的文本，重新使用英文版本。",
+      "add": {
+        "title": "添加技能",
+        "description": "技能是智能体每次运行都会读取的指引。创建后再编写具体内容。",
+        "dir": "文件夹名称",
+        "dirHint": "保存为 {path}",
+        "invalidDir": "请只使用小写字母、数字和短横线。",
+        "name": "名称",
+        "required": "必填。",
+        "descriptionField": "描述",
+        "submit": "添加技能"
+      }
+    }
+  },
+  "assets": {
+    "uploaded": "图片已添加。",
+    "required": "必填。",
+    "finalPromptHint": "生成参考图时实际使用的提示词。",
+    "staleHint": "已过时：这条提示词写好后，描述又有改动",
+    "kind": {
+      "character": "角色",
+      "scene": "场景",
+      "prop": "道具"
+    },
+    "card": {
+      "open": "打开“{name}”",
+      "generating": "生成中",
+      "ready": "已就绪",
+      "failed": "失败",
+      "noImage": "暂无图片",
+      "stale": "已过时",
+      "replaceImage": "替换图片",
+      "uploadImage": "上传图片",
+      "delete": "删除",
+      "generate": "生成图片",
+      "regenerate": "重新生成"
+    },
+    "fields": {
+      "name": "名称",
+      "role": "角色定位",
+      "appearance": "外貌",
+      "styling": "服装造型",
+      "description": "描述",
+      "location": "地点",
+      "time": "时段",
+      "prompt": "场景布置",
+      "lighting": "光线",
+      "type": "类型",
+      "finalPrompt": "图像提示词"
+    },
+    "create": {
+      "character": "添加角色",
+      "scene": "添加场景",
+      "prop": "添加道具"
+    },
+    "filter": {
+      "all": "全部"
+    },
+    "group": {
+      "character": "角色",
+      "scene": "场景",
+      "prop": "道具"
+    },
+    "add": {
+      "character": "添加角色",
+      "scene": "添加场景",
+      "prop": "添加道具"
+    },
+    "empty": {
+      "character": "还没有角色。可以从剧本中提取，也可以在这里手动添加。",
+      "scene": "还没有场景。场景指某个时段下的某个地点。",
+      "prop": "还没有道具。这里只放剧情离不开的关键物件。"
+    },
+    "needEpisode": "请先创建一集：提示词需要结合具体某一集来写。",
+    "alreadyGenerating": "这个素材的图片正在生成中。",
+    "saveFirst": "请先保存你的修改。",
+    "generatePrompt": "生成提示词",
+    "regeneratePrompt": "重写提示词",
+    "copy": "复制",
+    "copied": "已复制。",
+    "batch": {
+      "progress": "正在启动图片生成：{done}/{total}",
+      "summary": "已开始 {started} 个，{already} 个已在生成中，{failed} 个失败"
+    }
+  },
+  "project": {
+    "notFound": "该项目不存在或已被删除。",
+    "back": "全部项目",
+    "aspect": "画幅 {ratio}",
+    "counts": "{episodes, plural, other {# 集}}，{characters, plural, other {# 个角色}}，{scenes, plural, other {# 个场景}}，{props, plural, other {# 个道具}}",
+    "addEpisode": "添加剧集",
+    "addEpisodeN": "添加第 {number} 集",
+    "tabs": {
+      "episodes": "剧集",
+      "assets": "素材库"
+    },
+    "deleteEpisodeTitle": "删除“{title}”？",
+    "deleteEpisodeBody": "这一集会从项目中移除，文件仍保留在数据文件夹里。",
+    "deleteEpisodeConfirm": "删除剧集",
+    "newEpisode": {
+      "title": "添加第 {number} 集",
+      "lockNote": "这一集会固定使用当前已启用的图像和视频服务，之后即使你更换服务也不受影响。",
+      "name": "标题",
+      "nameHint": "选填，默认为“第 {number} 集”。",
+      "resolution": "视频分辨率",
+      "resolutionHint": "应用于本集的所有视频片段，之后可以修改。",
+      "submit": "添加剧集"
+    },
+    "episode": {
+      "more": "剧集操作",
+      "delete": "删除",
+      "resolution": "分辨率 {resolution}。更改分辨率",
+      "scriptReady": "剧本已就绪",
+      "merged": "成片已就绪",
+      "open": "打开工作台"
+    }
+  },
+  "studio": {
+    "notFound": "这一集不存在或已被删除。",
+    "backToProject": "返回项目",
+    "episodeChip": "第 {number} 集",
+    "scriptDone": "剧本已完成",
+    "script": {
+      "raw": "原始内容",
+      "chars": "{count, plural, other {# 字}}",
+      "save": "保存",
+      "saved": "已保存。",
+      "rawHint": "粘贴这一集的原文：小说章节、大纲或笔记都行。下一步 AI 会把它改写成拍摄剧本。",
+      "rawPlaceholder": "粘贴这一集的小说章节、大纲或笔记。",
+      "toRewrite": "下一步：剧本",
+      "toRaw": "前往原始内容",
+      "rewriteTitle": "剧本",
+      "needRaw": "请先粘贴原始内容，剧本要基于它来写。",
+      "rewriteBody": "AI 会把原始内容改写成包含场景标题、动作和对白的拍摄剧本。你也可以直接把原始内容当作剧本。",
+      "running": "正在写剧本，通常不到一分钟。",
+      "start": "生成剧本",
+      "skip": "直接用原始内容作剧本",
+      "failed": "改写失败：{error}",
+      "failedKept": "上次改写失败，已保留下方的剧本：{error}",
+      "script": "剧本",
+      "again": "重新改写",
+      "againTitle": "重新改写剧本？",
+      "againBody": "AI 会根据原始内容重新写一版剧本，替换当前剧本，你的修改也会被覆盖。"
+    },
+    "models": {
+      "default": "默认模型",
+      "text": "文本模型",
+      "image": "图像模型",
+      "video": "视频模型"
+    },
+    "resolution": "分辨率 {resolution}。更改分辨率",
+    "refresh": "刷新",
+    "panels": {
+      "raw": "原始内容",
+      "rewrite": "剧本",
+      "assets": "素材",
+      "video": "视频制作",
+      "export": "合成导出"
+    },
+    "sidebar": {
+      "label": "制作步骤",
+      "progress": "本集进度",
+      "expand": "展开侧边栏",
+      "collapse": "收起",
+      "stage": {
+        "script": "剧本",
+        "assets": "素材",
+        "video": "视频",
+        "export": "导出"
+      },
+      "section": {
+        "script": "剧本",
+        "production": "制作",
+        "export": "导出"
+      },
+      "panel": {
+        "raw": "原始内容",
+        "rewrite": "AI 改写",
+        "assets": "素材",
+        "video": "视频制作",
+        "export": "合成导出"
+      },
+      "state": {
+        "done": "已完成",
+        "active": "当前步骤",
+        "idle": "未开始"
+      }
+    },
+    "assets": {
+      "title": "素材",
+      "needScript": "请先完成剧本：素材要从剧本中提取。",
+      "toScript": "前往剧本",
+      "emptyBody": "从剧本中提取角色、场景和关键道具，也可以自己添加。",
+      "extractAll": "全部提取",
+      "extract": "提取",
+      "reextract": "重新提取",
+      "extracting": "提取中",
+      "extractingBody": "正在读取剧本，完成后新素材会出现在这里。",
+      "extractFailed": "提取失败",
+      "ready": "{ready}/{total} 已就绪",
+      "generateMissing": "{count, plural, =0 {图片已全部就绪} other {生成缺少的 # 张图片}}",
+      "generateKind": "{count, plural, =0 {已全部就绪} other {补齐缺失（#）}}",
+      "deleteTitle": "删除“{name}”？",
+      "deleteBody": "该素材会从项目的所有剧集中移除，图片仍保留在数据文件夹里。",
+      "deleteConfirm": "删除素材"
+    },
+    "video": {
+      "title": "视频制作",
+      "needScript": "请先完成剧本：分镜要从剧本中拆出来。",
+      "toScript": "前往剧本",
+      "toAssets": "前往素材",
+      "emptyBody": "把剧本拆成每段 8 到 15 秒的分镜。每个分镜都有描述、绑定的素材和视频提示词。",
+      "breakingBody": "正在拆分镜，完成后会显示在这里。",
+      "lockedModel": "视频使用 {name} 的 {model}。可在顶部栏换用其他视频模型。",
+      "noVideoService": "没有已启用的视频服务。生成视频前请先在设置中添加。",
+      "breakdown": "拆分镜",
+      "breaking": "拆分中",
+      "breakdownFailed": "拆分镜失败：{error}",
+      "breakdownFailedKept": "上次拆分镜失败，已保留这些分镜：{error}",
+      "promptsFailed": "上一批提示词生成失败：{error}",
+      "summary": "{count, plural, other {# 个分镜}} · {seconds} 秒",
+      "generated": "已生成 {done}/{total}",
+      "breakAgain": "重新拆分",
+      "breakAgainTitle": "重新拆分剧本？",
+      "breakAgainBody": "新的拆分结果会替换当前的分镜及其已生成的视频。如果拆分失败，会恢复当前的分镜。",
+      "breakAgainConfirm": "重新拆分",
+      "fillPrompts": "生成 {count, plural, other {# 条提示词}}",
+      "promptsDone": "提示词已完成",
+      "promptProgress": "提示词 {done}/{total}",
+      "retryFailed": "重试失败项（{count}）",
+      "selectMode": "选择",
+      "generateMissing": "生成视频（{count}）",
+      "generateSelected": "生成所选（{count}）",
+      "resizeList": "调整分镜列表宽度",
+      "resizeInspector": "调整播放器大小",
+      "unmatched": "未绑定到此分镜，将作为纯文本发送：{names}",
+      "dropped": "超出模型的参考数量上限，已省略：{names}",
+      "alreadyGenerating": "这个分镜正在生成中。",
+      "moderationHint": "服务商拒绝了该内容，换个视频模型再试试。",
+      "shotN": "分镜 #{number}",
+      "selectShot": "选择分镜 #{number}",
+      "generateShot": "生成分镜 #{number}",
+      "seconds": "{seconds} 秒",
+      "state": {
+        "pending": "未生成",
+        "generating": "生成中",
+        "done": "已完成",
+        "failed": "失败"
+      },
+      "filter": {
+        "label": "筛选分镜",
+        "all": "全部",
+        "pending": "待生成",
+        "generating": "生成中",
+        "done": "已完成",
+        "failed": "失败",
+        "none": "该筛选下没有分镜。"
+      },
+      "quick": {
+        "all": "全选",
+        "pending": "选未生成",
+        "failed": "选失败项",
+        "none": "全不选"
+      },
+      "fields": {
+        "description": "分镜描述",
+        "atmosphere": "氛围",
+        "videoPrompt": "视频提示词"
+      },
+      "refs": {
+        "title": "参考素材",
+        "goGenerate": "{count, plural, other {生成缺少的 # 张图片}}",
+        "characters": "角色",
+        "scene": "场景",
+        "props": "道具",
+        "noScene": "无场景",
+        "usable": "可用",
+        "notGenerated": "未生成",
+        "unbound": "未绑定",
+        "none": "本集暂无",
+        "noneBound": "此分镜未绑定任何素材。",
+        "character": "角色",
+        "prop": "道具"
+      },
+      "extra": {
+        "title": "额外参考",
+        "addImage": "添加参考图片",
+        "addVideo": "添加参考视频",
+        "addAudio": "添加参考音频",
+        "uploading": "上传中…",
+        "empty": "上传的图片、视频或音频会在绑定的素材之后发送。",
+        "video": "参考视频",
+        "audio": "参考音频",
+        "remove": "移除"
+      },
+      "prompt": {
+        "generate": "AI 编写",
+        "regenerate": "AI 重写",
+        "placeholder": "输入 @ 可提及已绑定的角色、场景或道具。",
+        "picker": "已绑定素材",
+        "pickerEmpty": "没有匹配的已绑定素材。",
+        "unbound": "未绑定到此分镜",
+        "hint": "用 @[名称] 提及素材，会把它的图片作为参考一起发送。",
+        "noBindings": "先绑定素材，才能提及它们。"
+      },
+      "inspector": {
+        "setMain": "设为主视频",
+        "download": "下载",
+        "noVideo": "暂无视频",
+        "history": "版本（{count}）",
+        "previewClip": "预览 {seconds} 秒版本",
+        "main": "主视频",
+        "deleteClip": "删除此版本",
+        "noHistory": "生成的版本会显示在这里。",
+        "references": "已作为参考发送",
+        "duration": "时长（秒）",
+        "config": "{model} · {resolution} · {seconds} 秒",
+        "defaultModel": "默认模型",
+        "generate": "生成视频",
+        "regenerate": "重新生成"
+      },
+      "batch": {
+        "progress": "正在提交视频 {done}/{total}",
+        "summary": "已开始 {started} 个，{already} 个已在生成中，{failed} 个失败",
+        "confirmTitle": "生成 {count, plural, other {# 个视频}}？",
+        "confirmBody": "每个分镜会发送给视频模型一次。生成费用由服务商收取。",
+        "shots": "分镜",
+        "seconds": "总时长（秒）",
+        "model": "模型",
+        "defaultModel": "本集默认",
+        "resolution": "分辨率",
+        "cancel": "取消",
+        "confirm": "生成 {count} 个"
+      }
+    },
+    "export": {
+      "title": "合成导出",
+      "markDone": "标记本集完成",
+      "films": "{count, plural, =0 {成片} other {# 部成片}}",
+      "noFilms": "还没有成片。在下方选择分镜，把它们合成为本集成片。",
+      "filmTitle": "成片 #{id}",
+      "play": "播放成片 #{id}",
+      "current": "本集成片",
+      "clips": "{count, plural, other {# 个片段}}",
+      "download": "下载",
+      "merging": "合成中",
+      "merged": "本集成片已就绪。",
+      "mergeFailed": "合成失败。",
+      "alreadyMerging": "本集已有合成任务在进行中。",
+      "state": {
+        "processing": "合成中",
+        "completed": "已就绪",
+        "failed": "失败"
+      },
+      "shots": "分镜片段 · 已生成 {done}/{total}",
+      "selectAll": "全选已生成",
+      "clear": "清空",
+      "mergeSelected": "合成所选（{count}）",
+      "noShots": "本集还没有分镜。请先在视频制作中拆分镜。",
+      "noClips": "还没有分镜生成视频。请先生成分镜视频。",
+      "toVideo": "前往视频制作",
+      "noVideo": "无视频",
+      "previewShot": "预览分镜 #{number}",
+      "shotPreview": "分镜 #{number}"
+    },
+    "tasks": {
+      "open": "生成任务",
+      "title": "任务",
+      "close": "关闭",
+      "empty": "这一集还没有生成过任何内容。",
+      "cap": "仅显示最近 {tasks} 个任务和 {films} 次合成。",
+      "count": {
+        "processing": "{count} 个进行中",
+        "completed": "{count} 个已完成",
+        "failed": "{count} 个失败"
+      },
+      "status": {
+        "processing": "进行中",
+        "completed": "已完成",
+        "failed": "失败"
+      },
+      "kind": {
+        "image": "图片",
+        "video": "视频",
+        "merge": "合成"
+      },
+      "owner": {
+        "shot": "分镜 {label}",
+        "character": "角色 · {label}",
+        "scene": "场景 · {label}",
+        "prop": "道具 · {label}",
+        "removed": "已删除的条目"
+      },
+      "mergeTarget": "整集合成 · {count, plural, other {# 个片段}}",
+      "openActive": "生成任务，{count} 个进行中"
+    },
+    "help": "查看工作台引导",
+    "tour": {
+      "stagesTitle": "按步骤往下做",
+      "stagesBody": "从剧本到素材，再到分镜视频，最后合成成片。每完成一步都会打上勾。",
+      "modelsTitle": "选择模型",
+      "modelsBody": "为本次会话选择文本、图像和视频模型。不选的话，就使用本集自己的服务。",
+      "resolutionTitle": "视频分辨率",
+      "resolutionBody": "设置本集分镜视频的分辨率。可选项取决于视频模型。",
+      "tasksTitle": "跟进进度",
+      "tasksBody": "图片、视频和合成都在后台运行。打开任务列表，可以看到哪些在运行、已完成或失败，以及失败原因。"
+    }
+  }
+}

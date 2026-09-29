@@ -55,7 +55,7 @@ function Resizer({ onDrag, onReset, label }: { onDrag: (dx: number) => void; onR
       aria-label={label}
       onPointerDown={start}
       onDoubleClick={onReset}
-      className="w-1.5 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-accent/30"
+      className="w-1.5 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-accent/30 max-[1080px]:hidden"
     />
   );
 }
@@ -233,7 +233,7 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
   }
 
   return (
-    <div className="-m-6 flex h-[calc(100%+3rem)] min-h-[560px] flex-col">
+    <div className="-m-6 flex h-[calc(100%+3rem)] min-h-[560px] flex-col max-[1080px]:h-auto">
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
         <h2 className="font-display text-2xl font-semibold tracking-wide">{t('title')}</h2>
         <Tag>{t('summary', { count: shots.length, seconds: Math.round(list.data.totalDurationSeconds) })}</Tag>
@@ -304,8 +304,12 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
         </p>
       ) : null}
 
-      <div className="flex min-h-0 flex-1">
-        <div className="shrink-0 border-r border-line" style={{ width: widths[0] }}>
+      {/* At 1080 px and below the three columns stack (list, editor, player) and the resize handles go away. */}
+      <div className="flex min-h-0 flex-1 max-[1080px]:flex-col">
+        <div
+          className="shrink-0 border-r border-line max-[1080px]:max-h-[45dvh] max-[1080px]:w-full! max-[1080px]:border-r-0 max-[1080px]:border-b"
+          style={{ width: widths[0] }}
+        >
           <TaskList
             shots={shots}
             selectedId={selected?.id ?? null}
@@ -324,7 +328,7 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
           onDrag={(dx) => setWidths(([a, b]) => [Math.min(520, Math.max(220, a + dx)), b])}
           onReset={() => setWidths(DEFAULT_WIDTHS)}
         />
-        <div className="min-w-0 flex-1 overflow-y-auto">
+        <div className="min-w-0 flex-1 overflow-y-auto max-[1080px]:overflow-visible">
           {selected ? (
             <ShotEditor
               key={selected.id}
@@ -342,7 +346,10 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
           onDrag={(dx) => setWidths(([a, b]) => [a, Math.min(640, Math.max(300, b - dx))])}
           onReset={() => setWidths(DEFAULT_WIDTHS)}
         />
-        <div className="shrink-0 border-l border-line" style={{ width: widths[1] }}>
+        <div
+          className="shrink-0 border-l border-line max-[1080px]:w-full! max-[1080px]:border-t max-[1080px]:border-l-0"
+          style={{ width: widths[1] }}
+        >
           {selected ? (
             <ShotInspector
               key={selected.id}

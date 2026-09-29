@@ -45,6 +45,10 @@ export interface RunLoopResult {
   text: string;
   steps: number;
   toolCalls: ToolCallRecord[];
+  /** Why the last step ended: `length` means the answer hit the output-token limit. */
+  finishReason: 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other';
+  /** The loop stopped because the step budget ran out, not because the result was saved. */
+  stepLimitReached: boolean;
 }
 
 /** One tool-calling loop: instructions, one user message, the agent's tools, a step budget. */
@@ -95,5 +99,12 @@ export async function runToolLoop(opts: {
     temperature: opts.temperature,
     abortSignal: opts.abortSignal,
   });
-  return { text: result.text, steps: result.steps.length, toolCalls };
+  const done = !!opts.isDone?.(toolCalls);
+  return {
+    text: result.text,
+    steps: result.steps.length,
+    toolCalls,
+    finishReason: result.finishReason,
+    stepLimitReached: !done && result.steps.length >= opts.maxSteps,
+  };
 }

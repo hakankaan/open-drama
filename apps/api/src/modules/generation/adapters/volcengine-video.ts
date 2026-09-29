@@ -22,6 +22,8 @@ const failure = (task: SeedanceTask) => {
  */
 export const volcengineVideo: VideoAdapter = {
   provider: 'volcengine',
+  // Submits answer with a task id; two minutes covers uploading inline reference images on a slow link.
+  submitTimeoutMs: 120_000,
   formatMention: (slot, name) => `${name} (@Image${slot})`,
   buildGenerateRequest(config, record) {
     if (!/seedance/i.test(config.model)) {

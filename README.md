@@ -4,7 +4,7 @@
 
 Open Drama is built on **Next.js** (web) and **Node.js** (API), with a documented domain model and architecture decisions, and is released under CC BY-NC-SA 4.0 (see `.dkk/adr/adr-0012.md`).
 
-> **Status: early development.** The skeleton runs: API, database, web shell. Features land milestone by milestone (`docs/plans/README.md`).
+> **Status: iteration 1 complete.** The whole line runs, from raw text to a merged episode film, in four UI languages (the zh/ja/ko catalogs are machine drafts awaiting native review). Real providers still need end-to-end checks with live keys; see `docs/BACKLOG.md`.
 
 ## Quick start
 
@@ -15,9 +15,35 @@ pnpm dev
 
 Open http://localhost:3000. The API listens on `127.0.0.1:4000` and the web server forwards `/api` and `/static` to it. Data (SQLite, media, agent workspace) lives in `./data`. If port 3000 is taken, run `WEB_PORT=3100 pnpm dev`. Configuration is optional; see `.env.example`.
 
-Requires Node.js 22+ and pnpm 12. No database server and no FFmpeg install are needed.
+Requires Node.js 22+ and pnpm 12. No database server is needed, and no FFmpeg install on macOS, Windows or Linux x64. On Linux arm64 the bundled package has no ffprobe: install FFmpeg and set `FFPROBE_BIN=/usr/bin/ffprobe` (the Docker image already does this).
 
 > Open Drama has no user accounts. Anyone who can reach the web port can use the whole tool, including your API keys. Keep it on a private network, or put a reverse proxy with authentication in front.
+
+### Run with Docker
+
+```bash
+docker compose up --build
+```
+
+One container runs both processes. The web app is published on port 3000 (`OPEN_DRAMA_PORT=8080 docker compose up` picks another host port), and the API stays on the container's localhost. Everything the app stores lives in the `open-drama-data` volume, so it survives `docker compose down` and rebuilds. FFmpeg comes from the image.
+
+### Run in production without Docker
+
+```bash
+pnpm install
+pnpm build
+pnpm start
+```
+
+The API runs on `127.0.0.1:4000` and the web server on `0.0.0.0:${WEB_PORT:-3000}`. Settings worth knowing (all optional; see `.env.example`):
+
+| Variable | When to set it |
+|---|---|
+| `OPEN_DRAMA_DATA_DIR` | keep data somewhere other than `./data` |
+| `PUBLIC_BASE_URL` | a video provider must fetch one of your uploaded reference videos or audio files; it needs a public https address |
+| `HOST` | only if the API must listen beyond localhost, which it normally should not |
+| `OPEN_DRAMA_VIDEO_CONCURRENCY` | how many shot videos one episode generates at once (default 4); the rest wait their turn |
+| `OPEN_DRAMA_STUB_PROVIDERS=1` | try the whole flow offline: image and video generation use local placeholders, text uses a scripted model |
 
 ---
 
@@ -67,7 +93,7 @@ The web app is its own Node process and proxies `/api` and `/static` to the API,
 
 - Node.js 22+ and pnpm 12
 - No database server: bundled SQLite
-- No FFmpeg install: `ffmpeg-static` / `ffprobe-static` are bundled (override with `FFMPEG_BIN` / `FFPROBE_BIN`)
+- No FFmpeg install: `ffmpeg-static` / `ffprobe-static` are bundled (override with `FFMPEG_BIN` / `FFPROBE_BIN`; Linux arm64 needs a system ffprobe)
 
 ## License
 

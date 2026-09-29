@@ -7,6 +7,7 @@ import { nowIso } from '../../../db/schema/columns';
 import { env } from '../../../env';
 import { conflict, precondition } from '../../../http/errors';
 import { logger } from '../../../http/logger';
+import { rememberSecret } from '../../../lib/secrets';
 import { resolveService } from '../../configuration/services';
 import { ProviderError, type Dialect, type ProviderRequest, type ResultMedia, type ServiceConfig } from '../adapters/types';
 import { classify, messageOf } from './errors';
@@ -14,7 +15,9 @@ import { classify, messageOf } from './errors';
 // The shared generation lifecycle (adr-0005): service resolution, task claim, dispatch, polling and failure.
 // images.ts and videos.ts add what differs per type (records, persistence, write-back).
 
-const REQUEST_TIMEOUT_MS = 10 * 60_000;
+/** Synchronous generate requests (image APIs that answer with the image) and status checks (adr-0005). */
+const SUBMIT_TIMEOUT_MS = 5 * 60_000;
+const POLL_TIMEOUT_MS = 30_000;
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -55,6 +58,7 @@ export function resolveGeneration<A>(
   const model = opts.model || row.models[0] || '';
   if (!model) throw precondition(`The ${type} service ${row.name} lists no model; add one in Settings`);
   if (!row.apiKey) throw precondition(`The ${type} service ${row.name} has no API key`);
+  rememberSecret(row.apiKey);
   return {
     adapter,
     config: { provider: row.provider, baseUrl: row.baseUrl, apiKey: row.apiKey, model },
@@ -84,12 +88,12 @@ export function claimTask(
 }
 
 /** Sends a provider request and returns its JSON body; non-2xx answers become ProviderError with the provider's message. */
-export async function send(req: ProviderRequest): Promise<unknown> {
+export async function send(req: ProviderRequest, timeoutMs: number): Promise<unknown> {
   const res = await fetch(req.url, {
     method: req.method,
     headers: req.headers,
     body: req.body,
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const text = await res.text();
   let body: unknown = text;
@@ -125,7 +129,7 @@ async function poll<R>(
     await new Promise((r) => setTimeout(r, profile.intervalMs));
     let result;
     try {
-      result = adapter.parsePollResponse(await send(adapter.buildPollRequest(config, providerTaskId)));
+      result = adapter.parsePollResponse(await send(adapter.buildPollRequest(config, providerTaskId), POLL_TIMEOUT_MS));
     } catch (err) {
       // Transport hiccups are retried; the provider's own failure verdicts come back as status 'failed'.
       if (err instanceof ProviderError && err.status && err.status < 500 && err.status !== 429 && err.status !== 408) throw err;
@@ -158,7 +162,9 @@ export async function generate<R>(
   if (!config || !adapter.buildGenerateRequest || !adapter.parseGenerateResponse) {
     throw new ProviderError(`The ${adapter.provider} ${what} adapter is incomplete`);
   }
-  const outcome = adapter.parseGenerateResponse(await send(adapter.buildGenerateRequest(config, record)));
+  const outcome = adapter.parseGenerateResponse(
+    await send(adapter.buildGenerateRequest(config, record), adapter.submitTimeoutMs ?? SUBMIT_TIMEOUT_MS),
+  );
   if (outcome.kind === 'result') return outcome;
   db.update(generationTasks).set({ providerTaskId: outcome.providerTaskId }).where(eq(generationTasks.id, taskId)).run();
   logger.info({ taskId, providerTaskId: outcome.providerTaskId }, `${what} task dispatched`);

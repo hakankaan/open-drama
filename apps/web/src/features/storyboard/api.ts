@@ -17,6 +17,7 @@ import {
   type UpdateShot,
 } from '@open-drama/contracts';
 import { request } from '@/lib/api';
+import { generationKeys } from '../generation/api';
 import { productionKeys } from '../production/api';
 
 export const storyboardKeys = {
@@ -45,6 +46,8 @@ function useInvalidateEpisode(episodeId: number) {
     void qc.invalidateQueries({ queryKey: storyboardKeys.shots(episodeId) });
     void qc.invalidateQueries({ queryKey: productionKeys.jobs(episodeId) });
     void qc.invalidateQueries({ queryKey: productionKeys.pipeline(episodeId) });
+    // The task drawer's badge only polls while it knows of running work.
+    void qc.invalidateQueries({ queryKey: generationKeys.episodeTasks(episodeId) });
   };
 }
 

@@ -1,9 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { videoCapsFor, type AspectRatio, type Resolution, type VideoProviderCaps } from '@open-drama/contracts';
 import { db } from '../../../db/client';
-import { generationTasks, shots } from '../../../db/schema';
+import { episodes, generationTasks, shots } from '../../../db/schema';
 import { nowIso } from '../../../db/schema/columns';
+import { env } from '../../../env';
 import { logger } from '../../../http/logger';
+import { keyedLimiter } from '../../../lib/limiter';
 import { assertVideo, deriveRenditions, storeRemoteFile } from '../../media/store';
 import { videoAdapterFor } from '../adapters/registry';
 import { ProviderError, type ResultMedia, type VideoAdapter } from '../adapters/types';
@@ -12,6 +14,9 @@ import { normalizeReferenceImages, resolvePublicMediaUrls } from './references';
 
 /** Video polling profile (adr-0005): every 10 s, at most 300 attempts. */
 const POLL = { intervalMs: 10_000, attempts: 300, maxMs: 55 * 60_000 };
+
+/** At most OPEN_DRAMA_VIDEO_CONCURRENCY shot videos of one episode talk to the provider at once. */
+const perEpisode = keyedLimiter(env.OPEN_DRAMA_VIDEO_CONCURRENCY);
 
 export type ResolvedVideo = ResolvedGeneration<VideoAdapter> & { caps: VideoProviderCaps };
 
@@ -23,6 +28,7 @@ export function resolveVideo(opts: { explicitId?: number; lockedId?: number | nu
 
 export interface SubmitVideoInput {
   shotId: number;
+  episodeId: number;
   dramaId: number;
   /** Mentions already rendered through the adapter. */
   prompt: string;
@@ -58,7 +64,25 @@ async function complete(taskId: number, shotId: number, media: ResultMedia) {
   logger.info({ taskId, shotId, path, durationSeconds }, 'video task completed');
 }
 
+/**
+ * A task may have waited minutes for a slot: before anything is sent (and billed) it re-checks that it is still
+ * wanted. False when the task no longer runs; throws when its shot or episode was deleted meanwhile.
+ */
+function stillWanted(taskId: number, shotId: number): boolean {
+  const task = db.select({ status: generationTasks.status }).from(generationTasks).where(eq(generationTasks.id, taskId)).get();
+  if (task?.status !== 'processing') return false;
+  const owner = db
+    .select({ deletedAt: episodes.deletedAt })
+    .from(shots)
+    .innerJoin(episodes, eq(episodes.id, shots.episodeId))
+    .where(eq(shots.id, shotId))
+    .get();
+  if (!owner || owner.deletedAt) throw new Error('The shot was deleted before its turn came; nothing was sent to the provider');
+  return true;
+}
+
 async function run(taskId: number, resolved: ResolvedVideo, input: SubmitVideoInput) {
+  if (!stillWanted(taskId, input.shotId)) return;
   const record = {
     taskId,
     prompt: input.prompt,
@@ -99,6 +123,10 @@ export function submitShotVideo(resolved: ResolvedVideo, input: SubmitVideoInput
     { column: generationTasks.shotId, id: input.shotId, busyMessage: 'A video is already being generated for this shot' },
   );
   logger.info({ taskId, provider: resolved.provider, model: resolved.model, shotId: input.shotId }, 'video task submitted');
-  detach(taskId, 'video', () => run(taskId, resolved, input));
+  detach(taskId, 'video', () =>
+    perEpisode(input.episodeId, () => run(taskId, resolved, input), () =>
+      logger.info({ taskId, episodeId: input.episodeId, limit: env.OPEN_DRAMA_VIDEO_CONCURRENCY }, 'video task waiting for a slot'),
+    ),
+  );
   return taskId;
 }

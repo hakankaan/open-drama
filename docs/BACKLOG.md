@@ -8,7 +8,7 @@ Items the product owner has decided on but pushed out of the current iteration, 
 |---|---|---|---|
 | **BytePlus provider adapter** | `adr-0013` | Adapter(s) for BytePlus ModelArk (ByteDance's international platform) for the Seedance/Seedream families — most likely the Volcengine adapters with BytePlus base URLs; connectivity probe; quick-setup template; `byteplus` shown as "coming soon" in Settings until then | Deferred on 2026-09-27; provider enum value reserved now |
 | **ModelRunner provider adapter** | `adr-0013` | One adapter covering images and video through ModelRunner (submit run → poll request → download result), text via its OpenAI-compatible surface if available; probe; quick-setup template | Product owner's own gateway; deferred on 2026-09-27; enum value reserved now |
-| `CONTRIBUTING.md` | `adr-0001`, `adr-0012` | Contributor note: contributions are original work and are licensed CC BY-NC-SA 4.0 | Needed before the first release |
+| **Native review of the zh/ja/ko UI catalogs** | `adr-0011` | `apps/web/messages/{zh,ja,ko}.json` are machine drafts (2026-09-28). A named native speaker per language reviews terminology (shot, asset, merge, rewrite, provider), counters and tone, then the catalogs count as reviewed | Needed before the first release |
 
 ## Later (no iteration assigned)
 

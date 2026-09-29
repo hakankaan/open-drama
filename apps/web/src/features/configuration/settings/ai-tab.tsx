@@ -1,8 +1,8 @@
 'use client';
 
-import { ExternalLink, Pencil, Plus, Star, Trash2, Zap } from 'lucide-react';
+import { CircleHelp, ExternalLink, Pencil, Plus, Star, Trash2, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   DEFERRED_PROVIDERS,
@@ -14,6 +14,7 @@ import {
   type ModelServiceProbe,
   type ServiceType,
 } from '@open-drama/contracts';
+import { useTour } from '@/components/tour';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Field, Input } from '@/components/ui/input';
@@ -52,7 +53,7 @@ function QuickSetup() {
   };
 
   return (
-    <section className="rounded-lg border border-line bg-surface p-5" aria-labelledby="quick-setup">
+    <section className="rounded-lg border border-line bg-surface p-5" aria-labelledby="quick-setup" data-tour="quick-setup">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex max-w-xl flex-col gap-1">
           <h2 id="quick-setup" className="flex items-center gap-2 text-base font-semibold">
@@ -207,7 +208,7 @@ function TypeCard({
   const t = useTranslations('settings.ai');
   const ready = services.some((s) => s.isActive && s.hasKey);
   return (
-    <section className="rounded-lg border border-line bg-surface" aria-labelledby={`type-${type}`}>
+    <section className="rounded-lg border border-line bg-surface" aria-labelledby={`type-${type}`} data-tour={`service-${type}`}>
       <header className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">
         <h2 id={`type-${type}`} className="font-display text-2xl font-semibold tracking-wide">
           {t(`types.${type}`)}
@@ -266,8 +267,24 @@ export function AiTab() {
     }
   };
 
+  const tourSteps = useMemo(
+    () => [
+      { target: 'quick-setup', title: t('tour.quickTitle'), description: t('tour.quickBody') },
+      { target: 'service-text', title: t('tour.servicesTitle'), description: t('tour.servicesBody') },
+      { target: 'settings-tab-agents', title: t('tour.agentsTitle'), description: t('tour.agentsBody') },
+    ],
+    [t],
+  );
+  const replayTour = useTour('settings', tourSteps, !services.isLoading);
+
   return (
     <div className="flex flex-col gap-6">
+      <div className="-mb-3 flex justify-end">
+        <Button size="sm" variant="ghost" onClick={replayTour}>
+          <CircleHelp className="h-4 w-4" aria-hidden />
+          {t('tour.replay')}
+        </Button>
+      </div>
       <QuickSetup />
       {services.isLoading
         ? SERVICE_TYPES.map((type) => <Skeleton key={type} className="h-40" />)

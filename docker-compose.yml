@@ -1,0 +1,25 @@
+# docker compose up --build → http://localhost:3000 (set OPEN_DRAMA_PORT to publish another host port).
+# Open Drama has no accounts: whoever reaches this port can use the tool and its API keys. Keep it private,
+# or put a reverse proxy with authentication in front.
+services:
+  open-drama:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: open-drama:latest
+    ports:
+      - '${OPEN_DRAMA_PORT:-3000}:3000'
+    volumes:
+      - open-drama-data:/app/data
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Shot videos one episode generates at once; the rest wait for a free slot.
+      OPEN_DRAMA_VIDEO_CONCURRENCY: ${OPEN_DRAMA_VIDEO_CONCURRENCY:-4}
+      # 1 = offline placeholders instead of real providers (to try the flow without keys).
+      OPEN_DRAMA_STUB_PROVIDERS: ${OPEN_DRAMA_STUB_PROVIDERS:-0}
+      # Set only when a video provider must fetch a local reference video or audio file (a public https URL):
+      # PUBLIC_BASE_URL: https://drama.example.com
+    restart: unless-stopped
+
+volumes:
+  open-drama-data:

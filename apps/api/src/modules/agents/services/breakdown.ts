@@ -2,7 +2,7 @@ import { and, count, eq, inArray, isNull } from 'drizzle-orm';
 import { isNarrator, type TextModelOverride } from '@open-drama/contracts';
 import type { z } from 'zod';
 import { db } from '../../../db/client';
-import { characters, episodeCharacters, episodeProps, episodeScenes, generationTasks, shots } from '../../../db/schema';
+import { characters, episodeCharacters, episodeProps, episodeScenes, films, generationTasks, shots } from '../../../db/schema';
 import { conflict, precondition } from '../../../http/errors';
 import { logger } from '../../../http/logger';
 import { getEpisodeJobs, runJob } from '../../jobs/run-job';
@@ -54,6 +54,12 @@ export function startBreakdown(episodeId: number, opts: z.input<typeof TextModel
           .get()
       : undefined;
     if (generating) throw conflict('Shot videos are still generating; break down once they have finished');
+    const merging = db
+      .select({ id: films.id })
+      .from(films)
+      .where(and(eq(films.episodeId, ep.id), eq(films.status, 'processing')))
+      .get();
+    if (merging) throw conflict('The episode film is being merged; break down once it has finished', { filmId: merging.id });
   }
 
   const video = describeVideoModel(ep.videoServiceId);

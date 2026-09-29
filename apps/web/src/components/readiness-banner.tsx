@@ -1,7 +1,7 @@
 'use client';
 
 import { TriangleAlert } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
@@ -11,6 +11,7 @@ import { useReadiness } from '@/features/configuration/api';
 export function ReadinessBanner() {
   const t = useTranslations('readiness');
   const types = useTranslations('serviceType');
+  const format = useFormatter();
   const pathname = usePathname();
   const { data, refetch } = useReadiness();
 
@@ -19,7 +20,11 @@ export function ReadinessBanner() {
   }, [pathname, refetch]);
 
   if (!data || data.ready) return null;
-  const missing = data.missingTypes.map((type) => types(type)).join(', ');
+  // "text and image" / "文本和图像" / "テキストと画像": the locale's own list conjunction.
+  const missing = format.list(
+    data.missingTypes.map((type) => types(type)),
+    { type: 'conjunction' },
+  );
   return (
     <div role="status" className="border-b border-warning/30 bg-warning-soft">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm sm:px-6">

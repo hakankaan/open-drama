@@ -82,6 +82,7 @@ export function requestShotVideo(shotId: number, body: z.output<typeof RequestSh
   const unmatchedMentions = [...unmatched];
   const taskId = submitShotVideo(resolved, {
     shotId: shot.id,
+    episodeId: ep.id,
     dramaId: ep.dramaId,
     prompt: rendered ? withStylePrefix(ep.dramaId, rendered) : '',
     referenceImages: slots.map((s) => s.path),

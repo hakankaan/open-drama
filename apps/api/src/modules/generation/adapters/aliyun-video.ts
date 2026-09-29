@@ -25,6 +25,8 @@ const reason = (res: WanResponse, fallback: string) => ({
  */
 export const aliyunVideo: VideoAdapter = {
   provider: 'aliyun',
+  // Submits answer with a task id; two minutes covers uploading inline reference images on a slow link.
+  submitTimeoutMs: 120_000,
   formatMention: (slot, name) => `${name}(图${slot})`,
   buildGenerateRequest(config, record) {
     const media = [

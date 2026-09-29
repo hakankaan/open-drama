@@ -1,5 +1,6 @@
 import { env } from '../../../env';
 import { logger } from '../../../http/logger';
+import { scrubSecrets } from '../../../lib/secrets';
 
 const OFFICIAL_HOSTS = new Set(['api.openai.com', 'generativelanguage.googleapis.com']);
 
@@ -37,7 +38,7 @@ export function patchedFetch(provider: string, baseUrl: string): typeof fetch {
     const key = `${provider} ${baseUrl}`;
     if (!seen.has(key)) {
       seen.add(key);
-      logger.info({ provider, baseUrl, patched: !official }, 'text endpoint');
+      logger.info({ provider, baseUrl: scrubSecrets(baseUrl), patched: !official }, 'text endpoint');
     }
     if (official || !init?.body || typeof init.body !== 'string') return fetch(input, init);
     let body: Record<string, unknown>;

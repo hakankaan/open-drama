@@ -19,6 +19,8 @@ const EnvSchema = z.object({
   FFMPEG_BIN: z.string().optional(),
   FFPROBE_BIN: z.string().optional(),
   OPEN_DRAMA_STUB_PROVIDERS: flag,
+  // Shot videos generating at once per episode; further requests wait for a slot (cost and rate-limit guard).
+  OPEN_DRAMA_VIDEO_CONCURRENCY: z.coerce.number().int().min(1).max(32).default(4),
   // Text transport patches for relays (Plan 2 §4).
   OPEN_DRAMA_AI_DISABLE_THINKING: z
     .enum(['0', '1', 'true', 'false'])

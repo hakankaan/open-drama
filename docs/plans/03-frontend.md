@@ -90,7 +90,7 @@ Left nav (220 px) with the six tabs; tab in the URL query so links deep-link.
 - Batch confirm dialog (shots, total seconds, model, resolution) before batch generation and retry; batch calls `POST /shots/:id/video` per target with at most 4 in flight; a `409` (already processing) is shown as "already generating" and not retried.
 - Column widths persisted; double-click resets.
 
-**Export stage**: film list (cards with poster/play, failed/merging states, time, duration, download; film preview modal), "Mark done" toggle (`PATCH /episodes/:id {status: completed | active}`), shot assets grid (poster, number, duration, preview modal, selection only for shots with video), "Select all generated" / "Clear", "Merge selected (n)" → `POST /episodes/:id/merge` then poll `GET /episodes/:id/films/latest` every 3 s until settled; a `409` means a merge is already running and the poll starts anyway.
+**Export stage**: film list (cards with poster/play, failed/merging states, time, duration, download; film preview modal), "Mark done" toggle (`PATCH /episodes/:id {status: completed | active}`), shot assets grid (poster, number, duration, preview modal, selection only for shots with video), "Select all generated" / "Clear", "Merge selected (n)" → `POST /episodes/:id/merge` then poll `GET /episodes/:id/films` (the list the stage shows) every 3 s until no film is processing; a `409` means a merge is already running and the poll starts anyway.
 
 **Task drawer**: right drawer listing `GET /episodes/:id/generation-tasks` (capped: 50 tasks + 20 films) newest first with kind badge, target label (Shot #n / Character · name / Scene · location / Prop · name / Full-episode merge), provider · model, elapsed, error + hint, status pill; refreshes every 4 s while open and anything is active.
 
@@ -111,7 +111,7 @@ Left nav (220 px) with the six tabs; tab in the URL query so links deep-link.
 | `/episodes/:id/shots` | 4 s | any shot generating |
 | `/dramas/:id/assets` (library) | 3 s | any card generating |
 | `/episodes/:id/generation-tasks` | 4 s | drawer open and active count > 0 |
-| `/episodes/:id/films/latest` | 3 s | latest film `processing` |
+| `/episodes/:id/films` | 3 s | a film `processing` |
 | `/storage` | 2 s | usage stale |
 
 Per-task polling (`/generation-tasks/:id`) is not used in the studio: the shot list and asset list already carry the latest task state, so a 40-shot batch costs one request per interval, not forty.

@@ -48,7 +48,8 @@ export async function request<S extends z.ZodType>(
       const errorClass = (details as { errorClass?: TaskErrorClass } | undefined)?.errorClass;
       throw new ApiError(code, message, res.status, details, errorClass);
     }
-    throw new ApiError(res.status >= 500 ? 'INTERNAL' : 'NETWORK', `Request failed (${res.status})`, res.status);
+    // The API always answers with an envelope, so a bare 5xx comes from the web proxy failing to reach it.
+    throw new ApiError(res.status >= 500 ? 'NETWORK' : 'INTERNAL', `Request failed (${res.status})`, res.status);
   }
   const data = schema.safeParse((payload as { data?: unknown } | null)?.data);
   if (!data.success) {

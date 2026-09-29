@@ -4,6 +4,7 @@ import { db } from '../../db/client';
 import { agentJobs } from '../../db/schema';
 import { nowIso } from '../../db/schema/columns';
 import { logger } from '../../http/logger';
+import { scrubSecrets } from '../../lib/secrets';
 
 type Row = typeof agentJobs.$inferSelect;
 
@@ -76,7 +77,7 @@ export function runJob(
     try {
       await work({ jobId, progress });
     } catch (err) {
-      failure = err instanceof Error ? err.message : String(err);
+      failure = scrubSecrets(err instanceof Error ? err.message : String(err));
     }
     if (failure === null) {
       try {

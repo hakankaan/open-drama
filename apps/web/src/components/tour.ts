@@ -24,10 +24,14 @@ export function useTour(id: string, steps: TourStep[], ready: boolean) {
   const started = useRef(false);
 
   const start = useCallback(() => {
-    const driveSteps: DriveStep[] = steps.map((s) => ({
-      element: s.target ? `[data-tour="${s.target}"]` : undefined,
-      popover: { title: s.title, description: s.description },
-    }));
+    // Steps whose target is not on screen (e.g. controls hidden at narrow widths) are skipped, not shown detached.
+    const visible = (target: string) => !!document.querySelector(`[data-tour="${target}"]`)?.getClientRects().length;
+    const driveSteps: DriveStep[] = steps
+      .filter((s) => !s.target || visible(s.target))
+      .map((s) => ({
+        element: s.target ? `[data-tour="${s.target}"]` : undefined,
+        popover: { title: s.title, description: s.description },
+      }));
     const tour = driver({
       steps: driveSteps,
       showProgress: true,

@@ -106,3 +106,10 @@ export function skipRewrite(id: number): EpisodeView {
 }
 
 
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** AttachEpisodeFilm: the latest rendered film becomes the episode's video (issued by compositing on completion). */
+export function attachEpisodeFilm(tx: Tx, episodeId: number, filmPath: string, durationSeconds: number) {
+  tx.update(episodes).set({ filmPath, filmDurationSeconds: durationSeconds }).where(eq(episodes.id, episodeId)).run();
+}

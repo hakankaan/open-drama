@@ -1,0 +1,709 @@
+{
+  "common": {
+    "cancel": "キャンセル",
+    "save": "保存",
+    "delete": "削除",
+    "create": "作成",
+    "edit": "編集",
+    "close": "閉じる",
+    "retry": "再試行",
+    "loading": "読み込み中…"
+  },
+  "nav": {
+    "label": "メイン",
+    "projects": "プロジェクト",
+    "settings": "設定",
+    "github": "GitHubのソースコード"
+  },
+  "theme": {
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム",
+    "lightLabel": "ライト",
+    "darkLabel": "ダーク",
+    "systemLabel": "システム",
+    "current": "テーマ：{theme}",
+    "switchTo": "{theme}テーマに切り替え"
+  },
+  "language": {
+    "menu": "言語",
+    "confirmTitle": "{language}に切り替えますか？",
+    "confirmBody": "画面の表示と、これ以降にAIが書く内容（脚本、抽出したアセット、プロンプト）の言語がまとめて切り替わります。作成済みのコンテンツはそのまま残ります。",
+    "confirm": "言語を切り替える"
+  },
+  "readiness": {
+    "missing": "エピソードを制作する前に、APIキーを設定した{count, plural, other {サービス（{types}）}}を追加してください。",
+    "action": "AIサービスを設定"
+  },
+  "serviceType": {
+    "text": "テキスト",
+    "image": "画像",
+    "video": "動画"
+  },
+  "status": {
+    "draft": "未着手",
+    "active": "進行中",
+    "completed": "完了",
+    "change": "ステータス：{status}。ステータスを変更"
+  },
+  "aspectRatio": {
+    "16:9": "16:9",
+    "9:16": "9:16",
+    "1:1": "1:1",
+    "adaptive": "自動"
+  },
+  "errors": {
+    "network": "Open Dramaのサーバーに接続できません。サーバーが起動しているか確認してください。",
+    "moderation": "プロバイダーがこのコンテンツを拒否しました。モデルを切り替えて再試行してください。",
+    "auth": "プロバイダーがAPIキーを拒否しました。設定でキーを確認してください。",
+    "quota": "プロバイダーの利用上限またはレート制限に達しました。しばらくしてから再度お試しください。",
+    "timeout": "プロバイダーの応答がタイムアウトしました。",
+    "provider": "プロバイダーからエラーが返されました。",
+    "unknown": "エラーが発生しました。もう一度お試しください。",
+    "config": "サービスが正しく設定されていません。設定を確認してください。"
+  },
+  "tour": {
+    "progress": "{current} / {total}",
+    "next": "次へ",
+    "back": "戻る",
+    "done": "完了"
+  },
+  "launcher": {
+    "title": "プロジェクト",
+    "subtitle": "1つのプロジェクトがショートドラマ1本です。ビジュアルスタイル、アスペクト比、エピソードをひとまとめにします。",
+    "summary": "{projects, plural, =0 {プロジェクトはまだありません} other {プロジェクト#件}}、進行中{active}件、ビジュアルスタイル{styles}種",
+    "help": "ガイドをもう一度見る",
+    "newProject": "新規プロジェクト",
+    "search": "プロジェクトを検索",
+    "filterLabel": "ステータスで絞り込み",
+    "all": "すべて",
+    "sortUpdated": "更新日順",
+    "sortName": "名前順",
+    "loadError": "プロジェクトを読み込めませんでした。",
+    "retry": "再試行",
+    "empty": {
+      "title": "最初のドラマを作りましょう",
+      "body": "プロジェクトには、1本のショートドラマのエピソードがまとまります。すべての画像とクリップで使うアスペクト比とビジュアルスタイルは、プロジェクト単位で固定されます。"
+    },
+    "noMatch": "条件に一致するプロジェクトはありません。",
+    "clearFilters": "絞り込みを解除",
+    "deleteTitle": "「{title}」を削除しますか？",
+    "deleteBody": "プロジェクトはOpen Dramaから消えますが、ファイルはデータフォルダに残ります。",
+    "deleteConfirm": "プロジェクトを削除",
+    "tour": {
+      "welcomeTitle": "Open Dramaへようこそ",
+      "welcomeBody": "ストーリーをショートドラマに。脚本、キャラクターと舞台、ショットごとの動画、そして1本の完成動画まで。",
+      "settingsTitle": "モデルを接続",
+      "settingsBody": "設定でテキスト・画像・動画のサービスを追加します。Volcengine Arkのキー1つで3つすべてをまかなえます。",
+      "createTitle": "プロジェクトを作成",
+      "createBody": "ビジュアルスタイルとアスペクト比を選びます。どちらもプロジェクトの全エピソードに適用されます。"
+    },
+    "create": {
+      "title": "新規プロジェクト",
+      "description": "アスペクト比とスタイルは、プロジェクト内のすべての画像とクリップに適用されます。",
+      "name": "名前",
+      "nameRequired": "プロジェクト名を入力してください。",
+      "namePlaceholder": "提灯売り",
+      "style": "ビジュアルスタイル",
+      "stylePlaceholder": "スタイルを選択",
+      "aspectRatio": "アスペクト比",
+      "aspectRatioHint": "作成後は変更できません。スマートフォン向けのドラマには9:16を選んでください。",
+      "submit": "プロジェクトを作成"
+    },
+    "card": {
+      "open": "「{title}」を開く",
+      "more": "プロジェクトの操作",
+      "openAction": "開く",
+      "delete": "削除",
+      "episodes": "{count, plural, other {全#話}}",
+      "episodesLabel": "エピソード",
+      "characters": "{count, plural, other {キャラクター#人}}",
+      "charactersLabel": "キャラクター",
+      "scenes": "{count, plural, other {シーン#件}}",
+      "scenesLabel": "シーン"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "tabs": {
+      "ai": "AIサービス",
+      "general": "一般",
+      "styles": "ビジュアルスタイル",
+      "storage": "ストレージ",
+      "about": "情報",
+      "agents": "エージェント"
+    },
+    "ai": {
+      "types": {
+        "text": "テキスト",
+        "image": "画像",
+        "video": "動画"
+      },
+      "ready": "設定済み",
+      "missing": "未設定",
+      "addFrom": "追加",
+      "addProvider": "{provider}のサービスを追加",
+      "comingLater": "イテレーション2で対応予定",
+      "empty": "{type}サービスはまだありません。上のプロバイダーから追加してください。",
+      "deleteTitle": "「{name}」を削除しますか？",
+      "deleteBody": "このサービスを固定していたエピソードは、同じ種類で次に有効なサービスに切り替わります。",
+      "deleteConfirm": "サービスを削除",
+      "quick": {
+        "title": "{gateway}でクイックセットアップ",
+        "body": "{gateway}のAPIキー1つで、テキスト・画像・動画のサービスをまとめて設定します。設定後に編集することもできます。",
+        "getKey": "キーを取得",
+        "key": "APIキー",
+        "keyPlaceholder": "キーを貼り付け",
+        "apply": "サービスを設定",
+        "applied": "{count}件のサービスを設定しました。"
+      },
+      "models": {
+        "isDefault": "デフォルトモデル",
+        "makeDefault": "デフォルトモデルに設定",
+        "remove": "{model}を削除",
+        "placeholder": "モデルIDを入力してEnter",
+        "addMore": "さらに追加"
+      },
+      "dialog": {
+        "createTitle": "{type}サービスを追加",
+        "editTitle": "{type}サービスを編集",
+        "presets": "プロバイダー",
+        "iteration2": "イテレーション2",
+        "name": "名前",
+        "provider": "プロバイダー",
+        "apiKey": "APIキー",
+        "keyHint": "このサーバーにのみ保存され、以後は表示されません。",
+        "keyStored": "キーは保存済みです。変更しない場合は空欄のままにしてください。",
+        "keyMissing": "キーはまだ保存されていません。",
+        "replaceKey": "置き換える場合は新しいキーを入力",
+        "keyRequired": "APIキーは必須です。",
+        "baseUrl": "Base URL",
+        "models": "モデル",
+        "modelsHint": "最初のモデルがデフォルトになります。モデルをクリックするとデフォルトに設定できます。",
+        "priority": "優先度",
+        "priorityHint": "種類ごとに、有効なサービスのうち優先度が最も高いものがデフォルトで使われます。",
+        "temperature": "Temperature",
+        "temperatureHint": "0〜2。空欄にするとプロバイダーのデフォルト値を使います。",
+        "test": "接続テスト",
+        "required": "必須です。",
+        "invalidUrl": "http:// または https:// で始まるURLを入力してください。",
+        "invalidTemperature": "0〜2の数値を入力してください。"
+      },
+      "row": {
+        "keySet": "キー設定済み",
+        "noKey": "キー未設定",
+        "disabled": "無効",
+        "priority": "優先度 {priority}",
+        "test": "テスト",
+        "active": "{name}を有効にする",
+        "edit": "編集",
+        "delete": "削除",
+        "noModels": "モデルが登録されていません。サービスを編集して追加してください。",
+        "defaultModel": "デフォルトモデル",
+        "makeDefault": "デフォルトモデルに設定"
+      },
+      "tour": {
+        "replay": "ガイドを表示",
+        "quickTitle": "クイックセットアップ",
+        "quickBody": "キー1つで、テキスト・画像・動画のサービスを一度に設定できます。",
+        "servicesTitle": "サービスを個別に追加する",
+        "servicesBody": "種類ごとに、APIキーを設定した有効なサービスが1つ必要です。エピソード側で独自のサービスを固定していない限り、優先度が最も高いものが使われます。",
+        "agentsTitle": "エージェントを調整",
+        "agentsBody": "「エージェント」タブでは、脚本の執筆、アセットの抽出、ショット分割、動画プロンプトの作成を担うプロンプトとスキルを管理できます。"
+      }
+    },
+    "general": {
+      "language": "言語",
+      "languageBody": "画面の表示言語とAIが書く言語は連動して切り替わります。",
+      "appearance": "外観",
+      "appearanceBody": "「システム」はOSの設定に従います。"
+    },
+    "styles": {
+      "summary": "{total}件中{active}件のスタイルをプロジェクト作成時に表示しています。",
+      "add": "スタイルを追加",
+      "builtIn": "組み込み",
+      "disabled": "無効",
+      "active": "{name}を新規プロジェクトで選択可能にする",
+      "edit": "編集",
+      "delete": "削除",
+      "deleteTitle": "「{name}」を削除しますか？",
+      "deleteBody": "既存のプロジェクトにはスタイルキーが残りますが、プロンプト断片は追加されなくなります。使用中のスタイルは削除できないため、代わりに無効にしてください。",
+      "deleteConfirm": "スタイルを削除",
+      "dialog": {
+        "createTitle": "ビジュアルスタイルを追加",
+        "editTitle": "ビジュアルスタイルを編集",
+        "name": "名前",
+        "key": "キー",
+        "keyHint": "半角英小文字、数字、ハイフンのみ。あとから変更できません。",
+        "keyImmutable": "キーは作成後に変更できません。",
+        "invalidKey": "半角英小文字、数字、ハイフンを使ってください。",
+        "prompt": "プロンプト断片",
+        "promptHint": "このスタイルを使うプロジェクトでは、すべての画像・動画プロンプトの先頭に追加されます。",
+        "description": "説明",
+        "sortOrder": "表示順",
+        "required": "必須です。"
+      }
+    },
+    "storage": {
+      "dataDir": "データフォルダ",
+      "mode": {
+        "local": "ローカル",
+        "docker": "Docker"
+      },
+      "root": "フォルダ",
+      "database": "データベース",
+      "media": "メディア",
+      "workspace": "エージェントのワークスペース",
+      "backupNote": "Open Dramaが保存するデータはすべてこのフォルダにあります。バックアップや移行の際は、このフォルダをコピーしてください。",
+      "usage": "ディスク使用量",
+      "counting": "計算中…",
+      "total": "{size}使用中",
+      "free": "空き{size}",
+      "empty": "保存されているデータはまだありません。",
+      "files": "{count, plural, other {#ファイル}}",
+      "bucket": {
+        "database": "データベース",
+        "images": "画像",
+        "videos": "動画",
+        "merged": "完成動画",
+        "uploads": "アップロード",
+        "temp": "一時ファイル",
+        "workspace": "ワークスペース",
+        "other": "その他"
+      }
+    },
+    "about": {
+      "version": "バージョン {version}",
+      "versionUnknown": "バージョン不明",
+      "exposureTitle": "ユーザーアカウントはありません",
+      "exposureBody": "このページを開ける人なら誰でも、保存済みのAPIキーを含むすべての機能を使えます。Open Dramaはプライベートネットワーク内で運用するか、認証付きのリバースプロキシを前段に置いてください。",
+      "source": "ソースコード",
+      "licence": "ライセンス：CC BY-NC-SA 4.0"
+    },
+    "agents": {
+      "languageNote": "{language}のテキストを編集しています。ほかの言語を編集するには言語を切り替えてください。専用のテキストがない言語では英語版が使われます。",
+      "skillCount": "{count, plural, other {スキル#件}}",
+      "prompt": "システムプロンプト",
+      "skills": "スキル（{count}）",
+      "addSkill": "スキルを追加",
+      "noSkills": "このエージェントにはまだスキルがありません。",
+      "saved": "保存しました。次回の実行から反映されます。",
+      "savedState": "保存済み",
+      "fallback": "英語版を使用",
+      "builtIn": "組み込みテキスト",
+      "reset": "リセット",
+      "resetTitle": "このプロンプトをリセットしますか？",
+      "resetBodyEn": "英語のプロンプトがOpen Drama同梱のバージョンに戻ります。編集内容は失われます。",
+      "resetBodyVariant": "この言語のプロンプトが削除され、再び英語版が使われます。",
+      "deleteVariant": "この言語版を削除",
+      "deleteSkillTitle": "「{name}」を削除しますか？",
+      "deleteSkillBody": "スキルとそのすべての言語版が削除されます。次回の実行から、エージェントはこのスキルを使わなくなります。",
+      "deleteVariantBody": "この言語のテキストが削除され、再び英語版が使われます。",
+      "add": {
+        "title": "スキルを追加",
+        "description": "スキルは、エージェントが実行のたびに読む指示書です。本文は作成後に書きます。",
+        "dir": "フォルダ名",
+        "dirHint": "{path}として保存されます",
+        "invalidDir": "半角英小文字、数字、ハイフンを使ってください。",
+        "name": "名前",
+        "required": "必須です。",
+        "descriptionField": "説明",
+        "submit": "スキルを追加"
+      }
+    }
+  },
+  "assets": {
+    "uploaded": "画像を添付しました。",
+    "required": "必須です。",
+    "finalPromptHint": "参照画像の生成に実際に使われたプロンプトです。",
+    "staleHint": "古い内容です：このプロンプトの作成後に説明が変更されました",
+    "kind": {
+      "character": "キャラクター",
+      "scene": "シーン",
+      "prop": "小道具"
+    },
+    "card": {
+      "open": "「{name}」を開く",
+      "generating": "生成中",
+      "ready": "生成済み",
+      "failed": "失敗",
+      "noImage": "画像なし",
+      "stale": "要更新",
+      "replaceImage": "画像を差し替え",
+      "uploadImage": "画像をアップロード",
+      "delete": "削除",
+      "generate": "画像を生成",
+      "regenerate": "再生成"
+    },
+    "fields": {
+      "name": "名前",
+      "role": "役柄",
+      "appearance": "外見",
+      "styling": "服装・スタイリング",
+      "description": "説明",
+      "location": "場所",
+      "time": "時間帯",
+      "prompt": "美術・装飾",
+      "lighting": "照明",
+      "type": "種類",
+      "finalPrompt": "画像プロンプト"
+    },
+    "create": {
+      "character": "キャラクターを追加",
+      "scene": "シーンを追加",
+      "prop": "小道具を追加"
+    },
+    "filter": {
+      "all": "すべて"
+    },
+    "group": {
+      "character": "キャラクター",
+      "scene": "シーン",
+      "prop": "小道具"
+    },
+    "add": {
+      "character": "キャラクターを追加",
+      "scene": "シーンを追加",
+      "prop": "小道具を追加"
+    },
+    "empty": {
+      "character": "キャラクターはまだありません。脚本から抽出されるほか、ここで追加することもできます。",
+      "scene": "シーンはまだありません。シーンとは、ある時間帯のある場所のことです。",
+      "prop": "小道具はまだありません。ストーリーの展開に関わる物だけを登録します。"
+    },
+    "needEpisode": "先にエピソードを作成してください。プロンプトはエピソードの文脈に沿って書かれます。",
+    "alreadyGenerating": "このアセットの画像はすでに生成中です。",
+    "saveFirst": "先に編集内容を保存してください。",
+    "generatePrompt": "プロンプトを作成",
+    "regeneratePrompt": "プロンプトを再作成",
+    "copy": "コピー",
+    "copied": "コピーしました。",
+    "batch": {
+      "progress": "画像生成を開始中：{done}/{total}",
+      "summary": "{started}件開始、{already}件は生成中、{failed}件失敗"
+    }
+  },
+  "project": {
+    "notFound": "このプロジェクトは存在しないか、削除されています。",
+    "back": "プロジェクト一覧",
+    "aspect": "アスペクト比 {ratio}",
+    "counts": "{episodes, plural, other {全#話}}、{characters, plural, other {キャラクター#人}}、{scenes, plural, other {シーン#件}}、{props, plural, other {小道具#点}}",
+    "addEpisode": "エピソードを追加",
+    "addEpisodeN": "第{number}話を追加",
+    "tabs": {
+      "episodes": "エピソード",
+      "assets": "アセットライブラリ"
+    },
+    "deleteEpisodeTitle": "「{title}」を削除しますか？",
+    "deleteEpisodeBody": "エピソードはプロジェクトから消えますが、ファイルはデータフォルダに残ります。",
+    "deleteEpisodeConfirm": "エピソードを削除",
+    "newEpisode": {
+      "title": "第{number}話を追加",
+      "lockNote": "エピソードには、現在有効な画像・動画サービスが固定されます。あとでサービスを変更しても、このエピソードでは同じサービスが使われます。",
+      "name": "タイトル",
+      "nameHint": "任意。未入力の場合は「第{number}話」になります。",
+      "resolution": "動画の解像度",
+      "resolutionHint": "エピソード内のすべてのクリップに適用されます。あとから変更できます。",
+      "submit": "エピソードを追加"
+    },
+    "episode": {
+      "more": "エピソードの操作",
+      "delete": "削除",
+      "resolution": "解像度 {resolution}。解像度を変更",
+      "scriptReady": "脚本完成",
+      "merged": "完成動画あり",
+      "open": "スタジオを開く"
+    }
+  },
+  "studio": {
+    "notFound": "このエピソードは存在しないか、削除されています。",
+    "backToProject": "プロジェクトに戻る",
+    "episodeChip": "第{number}話",
+    "scriptDone": "脚本完成",
+    "script": {
+      "raw": "原文",
+      "chars": "{count, plural, other {#文字}}",
+      "save": "保存",
+      "saved": "保存しました。",
+      "rawHint": "このエピソードの元になる文章を貼り付けてください。小説の1章、あらすじ、メモなど何でも構いません。次のステップでAIが撮影用の脚本にリライトします。",
+      "rawPlaceholder": "このエピソードの小説の1章、あらすじ、メモなどを貼り付けてください。",
+      "toRewrite": "脚本へ進む",
+      "toRaw": "原文へ",
+      "rewriteTitle": "脚本",
+      "needRaw": "先に原文を貼り付けてください。脚本は原文をもとに書かれます。",
+      "rewriteBody": "AIが原文を、柱（シーン見出し）・ト書き・台詞のある撮影用脚本にリライトします。原文をそのまま使うこともできます。",
+      "running": "脚本を作成中です。通常1分以内に完了します。",
+      "start": "脚本を作成",
+      "skip": "原文をそのまま脚本にする",
+      "failed": "リライトに失敗しました：{error}",
+      "failedKept": "前回のリライトに失敗したため、以下の脚本を残しています：{error}",
+      "script": "脚本",
+      "again": "もう一度リライト",
+      "againTitle": "脚本をリライトし直しますか？",
+      "againBody": "AIが原文から新しい脚本を書き、編集内容も含めて現在の脚本を置き換えます。"
+    },
+    "models": {
+      "default": "デフォルトモデル",
+      "text": "テキストモデル",
+      "image": "画像モデル",
+      "video": "動画モデル"
+    },
+    "resolution": "解像度 {resolution}。解像度を変更",
+    "refresh": "更新",
+    "panels": {
+      "raw": "原文",
+      "rewrite": "脚本",
+      "assets": "アセット",
+      "video": "動画制作",
+      "export": "結合・書き出し"
+    },
+    "sidebar": {
+      "label": "制作ステップ",
+      "progress": "エピソードの進捗",
+      "expand": "サイドバーを開く",
+      "collapse": "折りたたむ",
+      "stage": {
+        "script": "脚本",
+        "assets": "アセット",
+        "video": "動画",
+        "export": "書き出し"
+      },
+      "section": {
+        "script": "脚本",
+        "production": "制作",
+        "export": "書き出し"
+      },
+      "panel": {
+        "raw": "原文",
+        "rewrite": "AIリライト",
+        "assets": "アセット",
+        "video": "動画制作",
+        "export": "結合・書き出し"
+      },
+      "state": {
+        "done": "完了",
+        "active": "現在のステップ",
+        "idle": "未着手"
+      }
+    },
+    "assets": {
+      "title": "アセット",
+      "needScript": "先に脚本を仕上げてください。アセットは脚本から抽出されます。",
+      "toScript": "脚本へ",
+      "emptyBody": "脚本から登場人物、場所、重要な小道具を抽出するか、自分で追加してください。",
+      "extractAll": "すべて抽出",
+      "extract": "抽出",
+      "reextract": "再抽出",
+      "extracting": "抽出中",
+      "extractingBody": "脚本を読み込んでいます。完了すると新しいアセットがここに表示されます。",
+      "extractFailed": "抽出に失敗しました",
+      "ready": "準備完了 {ready}/{total}",
+      "generateMissing": "{count, plural, =0 {すべての画像が生成済み} other {未生成の画像を#件生成}}",
+      "generateKind": "{count, plural, =0 {すべて生成済み} other {未生成分を生成（#）}}",
+      "deleteTitle": "「{name}」を削除しますか？",
+      "deleteBody": "アセットはプロジェクトの全エピソードから削除されます。画像はデータフォルダに残ります。",
+      "deleteConfirm": "アセットを削除"
+    },
+    "video": {
+      "title": "動画制作",
+      "needScript": "先に脚本を仕上げてください。ショットは脚本から分割されます。",
+      "toScript": "脚本へ",
+      "toAssets": "アセットへ",
+      "emptyBody": "脚本を8〜15秒のショットに分割します。各ショットには説明、紐づけたアセット、動画プロンプトが付きます。",
+      "breakingBody": "脚本をショットに分割しています。完了するとここに表示されます。",
+      "lockedModel": "動画には{name}の{model}を使用します。別の動画モデルは上部のバーで選べます。",
+      "noVideoService": "有効な動画サービスがありません。動画を生成する前に、設定で追加してください。",
+      "breakdown": "ショットに分割",
+      "breaking": "分割中",
+      "breakdownFailed": "ショット分割に失敗しました：{error}",
+      "breakdownFailedKept": "前回のショット分割に失敗したため、これらのショットを残しています：{error}",
+      "promptsFailed": "前回のプロンプト一括作成に失敗しました：{error}",
+      "summary": "{count, plural, other {#ショット}} · {seconds}秒",
+      "generated": "生成済み {done}/{total}",
+      "breakAgain": "再分割",
+      "breakAgainTitle": "脚本を再分割しますか？",
+      "breakAgainBody": "現在のショットと生成済みの動画は、新しい分割結果で置き換えられます。失敗した場合は現在のショットに戻ります。",
+      "breakAgainConfirm": "再分割",
+      "fillPrompts": "{count, plural, other {プロンプトを#件作成}}",
+      "promptsDone": "プロンプト作成済み",
+      "promptProgress": "プロンプト {done}/{total}",
+      "retryFailed": "失敗分を再試行（{count}）",
+      "selectMode": "選択",
+      "generateMissing": "動画を生成（{count}）",
+      "generateSelected": "選択分を生成（{count}）",
+      "resizeList": "ショット一覧の幅を変更",
+      "resizeInspector": "プレイヤーの幅を変更",
+      "unmatched": "このショットに紐づいていないため、テキストとして送信：{names}",
+      "dropped": "モデルの参照上限を超えたため除外：{names}",
+      "alreadyGenerating": "このショットはすでに生成中です。",
+      "moderationHint": "プロバイダーがこのコンテンツを拒否しました。動画モデルを切り替えて再試行してください。",
+      "shotN": "ショット#{number}",
+      "selectShot": "ショット#{number}を選択",
+      "generateShot": "ショット#{number}を生成",
+      "seconds": "{seconds}秒",
+      "state": {
+        "pending": "未生成",
+        "generating": "生成中",
+        "done": "完了",
+        "failed": "失敗"
+      },
+      "filter": {
+        "label": "ショットを絞り込み",
+        "all": "すべて",
+        "pending": "未生成",
+        "generating": "生成中",
+        "done": "完了",
+        "failed": "失敗",
+        "none": "この条件に一致するショットはありません。"
+      },
+      "quick": {
+        "all": "すべて",
+        "pending": "未生成",
+        "failed": "失敗",
+        "none": "なし"
+      },
+      "fields": {
+        "description": "ショットの説明",
+        "atmosphere": "雰囲気",
+        "videoPrompt": "動画プロンプト"
+      },
+      "refs": {
+        "title": "参照アセット",
+        "goGenerate": "{count, plural, other {未生成の画像を#件生成}}",
+        "characters": "キャラクター",
+        "scene": "シーン",
+        "props": "小道具",
+        "noScene": "シーンなし",
+        "usable": "使用可",
+        "notGenerated": "未生成",
+        "unbound": "未紐づけ",
+        "none": "このエピソードにはありません",
+        "noneBound": "このショットに紐づいたアセットはありません。",
+        "character": "キャラクター",
+        "prop": "小道具"
+      },
+      "extra": {
+        "title": "追加の参照ファイル",
+        "addImage": "参照画像を追加",
+        "addVideo": "参照動画を追加",
+        "addAudio": "参照音声を追加",
+        "uploading": "アップロード中…",
+        "empty": "アップロードした画像・動画・音声は、紐づけたアセットの後に送信されます。",
+        "video": "参照動画",
+        "audio": "参照音声",
+        "remove": "削除"
+      },
+      "prompt": {
+        "generate": "AIで作成",
+        "regenerate": "AIでリライト",
+        "placeholder": "@を入力すると、紐づけたキャラクター・シーン・小道具をメンションできます。",
+        "picker": "紐づけたアセット",
+        "pickerEmpty": "一致するアセットはありません。",
+        "unbound": "このショットに未紐づけ",
+        "hint": "@[名前] のようにメンションすると、そのアセットの画像が参照として送信されます。",
+        "noBindings": "メンションするには、先にアセットを紐づけてください。"
+      },
+      "inspector": {
+        "setMain": "メインに設定",
+        "download": "ダウンロード",
+        "noVideo": "動画はまだありません",
+        "history": "バージョン（{count}）",
+        "previewClip": "{seconds}秒のバージョンをプレビュー",
+        "main": "メイン動画",
+        "deleteClip": "このバージョンを削除",
+        "noHistory": "生成したバージョンがここに表示されます。",
+        "references": "参照として送信",
+        "duration": "秒数",
+        "config": "{model} · {resolution} · {seconds}秒",
+        "defaultModel": "デフォルトモデル",
+        "generate": "動画を生成",
+        "regenerate": "再生成"
+      },
+      "batch": {
+        "progress": "動画をリクエスト中 {done}/{total}",
+        "summary": "{started}件開始、{already}件は生成中、{failed}件失敗",
+        "confirmTitle": "動画を{count, plural, other {#本}}生成しますか？",
+        "confirmBody": "各ショットは動画モデルに1回ずつ送信されます。生成料金はプロバイダーから請求されます。",
+        "shots": "ショット",
+        "seconds": "合計秒数",
+        "model": "モデル",
+        "defaultModel": "エピソードのデフォルト",
+        "resolution": "解像度",
+        "cancel": "キャンセル",
+        "confirm": "{count}本を生成"
+      }
+    },
+    "export": {
+      "title": "結合・書き出し",
+      "markDone": "エピソードを完了にする",
+      "films": "{count, plural, =0 {完成動画} other {完成動画（#本）}}",
+      "noFilms": "完成動画はまだありません。下のショットを選択して、エピソードの完成動画に結合してください。",
+      "filmTitle": "完成動画 #{id}",
+      "play": "完成動画 #{id}を再生",
+      "current": "エピソードの完成動画",
+      "clips": "{count, plural, other {#クリップ}}",
+      "download": "ダウンロード",
+      "merging": "結合中",
+      "merged": "エピソードの完成動画ができました。",
+      "mergeFailed": "結合に失敗しました。",
+      "alreadyMerging": "このエピソードはすでに結合中です。",
+      "state": {
+        "processing": "結合中",
+        "completed": "完了",
+        "failed": "失敗"
+      },
+      "shots": "ショットのクリップ · 生成済み {done}/{total}",
+      "selectAll": "生成済みをすべて選択",
+      "clear": "選択を解除",
+      "mergeSelected": "選択分を結合（{count}）",
+      "noShots": "このエピソードにはまだショットがありません。動画制作で脚本をショットに分割してください。",
+      "noClips": "動画のあるショットがまだありません。先にショットの動画を生成してください。",
+      "toVideo": "動画制作へ",
+      "noVideo": "動画なし",
+      "previewShot": "ショット#{number}をプレビュー",
+      "shotPreview": "ショット#{number}"
+    },
+    "tasks": {
+      "open": "生成タスク",
+      "title": "タスク",
+      "close": "閉じる",
+      "empty": "このエピソードではまだ何も生成されていません。",
+      "cap": "最新のタスク{tasks}件と結合{films}件を表示しています。",
+      "count": {
+        "processing": "{count}件実行中",
+        "completed": "{count}件完了",
+        "failed": "{count}件失敗"
+      },
+      "status": {
+        "processing": "実行中",
+        "completed": "完了",
+        "failed": "失敗"
+      },
+      "kind": {
+        "image": "画像",
+        "video": "動画",
+        "merge": "結合"
+      },
+      "owner": {
+        "shot": "ショット{label}",
+        "character": "キャラクター · {label}",
+        "scene": "シーン · {label}",
+        "prop": "小道具 · {label}",
+        "removed": "削除済みの項目"
+      },
+      "mergeTarget": "エピソード全体の結合 · {count, plural, other {#クリップ}}",
+      "openActive": "生成タスク（{count}件実行中）"
+    },
+    "help": "スタジオのガイドを表示",
+    "tour": {
+      "stagesTitle": "ステップ順に進める",
+      "stagesBody": "脚本からアセット、ショット動画、完成動画へと順に進みます。完了したステップにはチェックが付きます。",
+      "modelsTitle": "モデルを選ぶ",
+      "modelsBody": "このセッションで使うテキスト・画像・動画モデルを選びます。選ばない場合は、エピソードに設定されたサービスが使われます。",
+      "resolutionTitle": "動画の解像度",
+      "resolutionBody": "このエピソードのショット動画の解像度を設定します。選べる解像度は動画モデルによって異なります。",
+      "tasksTitle": "進行状況を確認",
+      "tasksBody": "画像・動画の生成や結合はバックグラウンドで実行されます。タスク一覧を開くと、実行中・完了・失敗の状況とその理由を確認できます。"
+    }
+  }
+}

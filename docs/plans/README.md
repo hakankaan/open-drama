@@ -21,8 +21,8 @@ Three plans cover three sections of Open Drama. They are written against the dom
 
 Iteration 1 video adapters (M3) are Seedance via Volcengine, then MiniMax, then Wan (`adr-0013`); BytePlus and ModelRunner are iteration 2 (see [../BACKLOG.md](../BACKLOG.md)).
 
-## Decisions still marked `proposed`
+## Decisions
 
-`adr-0003` (Hono), `adr-0004` (SQLite + Drizzle), `adr-0005` (generation lifecycle), `adr-0006` (AI SDK tool loop, file-based prompts), `adr-0007` (contract + enum table), `adr-0008` (jobs, parking), `adr-0009` (media), `adr-0010` (Next.js runtime proxy, raised proxy timeout, localhost API), `adr-0011` (English canonical). `adr-0001` (product scope, original work), `adr-0002` (monorepo), `adr-0012` (licence) and `adr-0013` (provider set) are accepted. Accept the proposed ones with `dkk adr status adr-000N accepted` once reviewed, or supersede with `dkk new adr "…" --supersedes adr-000N`.
+All thirteen ADRs (`adr-0001` … `adr-0013`) are accepted. Replace one with `dkk new adr "…" --supersedes adr-000N`.
 
 Resolved: all code, prompts and copy are original work (`adr-0001`); the licence is CC BY-NC-SA 4.0 (`adr-0012`); providers are the official endpoints of the supported models plus BytePlus and ModelRunner, whose adapters are deferred to iteration 2 and tracked in [../BACKLOG.md](../BACKLOG.md) (`adr-0013`). Still open: whether to keep a "recommended gateway" quick setup, and whether an Electron desktop shell is wanted.

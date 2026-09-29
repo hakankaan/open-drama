@@ -1,6 +1,7 @@
 import type { AgentType } from '@open-drama/contracts';
 import { env } from '../../../env';
 import { precondition } from '../../../http/errors';
+import { rememberSecret } from '../../../lib/secrets';
 import { resolveService } from '../../configuration/services';
 import { buildLanguageModel, type LanguageModel } from './sdk';
 import { stubLanguageModel } from './stub-model';
@@ -44,6 +45,7 @@ export function resolveTextModel(opts: {
   const modelId = opts.modelOverride || opts.promptModel || row.models[0];
   if (!modelId) throw precondition(`The text service ${row.name} lists no model; add one in Settings`);
   if (!row.apiKey) throw precondition(`The text service ${row.name} has no API key`);
+  rememberSecret(row.apiKey);
   return {
     model: buildLanguageModel({
       provider: row.provider,

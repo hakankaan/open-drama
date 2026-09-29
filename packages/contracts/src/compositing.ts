@@ -15,3 +15,12 @@ export const Film = z.object({
   completedAt: Timestamp.nullable(),
 });
 export type Film = z.infer<typeof Film>;
+
+/** MergeShots: every shot with a video, or the given ones; clips are always concatenated in shot order. */
+export const MergeShots = z.object({
+  shotIds: z.array(z.number().int().positive()).min(1).max(1000).optional(),
+});
+export type MergeShots = z.input<typeof MergeShots>;
+
+export const MergeStarted = z.object({ filmId: z.number().int() });
+export type MergeStarted = z.infer<typeof MergeStarted>;

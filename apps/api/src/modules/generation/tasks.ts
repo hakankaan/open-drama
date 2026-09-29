@@ -4,7 +4,6 @@ import type { z } from 'zod';
 import type {
   EpisodeGenerationTasks,
   EpisodeTaskRow,
-  Film,
   GenerationTask,
   GenerationTaskList,
   GenerationTaskListQuery,
@@ -26,14 +25,12 @@ import {
   shots,
 } from '../../db/schema';
 import { conflict, notFound } from '../../http/errors';
+import { toFilm } from '../compositing/films';
 
 type TaskRow = typeof generationTasks.$inferSelect;
-type FilmRow = typeof films.$inferSelect;
 
 /** The provider's task id and result URL stay internal (the result URL may be signed). */
 export const toGenerationTask = ({ providerTaskId: _p, resultUrl: _r, ...row }: TaskRow): GenerationTask => row;
-
-export const toFilm = ({ dramaId: _d, encoder: _e, clipPaths, ...row }: FilmRow): Film => ({ ...row, clipCount: clipPaths.length });
 
 /** The latest task of a type per owner id (the owner column is characterId, sceneId, propId or shotId). */
 export function latestTasks(type: GenerationType, column: SQLiteColumn, ids: number[]): Map<number, TaskSummary> {

@@ -1,13 +1,11 @@
 # Read model — a query-optimised projection.
 name: EpisodeFilms
-description: The export stage — the episode's films newest first (status, duration, poster, path for play/download) and the shot assets available for selection with their generated state.
+description: The export stage — the episode's films newest first (status, duration, poster, path for play/download). The stage reads the selectable shots and their generated state from storyboard.EpisodeShotList.
 fields:
   - name: episodeId
     type: ID
   - name: films
     type: "FilmRow[]"
-  - name: shots
-    type: "ShotSelectionRow[]"
 subscribes_to:
   - MergeStarted
   - FilmRendered

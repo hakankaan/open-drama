@@ -16,5 +16,8 @@ adr_refs:
   - adr-0007
   - adr-0012
 code_refs:
+  - apps/api/src/modules/compositing/**
   - apps/api/src/db/schema/compositing.ts
   - apps/api/src/lib/ffmpeg.ts
+  - packages/contracts/src/compositing.ts
+  - apps/web/src/features/compositing/**
