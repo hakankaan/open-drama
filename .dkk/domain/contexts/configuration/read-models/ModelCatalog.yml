@@ -1,0 +1,20 @@
+name: ModelCatalog
+description: >-
+  The ModelRunner endpoints a service of one type can use, with their USD prices (per million tokens, per image, or per
+  output second over the resolution tiers). Read live from ModelRunner's public catalog each time the service dialog
+  asks and never stored; image and video list only the Seedream 5 and Seedance 2 mode endpoints the adapter maps.
+  Picking one adds it to the service's models.
+fields:
+  - name: id
+    type: string
+  - name: name
+    type: string
+  - name: description
+    type: string
+  - name: price
+    type: CatalogPrice
+subscribes_to: []
+used_by:
+  - Creator
+adr_refs:
+  - adr-0013

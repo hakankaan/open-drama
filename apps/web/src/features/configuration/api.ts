@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import {
   AppSettingsView,
+  CatalogModel,
   ConfigurationReadiness,
   Health,
   ModelService,
@@ -25,6 +26,7 @@ export const configurationKeys = {
   readiness: ['configuration', 'readiness'] as const,
   health: ['system', 'health'] as const,
   services: ['configuration', 'services'] as const,
+  catalog: (type: ServiceType) => ['configuration', 'modelrunner-catalog', type] as const,
   presets: (all: boolean) => ['configuration', 'presets', all] as const,
   settings: ['configuration', 'settings'] as const,
 };
@@ -46,6 +48,15 @@ export const useModelServices = (type?: ServiceType, usableOnly = false) =>
     queryKey: [...configurationKeys.services, type ?? 'all', usableOnly],
     queryFn: () => request(z.array(ModelService), 'GET', '/model-services' + qs({ type, activeOnly: usableOnly ? 1 : undefined })),
     select: usableOnly ? (list: ModelService[]) => list.filter((s) => s.hasKey) : undefined,
+  });
+
+/** ModelRunner endpoints a service of this type can use, read live from its catalog when the picker opens. */
+export const useModelRunnerCatalog = (type: ServiceType, enabled: boolean) =>
+  useQuery({
+    queryKey: configurationKeys.catalog(type),
+    queryFn: () => request(z.array(CatalogModel), 'GET', '/model-services/modelrunner-catalog' + qs({ type })),
+    enabled,
+    staleTime: 5 * 60_000,
   });
 
 /** Every model-service change refreshes the lists and the readiness banner. */

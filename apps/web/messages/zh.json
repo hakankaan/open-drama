@@ -189,7 +189,23 @@
         "test": "测试连接",
         "required": "必填。",
         "invalidUrl": "请输入以 http:// 或 https:// 开头的 URL。",
-        "invalidTemperature": "请输入 0 到 2 之间的数字。"
+        "invalidTemperature": "请输入 0 到 2 之间的数字。",
+        "catalog": {
+          "toggle": "浏览 ModelRunner 模型",
+          "search": "搜索模型",
+          "error": "无法加载 ModelRunner 模型目录。",
+          "retry": "重试",
+          "empty": "没有匹配的模型。",
+          "add": "添加",
+          "added": "已添加",
+          "addModel": "添加 {model}",
+          "addedModel": "{model} 已在列表中",
+          "perMillionTokens": "每 1M tokens：输入 {input} · 输出 {output}",
+          "perImage": "每张 {amount}",
+          "perSecond": "每秒 {amount}",
+          "perSecondRange": "每秒 {min}–{max}",
+          "hint": "这里只列出本应用支持调用的 endpoint。价格来自 ModelRunner，以美元计；视频价格随分辨率变化。"
+        }
       },
       "row": {
         "keySet": "已设置 Key",

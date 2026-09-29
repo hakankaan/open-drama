@@ -89,6 +89,26 @@ export const ModelServiceProbe = z.object({
 });
 export type ModelServiceProbe = z.infer<typeof ModelServiceProbe>;
 
+export const ModelCatalogQuery = z.object({ type: ServiceType });
+
+/** A catalog price in US dollars: per million tokens (text), per image, or per output second (a range over tiers). */
+export const CatalogPrice = z.discriminatedUnion('unit', [
+  z.object({ unit: z.literal('tokens'), input: z.number(), output: z.number() }),
+  z.object({ unit: z.literal('image'), amount: z.number() }),
+  z.object({ unit: z.literal('second'), min: z.number(), max: z.number() }),
+]);
+export type CatalogPrice = z.infer<typeof CatalogPrice>;
+
+/** One ModelRunner endpoint the service's adapter can drive, read from the live catalog on demand (adr-0013). */
+export const CatalogModel = z.object({
+  /** The `owner/alias` id a service lists as a model. */
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  price: CatalogPrice.nullable(),
+});
+export type CatalogModel = z.infer<typeof CatalogModel>;
+
 export const ConfigurationReadiness = z.object({
   missingTypes: z.array(ServiceType),
   ready: z.boolean(),

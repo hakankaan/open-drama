@@ -64,6 +64,7 @@ _No policies._
 | [ActiveModelServices](ActiveModelServices.md) | For each service type, the active services sorted by priority with their models, so the workbench top bar can switch text/image/video models and episode creation can lock the defaults. | ModelServiceAdded, ModelServiceUpdated, ModelServiceDeleted, QuickSetupApplied | Creator |
 | [AppSettingsView](AppSettingsView.md) | The current content language and the tours already seen, read at app start. | ContentLanguageChanged, ToursSeenRecorded | Creator |
 | [ConfigurationReadiness](ConfigurationReadiness.md) | Which service types (text, image, video) still lack an active service. Drives the site-wide banner and the first-run tour. | ModelServiceAdded, ModelServiceUpdated, ModelServiceDeleted, QuickSetupApplied | Creator |
+| [ModelCatalog](ModelCatalog.md) | The ModelRunner endpoints a service of one type can use, with their USD prices (per million tokens, per image, or per output second over the resolution tiers). Read live from ModelRunner's public catalog each time the service dialog asks and never stored; image and video list only the Seedream 5 and Seedance 2 mode endpoints the adapter maps. Picking one adds it to the service's models. | — | Creator |
 | [StylePresetCatalog](StylePresetCatalog.md) | Style presets sorted by sort order — active only for project creation, all of them for the settings page. | StylePresetCreated, StylePresetUpdated, StylePresetDeleted | Creator |
 
 ## Linked ADRs

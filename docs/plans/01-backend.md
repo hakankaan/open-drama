@@ -225,6 +225,7 @@ Endpoints, grouped by context (command / read model they implement in parenthese
 | POST | `/model-services/test` | TestModelService (probes in this module; 15 s fetch timeout) |
 | POST | `/model-services/quick-setup` `{ apiKey, gateway }` | ApplyQuickSetup (templates are static data in `packages/contracts/quick-setup.ts`, shared with the web app) |
 | GET | `/model-services/readiness` | ConfigurationReadiness |
+| GET | `/model-services/modelrunner-catalog?type` | ModelCatalog (ModelRunner's public catalog, read live and never stored; image and video filtered by the adapter's `offersEndpoint`) |
 | GET · POST · PATCH · DELETE | `/style-presets[?all=1][/:id]` | StylePresetCatalog / Create / Update / Delete |
 | GET · PATCH | `/settings` | AppSettingsView / SetContentLanguage / RecordToursSeen |
 

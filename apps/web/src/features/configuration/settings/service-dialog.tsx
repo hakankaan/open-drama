@@ -19,6 +19,7 @@ import { Select } from '@/components/ui/select';
 import { cn } from '@/lib/cn';
 import { useToastError } from '@/lib/errors';
 import { useAddModelService, useTestModelService, useUpdateModelService } from '../api';
+import { ModelCatalog } from './model-catalog';
 import { ProbeResult } from './probe-result';
 
 export type ServiceDialogState =
@@ -216,6 +217,14 @@ export function ServiceDialog({ state, onClose }: { state: ServiceDialogState; o
           <Field label={t('models')} htmlFor="svc-models" hint={t('modelsHint')}>
             <ModelsInput id="svc-models" value={form.models} onChange={(m) => set('models', m)} />
           </Field>
+
+          {form.provider === 'modelrunner' ? (
+            <ModelCatalog
+              serviceType={serviceType}
+              models={form.models}
+              onAdd={(m) => set('models', [...new Set([...form.models, m])])}
+            />
+          ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t('priority')} htmlFor="svc-priority" hint={t('priorityHint')}>

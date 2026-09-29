@@ -189,7 +189,23 @@
         "test": "Test connection",
         "required": "Required.",
         "invalidUrl": "Enter a URL starting with http:// or https://.",
-        "invalidTemperature": "Use a number from 0 to 2."
+        "invalidTemperature": "Use a number from 0 to 2.",
+        "catalog": {
+          "toggle": "Browse ModelRunner models",
+          "search": "Search models",
+          "error": "The ModelRunner catalog could not be loaded.",
+          "retry": "Retry",
+          "empty": "No models match.",
+          "add": "Add",
+          "added": "Added",
+          "addModel": "Add {model}",
+          "addedModel": "{model} is already listed",
+          "perMillionTokens": "{input} in · {output} out per 1M tokens",
+          "perImage": "{amount} per image",
+          "perSecond": "{amount} per second",
+          "perSecondRange": "{min}–{max} per second",
+          "hint": "Only the endpoints this app can drive are listed. Prices are ModelRunner's, in US dollars; video prices depend on the resolution."
+        }
       },
       "row": {
         "keySet": "Key set",

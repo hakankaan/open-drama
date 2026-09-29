@@ -189,7 +189,23 @@
         "test": "接続テスト",
         "required": "必須です。",
         "invalidUrl": "http:// または https:// で始まるURLを入力してください。",
-        "invalidTemperature": "0〜2の数値を入力してください。"
+        "invalidTemperature": "0〜2の数値を入力してください。",
+        "catalog": {
+          "toggle": "ModelRunner のモデルを探す",
+          "search": "モデルを検索",
+          "error": "ModelRunner のカタログを読み込めませんでした。",
+          "retry": "再試行",
+          "empty": "一致するモデルはありません。",
+          "add": "追加",
+          "added": "追加済み",
+          "addModel": "{model} を追加",
+          "addedModel": "{model} は追加済みです",
+          "perMillionTokens": "1M tokens あたり 入力 {input} · 出力 {output}",
+          "perImage": "1 枚 {amount}",
+          "perSecond": "1 秒 {amount}",
+          "perSecondRange": "1 秒 {min}〜{max}",
+          "hint": "このアプリで呼び出せる endpoint だけを表示しています。価格は ModelRunner の米ドル建てで、動画は解像度によって変わります。"
+        }
       },
       "row": {
         "keySet": "キー設定済み",

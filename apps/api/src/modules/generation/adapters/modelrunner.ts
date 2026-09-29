@@ -11,9 +11,12 @@ import {
   type VideoAdapter,
 } from './types';
 
-/** The Seedream and Seedance families, whose ModelRunner schemas this adapter maps (adr-0013). */
-const IMAGE_FAMILY = /^bytedance\/seedream-/;
-const VIDEO_FAMILY = /^bytedance\/seedance-/;
+/**
+ * The Seedream 5 and Seedance 2 families, whose ModelRunner schemas this adapter maps (adr-0013). Older versions take
+ * other inputs (Seedream 4.5 `image_size`, Seedance 1.5 a string `duration`) and have no reference sibling.
+ */
+const IMAGE_FAMILY = /^bytedance\/seedream-v5(-pro)?(\/|$)/;
+const VIDEO_FAMILY = /^bytedance\/seedance-v2(\.5|-fast|-mini)?(\/|$)/;
 
 /**
  * ModelRunner splits a family by mode, each with its own inputs: `…/text-to-image` has no references and `…/edit`
@@ -23,20 +26,33 @@ const VIDEO_FAMILY = /^bytedance\/seedance-/;
  */
 const MODE_PAIRS = { image: ['/text-to-image', '/edit'], video: ['/text-to-video', '/reference-to-video'] } as const;
 
-function endpointFor(model: string, kind: 'image' | 'video', withReferences: boolean): string {
-  const endpoint = clean(model);
+/** Why the adapter cannot drive the endpoint for this kind, or undefined when it can. */
+function refusal(endpoint: string, kind: 'image' | 'video'): string | undefined {
   const family = kind === 'image' ? IMAGE_FAMILY : VIDEO_FAMILY;
   if (!family.test(endpoint)) {
-    throw new ConfigError(
-      `The ModelRunner ${kind} adapter drives ${kind === 'image' ? 'bytedance/seedream-*' : 'bytedance/seedance-*'} endpoints; ${model} is not one`,
-    );
+    const families = kind === 'image' ? 'Seedream 5 and 5 Pro' : 'Seedance 2.0, 2.5, 2.0 Fast and 2.0 Mini';
+    return `The ModelRunner ${kind} adapter drives the ${families} endpoints; ${endpoint} is not one`;
   }
   const [plain, referenced] = MODE_PAIRS[kind];
   // Other modes (image-to-video, first-last-frame, video-to-video) take inputs this adapter does not map.
   const mode = endpoint.split('/').slice(2).join('/');
   if (mode && `/${mode}` !== plain && `/${mode}` !== referenced) {
-    throw new ConfigError(`The ModelRunner ${kind} adapter drives the ${plain.slice(1)} and ${referenced.slice(1)} endpoints; ${model} is not one`);
+    return `The ModelRunner ${kind} adapter drives the ${plain.slice(1)} and ${referenced.slice(1)} endpoints; ${endpoint} is not one`;
   }
+  return undefined;
+}
+
+/** Catalog endpoints worth offering in the model picker: a driven family under one of its mapped mode endpoints. */
+export function offersEndpoint(kind: 'image' | 'video', model: string): boolean {
+  const endpoint = clean(model);
+  return !refusal(endpoint, kind) && MODE_PAIRS[kind].some((mode) => endpoint.endsWith(mode));
+}
+
+function endpointFor(model: string, kind: 'image' | 'video', withReferences: boolean): string {
+  const endpoint = clean(model);
+  const why = refusal(endpoint, kind);
+  if (why) throw new ConfigError(why);
+  const [plain, referenced] = MODE_PAIRS[kind];
   if (withReferences && endpoint.endsWith(plain)) return endpoint.slice(0, -plain.length) + referenced;
   if (!withReferences && endpoint.endsWith(referenced)) return endpoint.slice(0, -referenced.length) + plain;
   return endpoint;
