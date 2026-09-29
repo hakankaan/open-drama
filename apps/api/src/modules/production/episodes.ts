@@ -51,7 +51,7 @@ export function createEpisode(input: z.output<typeof CreateEpisode>): EpisodeVie
   const video = resolveService('video', { explicitId: input.videoServiceId });
   const missing = [!image && 'image', !video && 'video'].filter(Boolean);
   if (missing.length > 0) {
-    throw precondition(`Add an active ${missing.join(' and ')} service in Settings before creating an episode`, {
+    throw precondition(`Add an active ${missing.join(' and ')} service with an API key in Settings before creating an episode`, {
       missingTypes: missing,
     });
   }

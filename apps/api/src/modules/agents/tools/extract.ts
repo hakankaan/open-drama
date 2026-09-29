@@ -59,7 +59,7 @@ const text = (max: number) => z.string().max(max).optional();
 
 export const saveDedupCharacters = defineTool({
   id: 'save_dedup_characters',
-  description: 'Save every character of this episode. Existing names are linked to the episode, not duplicated.',
+  description: 'Save every character of this episode. Existing names are linked to the episode, not duplicated; names the creator deleted come back as skipped.',
   input: z.object({
     items: z
       .array(
@@ -78,7 +78,7 @@ export const saveDedupCharacters = defineTool({
 
 export const saveDedupScenes = defineTool({
   id: 'save_dedup_scenes',
-  description: 'Save every scene (location + time) of this episode. Existing ones are linked, not duplicated.',
+  description: 'Save every scene (location + time) of this episode. Existing ones are linked, not duplicated; scenes the creator deleted come back as skipped.',
   input: z.object({
     items: z
       .array(z.object({ location: z.string().min(1).max(120), time: text(60), prompt: text(4000), lighting: text(1000) }))
@@ -89,7 +89,7 @@ export const saveDedupScenes = defineTool({
 
 export const saveDedupProps = defineTool({
   id: 'save_dedup_props',
-  description: 'Save the plot-critical props of this episode (0 to 3). An empty list is valid.',
+  description: 'Save the plot-critical props of this episode (0 to 3). An empty list is valid; props the creator deleted come back as skipped.',
   input: z.object({
     items: z.array(z.object({ name: z.string().min(1).max(80), type: text(60), description: text(4000) })).max(10),
   }),

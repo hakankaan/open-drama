@@ -32,7 +32,7 @@
     "confirm": "Switch language"
   },
   "readiness": {
-    "missing": "{count, plural, one {Add a {types} service} other {Add {types} services}} before producing an episode.",
+    "missing": "{count, plural, one {Add a {types} service} other {Add {types} services}} with an API key before producing an episode.",
     "action": "Set up AI services"
   },
   "serviceType": {

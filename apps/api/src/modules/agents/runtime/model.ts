@@ -39,7 +39,7 @@ export function resolveTextModel(opts: {
     return { model: stubLanguageModel(), modelId: 'stub-text', serviceId: null };
   }
   const resolved = resolveService('text', { explicitId: opts.textServiceId });
-  if (!resolved) throw precondition('Add an active text service in Settings before running an agent');
+  if (!resolved) throw precondition('Add an active text service with an API key in Settings before running an agent');
   const { row } = resolved;
   const modelId = opts.modelOverride || opts.promptModel || row.models[0];
   if (!modelId) throw precondition(`The text service ${row.name} lists no model; add one in Settings`);

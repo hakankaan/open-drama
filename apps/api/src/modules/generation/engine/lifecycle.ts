@@ -48,7 +48,7 @@ export function resolveGeneration<A>(
     return { adapter, config: null, serviceId: null, provider: 'stub', model: `stub-${type}` };
   }
   const resolved = resolveService(type, { explicitId: opts.explicitId, lockedId: opts.lockedId });
-  if (!resolved) throw precondition(`Add an active ${type} service in Settings before generating ${type}s`);
+  if (!resolved) throw precondition(`Add an active ${type} service with an API key in Settings before generating ${type}s`);
   const { row } = resolved;
   const adapter = adapterFor(row.provider);
   if (!adapter) throw precondition(`${type === 'image' ? 'Image' : 'Video'} generation through ${row.provider} is not available yet`);

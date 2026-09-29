@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, ne } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   type AddModelService as AddModelServiceSchema,
@@ -22,6 +22,10 @@ type Row = typeof modelServices.$inferSelect;
 export const toModelService = ({ apiKey, ...row }: Row): ModelService => ({ ...row, hasKey: apiKey.length > 0 });
 
 const ORDER = [desc(modelServices.priority), asc(modelServices.id)] as const;
+
+/** A service a run can fall back to: active and holding a key. Readiness counts exactly these. */
+export const usableService = (type?: ServiceType) =>
+  and(type ? eq(modelServices.serviceType, type) : undefined, eq(modelServices.isActive, true), ne(modelServices.apiKey, ''));
 
 /** Provider must be one the app supports for the type, and its adapter must exist (adr-0013). */
 function assertProvider(serviceType: ServiceType, provider: ProviderName) {
@@ -112,7 +116,7 @@ export function deleteModelService(id: number): { id: number } {
 
 /**
  * The service to use for a type: an explicit id, else the episode's lock while it is still active, else the
- * highest-priority active service. null when the type has no active service.
+ * highest-priority usable (active, keyed) service. null when the type has none.
  */
 export function resolveService(type: ServiceType, opts: { explicitId?: number | null; lockedId?: number | null } = {}) {
   if (opts.explicitId) {
@@ -128,7 +132,7 @@ export function resolveService(type: ServiceType, opts: { explicitId?: number | 
   const row = db
     .select()
     .from(modelServices)
-    .where(and(eq(modelServices.serviceType, type), eq(modelServices.isActive, true)))
+    .where(usableService(type))
     .orderBy(...ORDER)
     .get();
   return row ? { row, locked: false } : null;

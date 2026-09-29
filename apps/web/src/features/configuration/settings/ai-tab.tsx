@@ -205,7 +205,7 @@ function TypeCard({
   onDelete: (service: ModelService) => void;
 }) {
   const t = useTranslations('settings.ai');
-  const ready = services.some((s) => s.isActive);
+  const ready = services.some((s) => s.isActive && s.hasKey);
   return (
     <section className="rounded-lg border border-line bg-surface" aria-labelledby={`type-${type}`}>
       <header className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">

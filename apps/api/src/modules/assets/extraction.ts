@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 import { db } from '../../db/client';
 import { characters, dramas, episodeCharacters, episodeProps, episodeScenes, props, scenes } from '../../db/schema';
 import { getDramaStylePrompt } from '../configuration/presets';
@@ -42,7 +42,9 @@ const MAX_PROPS = 3;
 
 /**
  * SaveExtractedCharacters: near-name dedup against the drama's live characters, then link every result to the
- * episode. Existing characters only get their empty fields filled.
+ * episode. Existing characters only get their empty fields filled. Deleting an asset is the creator's verdict: a
+ * name matching only a deleted one is reported as skipped instead of coming back (the same rule holds for scenes
+ * and props).
  */
 export function saveExtractedCharacters(dramaId: number, episodeId: number, items: ExtractedCharacter[]): SaveResult {
   const result: SaveResult = { created: [], reused: [], skipped: [] };
@@ -52,11 +54,23 @@ export function saveExtractedCharacters(dramaId: number, episodeId: number, item
       .from(characters)
       .where(and(eq(characters.dramaId, dramaId), isNull(characters.deletedAt)))
       .all();
+    const deleted = new Set(
+      tx
+        .select({ name: characters.name })
+        .from(characters)
+        .where(and(eq(characters.dramaId, dramaId), isNotNull(characters.deletedAt)))
+        .all()
+        .map((c) => normaliseName(c.name)),
+    );
     for (const item of items) {
       const name = item.name?.trim();
       if (!name) continue;
       const key = normaliseName(name);
       let row = live.find((c) => normaliseName(c.name) === key);
+      if (!row && deleted.has(key)) {
+        result.skipped.push(name);
+        continue;
+      }
       if (row) {
         const patch = fillEmpty(row, { role: item.role, appearance: item.appearance, styling: item.styling, description: item.description });
         if (Object.keys(patch).length > 0) {
@@ -98,6 +112,14 @@ export function saveExtractedScenes(dramaId: number, episodeId: number, items: E
       .from(scenes)
       .where(and(eq(scenes.dramaId, dramaId), isNull(scenes.deletedAt)))
       .all();
+    const deleted = new Set(
+      tx
+        .select({ location: scenes.location, time: scenes.time })
+        .from(scenes)
+        .where(and(eq(scenes.dramaId, dramaId), isNotNull(scenes.deletedAt)))
+        .all()
+        .map((s) => sceneKey(s.location, s.time)),
+    );
     for (const item of items) {
       const location = item.location?.trim();
       if (!location) continue;
@@ -105,6 +127,10 @@ export function saveExtractedScenes(dramaId: number, episodeId: number, items: E
       const key = sceneKey(location, time);
       const label = time ? `${location} (${time})` : location;
       let row = live.find((s) => sceneKey(s.location, s.time) === key);
+      if (!row && deleted.has(key)) {
+        result.skipped.push(label);
+        continue;
+      }
       if (row) {
         const patch = fillEmpty(row, { prompt: item.prompt, lighting: item.lighting });
         if (Object.keys(patch).length > 0) {
@@ -141,6 +167,14 @@ export function saveExtractedProps(dramaId: number, episodeId: number, items: Ex
       .from(props)
       .where(and(eq(props.dramaId, dramaId), isNull(props.deletedAt)))
       .all();
+    const deleted = new Set(
+      tx
+        .select({ name: props.name })
+        .from(props)
+        .where(and(eq(props.dramaId, dramaId), isNotNull(props.deletedAt)))
+        .all()
+        .map((p) => normaliseName(p.name)),
+    );
     const linked = new Set(
       tx
         .select({ id: episodeProps.propId })
@@ -155,7 +189,7 @@ export function saveExtractedProps(dramaId: number, episodeId: number, items: Ex
       if (!name) continue;
       const key = normaliseName(name);
       let row = live.find((p) => normaliseName(p.name) === key);
-      if (!(row && linked.has(row.id)) && linked.size >= MAX_PROPS) {
+      if ((!row && deleted.has(key)) || (!(row && linked.has(row.id)) && linked.size >= MAX_PROPS)) {
         result.skipped.push(name);
         continue;
       }
