@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ne } from 'drizzle-orm';
+import { and, asc, desc, eq, max, ne } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   type AddModelService as AddModelServiceSchema,
@@ -138,7 +138,10 @@ export function resolveService(type: ServiceType, opts: { explicitId?: number | 
   return row ? { row, locked: false } : null;
 }
 
-/** ApplyQuickSetup: writes one service per type from the template, upserting by name or (type, provider, baseUrl). */
+/**
+ * ApplyQuickSetup: writes one service per type from the template, upserting by name or (type, provider, baseUrl).
+ * Each written service outranks the other services of its type, so the platform just set up is the one runs use.
+ */
 export function applyQuickSetup(input: ApplyQuickSetup): ModelService[] {
   const template = QUICK_SETUP_TEMPLATES.find((t) => t.gateway === input.gateway);
   if (!template) throw invalid(`Unknown quick-setup gateway: ${input.gateway}`);
@@ -157,6 +160,11 @@ export function applyQuickSetup(input: ApplyQuickSetup): ModelService[] {
             ),
           )
           .get();
+      const others = tx
+        .select({ top: max(modelServices.priority) })
+        .from(modelServices)
+        .where(and(eq(modelServices.serviceType, svc.serviceType), existing ? ne(modelServices.id, existing.id) : undefined))
+        .get()?.top;
       const values = {
         serviceType: svc.serviceType,
         provider: svc.provider,
@@ -165,6 +173,8 @@ export function applyQuickSetup(input: ApplyQuickSetup): ModelService[] {
         apiKey: input.apiKey,
         models: svc.models,
         isActive: true,
+        // Capped at the edit form's bound so the service stays editable.
+        priority: others == null ? (existing?.priority ?? 0) : Math.min(1000, Math.max(existing?.priority ?? 0, others + 1)),
       };
       const row = existing
         ? tx.update(modelServices).set(values).where(eq(modelServices.id, existing.id)).returning().get()

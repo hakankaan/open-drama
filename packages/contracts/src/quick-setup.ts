@@ -17,6 +17,7 @@ export interface QuickSetupTemplate {
 }
 
 const ARK = 'https://ark.cn-beijing.volces.com/api/v3';
+const MODELARK = 'https://ark.ap-southeast.bytepluses.com/api/v3';
 
 export const QUICK_SETUP_TEMPLATES: QuickSetupTemplate[] = [
   {
@@ -47,6 +48,34 @@ export const QUICK_SETUP_TEMPLATES: QuickSetupTemplate[] = [
       },
     ],
   },
+  {
+    gateway: 'byteplus-modelark',
+    label: 'BytePlus ModelArk',
+    keyUrl: 'https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey',
+    services: [
+      {
+        serviceType: 'text',
+        provider: 'byteplus',
+        name: 'Seed (ModelArk)',
+        baseUrl: MODELARK,
+        models: ['seed-2-0-pro-260328', 'dola-seed-2-1-turbo-260628'],
+      },
+      {
+        serviceType: 'image',
+        provider: 'byteplus',
+        name: 'Seedream (ModelArk)',
+        baseUrl: MODELARK,
+        models: ['dola-seedream-5-0-pro-260628', 'dola-seedream-5-0-flash-260915'],
+      },
+      {
+        serviceType: 'video',
+        provider: 'byteplus',
+        name: 'Seedance (ModelArk)',
+        baseUrl: MODELARK,
+        models: ['dreamina-seedance-2-0-260128', 'dreamina-seedance-2-5-260628'],
+      },
+    ],
+  },
 ];
 
 /** Starting points for the manual service dialog: provider base URL and, where stable, a default model. */
@@ -72,6 +101,14 @@ export const PROVIDER_PRESETS: Record<ProviderName, { label: string; baseUrl: st
   },
   minimax: { label: 'MiniMax', baseUrl: 'https://api.minimaxi.com', models: { video: ['MiniMax-H3'] } },
   aliyun: { label: 'Alibaba Bailian', baseUrl: 'https://dashscope.aliyuncs.com/api/v1', models: { video: ['wan3.0-video'] } },
-  byteplus: { label: 'BytePlus ModelArk', baseUrl: 'https://ark.ap-southeast.bytepluses.com/api/v3', models: {} },
+  byteplus: {
+    label: 'BytePlus ModelArk',
+    baseUrl: MODELARK,
+    models: {
+      text: ['seed-2-0-pro-260328'],
+      image: ['dola-seedream-5-0-pro-260628'],
+      video: ['dreamina-seedance-2-0-260128'],
+    },
+  },
   modelrunner: { label: 'ModelRunner', baseUrl: 'https://modelrunner.run', models: {} },
 };

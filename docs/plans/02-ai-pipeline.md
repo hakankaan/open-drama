@@ -2,7 +2,7 @@
 
 Scope: everything that talks to a model. The agent runtime and its four production agents, the prompt/skill workspace they read from, the text-model transport patches, the unified generation engine, the image and video provider adapters (plus stub adapters for offline development), reference normalisation, result persistence and write-back. It lives inside `apps/api` and plugs into the endpoints and tables defined in Plan 1.
 
-Governing decisions: `adr-0005` (generation lifecycle + adapters), `adr-0006` (AI SDK tool loop, file-based prompts/skills), `adr-0008` (jobs), `adr-0009` (media), `adr-0011` (English canonical), `adr-0001` (original work: every prompt and skill text is written for this repository), `adr-0012` (licence), `adr-0013` (provider set; BytePlus and ModelRunner adapters deferred to iteration 2). Domain: `.dkk/domain/contexts/{agents,generation,assets,storyboard,production}` and flows `AgentRun`, `GenerationTaskLifecycle`.
+Governing decisions: `adr-0005` (generation lifecycle + adapters), `adr-0006` (AI SDK tool loop, file-based prompts/skills), `adr-0008` (jobs), `adr-0009` (media), `adr-0011` (English canonical), `adr-0001` (original work: every prompt and skill text is written for this repository), `adr-0012` (licence), `adr-0013` (provider set; BytePlus served by the Volcengine adapters, ModelRunner deferred to iteration 2). Domain: `.dkk/domain/contexts/{agents,generation,assets,storyboard,production}` and flows `AgentRun`, `GenerationTaskLifecycle`.
 
 ---
 
@@ -188,7 +188,7 @@ interface ProviderRequest { url: string; method: string; headers: Record<string,
 - `openai-image` — `/v1/images/generations` for text-to-image, `/v1/images/edits` (multipart `image[]`) when references exist; size normalisation for `gpt-image-*` models; URL or `b64_json` results.
 - `gemini-image` — `generateContent` with image response modality; inline base64 output; reference images as `inline_data` parts.
 - Video adapters (Phase F), iteration 1, in priority order (`adr-0013`): Seedance 2.x via Volcengine Ark (multimodal `content[]` with reference roles, 4–15 s, 480p/720p, `@Image{N}`-style tokens), MiniMax (768P/2K tiers), Wan 3.x via Alibaba Bailian (`input.media[]` + `parameters`, async header).
-- **Iteration 2 (deferred, `docs/BACKLOG.md`)**: a BytePlus adapter for the Seedance/Seedream families (expected to reuse the Volcengine adapters with BytePlus base URLs) and a ModelRunner adapter covering images and video through one gateway (submit run → poll request → download result). The provider enum reserves `byteplus` and `modelrunner` now; the settings UI shows them as coming soon until the adapters land.
+- **BytePlus ModelArk** (brought into iteration 1 on 2026-09-29, `adr-0013` amendment): the Volcengine Seedream and Seedance adapters under the ModelArk host, registered as `byteplus`; text through the OpenAI-compatible client. **Iteration 2 (deferred, `docs/BACKLOG.md`)**: a ModelRunner adapter covering images and video through one gateway (submit run → poll request → download result). The provider enum reserves `modelrunner` now; the settings UI shows it as coming soon until the adapter lands.
 - Each adapter file owns: required URL prefix, model allow-list or prefix check, parameter mapping (duration clamp, ratio, resolution tier), reference limits (used by `submit` validation through `registry.limitsFor(provider)`), mention token formatting, its probe, and response parsing including moderation error codes.
 
 ## 10. Where the pieces plug into Plan 1
@@ -233,7 +233,7 @@ Estimated total: 9–12 working days.
 
 ## 12. Risks and open questions
 
-- **Video providers.** Decided (`adr-0013`): iteration 1 ships the official Seedance (Volcengine), MiniMax and Wan adapters in that order; BytePlus and ModelRunner follow in iteration 2 and are tracked in `docs/BACKLOG.md`. The adapter contract makes reordering cheap.
+- **Video providers.** Decided (`adr-0013`): iteration 1 ships the official Seedance (Volcengine), MiniMax and Wan adapters in that order; BytePlus reuses the Seedance adapter under its own host (brought into iteration 1 on 2026-09-29); ModelRunner follows in iteration 2 and is tracked in `docs/BACKLOG.md`. The adapter contract makes reordering cheap.
 - **AI SDK version drift.** Pin `ai` (v6 line) and `@ai-sdk/openai`, `@ai-sdk/google`, `@ai-sdk/openai-compatible` (v3 line); the step-limit (`stopWhen: stepCountIs`) and tool (`inputSchema`) APIs changed between majors. Only `sdk.ts` imports them.
 - **Model compliance.** Agents sometimes reply with text instead of calling the save tool; the success check plus a single automatic retry with a stronger "call the tool" reminder covers most cases.
 - **Cost control.** Batch video generation is the expensive step; the confirmation dialog (Plan 3), the per-shot `409` while processing, per-shot retry and the concurrency cap are the guardrails.

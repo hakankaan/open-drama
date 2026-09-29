@@ -19,10 +19,10 @@ Three plans cover three sections of Open Drama. They are written against the dom
 | M4 Export | Phase 7 | — | Phase 7 | merged film playable and downloadable |
 | M5 Ship | Phase 8 | Phase G | Phase 8 | Docker image, four languages, tours, log redaction audit |
 
-Iteration 1 video adapters (M3) are Seedance via Volcengine, then MiniMax, then Wan (`adr-0013`); BytePlus and ModelRunner are iteration 2 (see [../BACKLOG.md](../BACKLOG.md)).
+Iteration 1 video adapters (M3) are Seedance via Volcengine, then MiniMax, then Wan (`adr-0013`); BytePlus joined iteration 1 as a Volcengine alias on 2026-09-29; ModelRunner is iteration 2 (see [../BACKLOG.md](../BACKLOG.md)).
 
 ## Decisions
 
 All thirteen ADRs (`adr-0001` … `adr-0013`) are accepted. Replace one with `dkk new adr "…" --supersedes adr-000N`.
 
-Resolved: all code, prompts and copy are original work (`adr-0001`); the licence is CC BY-NC-SA 4.0 (`adr-0012`); providers are the official endpoints of the supported models plus BytePlus and ModelRunner, whose adapters are deferred to iteration 2 and tracked in [../BACKLOG.md](../BACKLOG.md) (`adr-0013`). Still open: whether to keep a "recommended gateway" quick setup, and whether an Electron desktop shell is wanted.
+Resolved: all code, prompts and copy are original work (`adr-0001`); the licence is CC BY-NC-SA 4.0 (`adr-0012`); providers are the official endpoints of the supported models plus BytePlus and ModelRunner; BytePlus ships in iteration 1 and the ModelRunner adapter is deferred to iteration 2, tracked in [../BACKLOG.md](../BACKLOG.md) (`adr-0013`). Still open: whether to keep a "recommended gateway" quick setup, and whether an Electron desktop shell is wanted.

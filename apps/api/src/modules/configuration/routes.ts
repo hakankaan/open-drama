@@ -40,7 +40,8 @@ export const configurationRoutes = new Hono()
     const apiKey = body.apiKey || saved?.apiKey;
     if (!serviceType || !provider || !baseUrl) throw invalid('serviceType, provider and baseUrl are required');
     if (!apiKey) throw invalid('An API key is required to test the service');
-    return ok(c, await probeService({ serviceType, provider, baseUrl, apiKey }));
+    const model = body.model || saved?.models[0];
+    return ok(c, await probeService({ serviceType, provider, baseUrl, apiKey, model }));
   })
   .post('/model-services/quick-setup', v('json', ApplyQuickSetup), (c) =>
     ok(c, { services: applyQuickSetup(c.req.valid('json')) }),

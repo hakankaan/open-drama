@@ -8,7 +8,7 @@ glossary:
 - term: Service type
   definition: text, image or video — each stage needs exactly one active service of the type it uses.
 - term: Provider
-  definition: 'The dialect a service speaks: the official endpoints of the supported model families (openai, gemini, volcengine, minimax, aliyun), plus byteplus and modelrunner (adapters in iteration 2, adr-0013). Determines the adapter and the connectivity probe.'
+  definition: 'The dialect a service speaks: the official endpoints of the supported model families (openai, gemini, volcengine, minimax, aliyun), plus byteplus (the international Ark, served by the Volcengine adapters) and modelrunner (adapter in iteration 2, adr-0013). Determines the adapter and the connectivity probe.'
 - term: Quick setup
   definition: Writing a recommended text, image and video service in one step from a single API key of a compatible gateway.
 - term: Style preset

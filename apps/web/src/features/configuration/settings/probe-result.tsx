@@ -2,9 +2,9 @@ import { CircleAlert, CircleCheck, CircleX } from 'lucide-react';
 import type { ModelServiceProbe } from '@open-drama/contracts';
 import { cn } from '@/lib/cn';
 
-/** Outcome of a connectivity test: green only when the key was accepted. */
+/** Outcome of a connectivity test: green only when the key was accepted and the model was not refused. */
 export function ProbeResult({ probe, className }: { probe: ModelServiceProbe; className?: string }) {
-  const ok = probe.reachable && probe.keyAccepted !== false;
+  const ok = probe.reachable && probe.keyAccepted !== false && probe.modelAvailable !== false;
   const Icon = ok ? (probe.keyAccepted ? CircleCheck : CircleAlert) : CircleX;
   return (
     <p

@@ -18,6 +18,7 @@ import { useTour } from '@/components/tour';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Field, Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Tag } from '@/components/ui/tag';
@@ -37,7 +38,8 @@ function QuickSetup() {
   const t = useTranslations('settings.ai.quick');
   const toastError = useToastError();
   const apply = useApplyQuickSetup();
-  const template = QUICK_SETUP_TEMPLATES[0]!;
+  const [gateway, setGateway] = useState(QUICK_SETUP_TEMPLATES[0]!.gateway);
+  const template = QUICK_SETUP_TEMPLATES.find((q) => q.gateway === gateway) ?? QUICK_SETUP_TEMPLATES[0]!;
   const [key, setKey] = useState('');
 
   const submit = async (e: React.SubmitEvent<HTMLFormElement>) => {
@@ -73,6 +75,18 @@ function QuickSetup() {
         </a>
       </div>
       <form onSubmit={submit} className="mt-4 flex flex-wrap items-end gap-3">
+        {QUICK_SETUP_TEMPLATES.length > 1 && (
+          <div className="w-56">
+            <Field label={t('platform')} htmlFor="quick-platform">
+              <Select
+                id="quick-platform"
+                value={gateway}
+                onValueChange={setGateway}
+                options={QUICK_SETUP_TEMPLATES.map((q) => ({ value: q.gateway, label: q.label }))}
+              />
+            </Field>
+          </div>
+        )}
         <div className="min-w-64 flex-1">
           <Field label={t('key')} htmlFor="quick-key">
             <Input

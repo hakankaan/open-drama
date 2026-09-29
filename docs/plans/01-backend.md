@@ -360,7 +360,7 @@ Estimated total: 8â€“11 working days for one engineer, assuming Plan 2 phases Aâ
 - **Proxying media through Next** doubles the hop for large videos and shares the proxy idle timeout; the Phase 3 check is the gate. If it fails, expose the API origin to the browser for `/static` only (build-time `NEXT_PUBLIC_API_ORIGIN`, CORS on `/static`).
 - **Single-user, no auth**: acceptable for a self-hosted tool bound to localhost; a reverse proxy with authentication is the documented answer for exposed deployments. Adding accounts later means adding `ownerId` to dramas and model services.
 - **Concurrency in SQLite**: WAL + busy timeout handles the polling load; keep transactions short in `saveShots`.
-- Open: whether to ship a recommended gateway in quick setup or a neutral list; whether the desktop shell is wanted at all. Resolved: licence is CC BY-NC-SA 4.0 (`adr-0012`, `LICENSE` at the root, SPDX id in every `package.json` from Phase 0); providers are the official endpoints plus BytePlus and ModelRunner, the latter two deferred to iteration 2 (`adr-0013`, `docs/BACKLOG.md`).
+- Open: whether to ship a recommended gateway in quick setup or a neutral list; whether the desktop shell is wanted at all. Resolved: licence is CC BY-NC-SA 4.0 (`adr-0012`, `LICENSE` at the root, SPDX id in every `package.json` from Phase 0); providers are the official endpoints plus BytePlus and ModelRunner; ModelRunner is deferred to iteration 2 (`adr-0013`, `docs/BACKLOG.md`).
 
 ## 10. Later
 

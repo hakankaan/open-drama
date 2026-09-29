@@ -152,6 +152,7 @@
         "title": "Quick setup with {gateway}",
         "body": "One {gateway} API key sets up a text, an image and a video service at once. You can edit them afterwards.",
         "getKey": "Get a key",
+        "platform": "Platform",
         "key": "API key",
         "keyPlaceholder": "Paste your key",
         "apply": "Set up services",

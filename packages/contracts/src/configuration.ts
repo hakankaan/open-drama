@@ -81,6 +81,8 @@ export const ModelServiceProbe = z.object({
   reachable: z.boolean(),
   /** false when the provider rejected the key; null when the answer does not tell. */
   keyAccepted: z.boolean().nullable(),
+  /** false when the provider said the default model is unknown or not activated; null when it was not checked. */
+  modelAvailable: z.boolean().nullable(),
   status: z.number().int().nullable(),
   latencyMs: z.number().int(),
   message: z.string(),

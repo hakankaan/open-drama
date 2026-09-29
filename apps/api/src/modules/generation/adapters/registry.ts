@@ -9,14 +9,17 @@ import type { ImageAdapter, VideoAdapter } from './types';
 import { volcengineImage } from './volcengine-image';
 import { volcengineVideo } from './volcengine-video';
 
+// BytePlus ModelArk is the international Ark: the same v3 API, served from its own host (adr-0013).
 const IMAGE: Record<string, ImageAdapter> = {
   openai: openaiImage,
   gemini: geminiImage,
   volcengine: volcengineImage,
+  byteplus: { ...volcengineImage, provider: 'byteplus' },
 };
 
 const VIDEO: Record<string, VideoAdapter> = {
   volcengine: volcengineVideo,
+  byteplus: { ...volcengineVideo, provider: 'byteplus' },
   minimax: minimaxVideo,
   aliyun: aliyunVideo,
 };

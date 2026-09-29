@@ -17,7 +17,7 @@ const failure = (task: SeedanceTask) => {
 };
 
 /**
- * Volcengine Ark Seedance 2.x: one multimodal task (`content[]` with the text, then reference images, videos and
+ * Ark Seedance 2.x (Volcengine, and BytePlus ModelArk through the registry): one multimodal task (`content[]` with the text, then reference images, videos and
  * audio by role), polled by task id. Seedance offers 480p and 720p; 1080p is sent as 720p.
  */
 export const volcengineVideo: VideoAdapter = {
@@ -27,7 +27,7 @@ export const volcengineVideo: VideoAdapter = {
   formatMention: (slot, name) => `${name} (@Image${slot})`,
   buildGenerateRequest(config, record) {
     if (!/seedance/i.test(config.model)) {
-      throw new ConfigError(`The Volcengine video adapter drives Seedance models; ${config.model} is not one`);
+      throw new ConfigError(`The Ark video adapter drives Seedance models; ${config.model} is not one`);
     }
     const content: unknown[] = [];
     if (record.prompt) content.push({ type: 'text', text: record.prompt });

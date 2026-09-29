@@ -107,6 +107,7 @@ export function ServiceDialog({ state, onClose }: { state: ServiceDialogState; o
           provider: form.provider,
           baseUrl: form.baseUrl.trim(),
           apiKey: form.apiKey.trim() || undefined,
+          model: form.models[0],
         }),
       );
     } catch (err) {

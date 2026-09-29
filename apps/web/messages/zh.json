@@ -152,6 +152,7 @@
         "title": "通过 {gateway} 快速配置",
         "body": "一个 {gateway} API Key 就能同时配置好文本、图像和视频服务，之后仍可修改。",
         "getKey": "获取 API Key",
+        "platform": "平台",
         "key": "API Key",
         "keyPlaceholder": "粘贴你的 API Key",
         "apply": "一键配置",

@@ -9,7 +9,7 @@ const SIZE: Record<AspectRatio, string> = {
   adaptive: '2304x1728',
 };
 
-/** Volcengine Ark Seedream: OpenAI-style /images/generations; reference images go in `image` as data URLs. */
+/** Ark Seedream (Volcengine, and BytePlus ModelArk through the registry): OpenAI-style /images/generations; reference images go in `image` as data URLs. */
 export const volcengineImage: ImageAdapter = {
   provider: 'volcengine',
   limits: { images: 10 },
