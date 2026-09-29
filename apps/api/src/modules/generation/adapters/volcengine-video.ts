@@ -18,7 +18,7 @@ const failure = (task: SeedanceTask) => {
 
 /**
  * Ark Seedance 2.x (Volcengine, and BytePlus ModelArk through the registry): one multimodal task (`content[]` with the text, then reference images, videos and
- * audio by role), polled by task id. Seedance offers 480p and 720p; 1080p is sent as 720p.
+ * audio by role), polled by task id. The resolution arrives already fitted to the model's tiers.
  */
 export const volcengineVideo: VideoAdapter = {
   provider: 'volcengine',
@@ -34,6 +34,10 @@ export const volcengineVideo: VideoAdapter = {
     for (const url of record.referenceImages) content.push({ type: 'image_url', image_url: { url }, role: 'reference_image' });
     for (const url of record.referenceVideos) content.push({ type: 'video_url', video_url: { url }, role: 'reference_video' });
     for (const url of record.referenceAudios) content.push({ type: 'audio_url', audio_url: { url }, role: 'reference_audio' });
+    // Seedance 2.5 reads a reference video under an editing or extending prompt as an edit or extend task, which
+    // demands an adaptive ratio (and duration -1). Naming the task keeps a shot's references plain references.
+    const refs = record.referenceImages.length + record.referenceVideos.length + record.referenceAudios.length;
+    const taskType = refs > 0 && /seedance-2-5/i.test(config.model) ? { omni_reference_task_type: 'reference' } : {};
     return {
       url: joinProviderUrl(config.baseUrl, '/api/v3', 'contents/generations/tasks'),
       method: 'POST',
@@ -43,9 +47,10 @@ export const volcengineVideo: VideoAdapter = {
         content,
         ratio: record.aspectRatio,
         duration: record.durationSeconds,
-        resolution: record.resolution === '480p' ? '480p' : '720p',
+        resolution: record.resolution,
         generate_audio: record.generateAudio,
         watermark: false,
+        ...taskType,
       }),
     };
   },

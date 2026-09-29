@@ -76,13 +76,16 @@ function QuickSetup() {
       </div>
       <form onSubmit={submit} className="mt-4 flex flex-wrap items-end gap-3">
         {QUICK_SETUP_TEMPLATES.length > 1 && (
-          <div className="w-56">
+          <div className="w-64">
             <Field label={t('platform')} htmlFor="quick-platform">
               <Select
                 id="quick-platform"
                 value={gateway}
                 onValueChange={setGateway}
-                options={QUICK_SETUP_TEMPLATES.map((q) => ({ value: q.gateway, label: q.label }))}
+                options={QUICK_SETUP_TEMPLATES.map((q) => ({
+                  value: q.gateway,
+                  label: q.recommended ? t('recommended', { gateway: q.label }) : q.label,
+                }))}
               />
             </Field>
           </div>

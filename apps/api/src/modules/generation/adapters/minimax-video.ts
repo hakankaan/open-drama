@@ -36,7 +36,7 @@ export const minimaxBase = (baseUrl: string) => baseUrl.replace(/\/v1\/?$/, '');
 
 /**
  * MiniMax Hailuo H3 (/v2): one multimodal task (`content[]`: text, reference images, videos, audio), polled by
- * task id. Tiers are 768P and 2K: 480p and 720p go as 768P, 1080p as 2K. It has no reference token syntax, so
+ * task id. Tiers are 480P (H3-Max), 768P and 2K: 480p, 720p and 1080p map to them. It has no reference token syntax, so
  * mentions stay plain names.
  */
 export const minimaxVideo: VideoAdapter = {
@@ -63,7 +63,7 @@ export const minimaxVideo: VideoAdapter = {
         model: config.model,
         content,
         duration: max ? Math.max(5, record.durationSeconds) : record.durationSeconds,
-        resolution: record.resolution === '1080p' ? '2K' : '768P',
+        resolution: record.resolution === '1080p' ? '2K' : record.resolution === '480p' && max ? '480P' : '768P',
         ratio: RATIOS.has(record.aspectRatio) ? record.aspectRatio : '16:9',
       }),
     };

@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import type { RequestShotVideo, ShotVideoStarted } from '@open-drama/contracts';
+import { fitResolution, type RequestShotVideo, type ShotVideoStarted } from '@open-drama/contracts';
 import { invalid, precondition } from '../../http/errors';
 import { withStylePrefix } from '../assets/extraction';
 import { resolveVideo, submitShotVideo } from '../generation/engine/videos';
@@ -21,7 +21,7 @@ const key = (name: string) => name.trim().toLowerCase();
 /**
  * RequestShotVideo: builds the ordered reference slots (bound scene → characters → props, assets without an image
  * skipped, then the shot's uploaded images, then the request's extra images; deduplicated by path, capped by the
- * provider), turns each `@[Name]` of a bound asset into its slot token, prepends the drama's style, and submits the
+ * model), turns each `@[Name]` of a bound asset into its slot token, prepends the drama's style, and submits the
  * task in the episode's locked video service. A shot whose video task is still processing is refused (409).
  */
 export function requestShotVideo(shotId: number, body: z.output<typeof RequestShotVideo>): ShotVideoStarted {
@@ -90,7 +90,7 @@ export function requestShotVideo(shotId: number, body: z.output<typeof RequestSh
     referenceAudios: audios,
     durationSeconds,
     aspectRatio: drama.aspectRatio,
-    resolution: ep.resolution,
+    resolution: fitResolution(caps, ep.resolution),
     generateAudio: body.generateAudio ?? true,
     params: {
       slots: slots.map((s, i) => ({ slot: i + 1, name: s.name ?? null })),

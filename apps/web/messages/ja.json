@@ -153,6 +153,7 @@
         "body": "{gateway}のAPIキー1つで、テキスト・画像・動画のサービスをまとめて設定します。設定後に編集することもできます。",
         "getKey": "キーを取得",
         "platform": "プラットフォーム",
+        "recommended": "{gateway}（おすすめ）",
         "key": "APIキー",
         "keyPlaceholder": "キーを貼り付け",
         "apply": "サービスを設定",

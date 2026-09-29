@@ -153,6 +153,7 @@
         "body": "{gateway} API 키 하나로 텍스트, 이미지, 영상 서비스를 한 번에 설정해요. 설정한 뒤에도 수정할 수 있어요.",
         "getKey": "키 발급받기",
         "platform": "플랫폼",
+        "recommended": "{gateway} (추천)",
         "key": "API 키",
         "keyPlaceholder": "키를 붙여 넣으세요",
         "apply": "서비스 설정하기",

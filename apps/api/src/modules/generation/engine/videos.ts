@@ -23,7 +23,7 @@ export type ResolvedVideo = ResolvedGeneration<VideoAdapter> & { caps: VideoProv
 /** The video adapter, credentials and reference limits for a request (explicit → episode lock → active). */
 export function resolveVideo(opts: { explicitId?: number; lockedId?: number | null; model?: string }): ResolvedVideo {
   const resolved = resolveGeneration('video', videoAdapterFor, opts);
-  return { ...resolved, caps: videoCapsFor(resolved.provider) };
+  return { ...resolved, caps: videoCapsFor(resolved.provider, resolved.model) };
 }
 
 export interface SubmitVideoInput {

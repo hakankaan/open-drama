@@ -6,7 +6,7 @@ import type { ModelPicks } from '../configuration/model-picks';
 
 /**
  * The video model a generation will use, as the API resolves it: the creator's pick, else the episode's locked
- * service with its first model. Carries that provider's caps (durations, resolution tiers) for the pickers.
+ * service with its first model. Carries that model's caps (durations, resolution tiers) for the pickers.
  */
 export function useVideoTarget(episode: EpisodeView, picks: ModelPicks) {
   const services = useModelServices('video', true);
@@ -14,7 +14,7 @@ export function useVideoTarget(episode: EpisodeView, picks: ModelPicks) {
   const locked = episode.services.video;
   const provider = picked?.provider ?? locked?.provider ?? null;
   const model = picked ? picks.video!.model : (locked?.defaultModel ?? null);
-  const caps = videoCapsFor(provider);
+  const caps = videoCapsFor(provider, model);
   const clamp = (seconds: number) => Math.min(caps.durationRange[1], Math.max(caps.durationRange[0], Math.round(seconds)));
   return { provider, model, caps, clamp, lockedName: locked?.name ?? null };
 }

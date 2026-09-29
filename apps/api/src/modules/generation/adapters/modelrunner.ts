@@ -1,4 +1,4 @@
-import type { AspectRatio } from '@open-drama/contracts';
+import { cleanModelId as clean, type AspectRatio } from '@open-drama/contracts';
 import { ConfigError } from '../engine/errors';
 import { joinProviderUrl } from './url';
 import {
@@ -18,11 +18,10 @@ const VIDEO_FAMILY = /^bytedance\/seedance-/;
 /**
  * ModelRunner splits a family by mode, each with its own inputs: `…/text-to-image` has no references and `…/edit`
  * requires them; likewise `…/text-to-video` and `…/reference-to-video`. The service names one of the pair and the
- * request uses the one that fits whether references were sent. Endpoints without a mode suffix are used as named.
+ * request uses the one that fits whether references were sent. Endpoints without a mode suffix are used as named;
+ * other modes are refused.
  */
 const MODE_PAIRS = { image: ['/text-to-image', '/edit'], video: ['/text-to-video', '/reference-to-video'] } as const;
-
-const clean = (model: string) => model.trim().replace(/^\/+|\/+$/g, '');
 
 function endpointFor(model: string, kind: 'image' | 'video', withReferences: boolean): string {
   const endpoint = clean(model);
@@ -33,6 +32,11 @@ function endpointFor(model: string, kind: 'image' | 'video', withReferences: boo
     );
   }
   const [plain, referenced] = MODE_PAIRS[kind];
+  // Other modes (image-to-video, first-last-frame, video-to-video) take inputs this adapter does not map.
+  const mode = endpoint.split('/').slice(2).join('/');
+  if (mode && `/${mode}` !== plain && `/${mode}` !== referenced) {
+    throw new ConfigError(`The ModelRunner ${kind} adapter drives the ${plain.slice(1)} and ${referenced.slice(1)} endpoints; ${model} is not one`);
+  }
   if (withReferences && endpoint.endsWith(plain)) return endpoint.slice(0, -plain.length) + referenced;
   if (!withReferences && endpoint.endsWith(referenced)) return endpoint.slice(0, -referenced.length) + plain;
   return endpoint;

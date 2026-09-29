@@ -13,6 +13,8 @@ export interface QuickSetupTemplate {
   gateway: string;
   label: string;
   keyUrl: string;
+  /** The gateway quick setup offers first: one key covers every service type across many model families. */
+  recommended?: boolean;
   services: ServiceTemplate[];
 }
 
@@ -22,6 +24,35 @@ const MODELRUNNER_TEXT = 'https://modelrunner.run/v1';
 const MODELRUNNER_QUEUE = 'https://queue.modelrunner.run';
 
 export const QUICK_SETUP_TEMPLATES: QuickSetupTemplate[] = [
+  {
+    gateway: 'modelrunner',
+    label: 'ModelRunner',
+    recommended: true,
+    keyUrl: 'https://modelrunner.ai/settings/api-keys',
+    services: [
+      {
+        serviceType: 'text',
+        provider: 'modelrunner',
+        name: 'Text (ModelRunner)',
+        baseUrl: MODELRUNNER_TEXT,
+        models: ['deepseek/v4.1-flash'],
+      },
+      {
+        serviceType: 'image',
+        provider: 'modelrunner',
+        name: 'Seedream (ModelRunner)',
+        baseUrl: MODELRUNNER_QUEUE,
+        models: ['bytedance/seedream-v5-pro/text-to-image', 'bytedance/seedream-v5/text-to-image'],
+      },
+      {
+        serviceType: 'video',
+        provider: 'modelrunner',
+        name: 'Seedance (ModelRunner)',
+        baseUrl: MODELRUNNER_QUEUE,
+        models: ['bytedance/seedance-v2/reference-to-video', 'bytedance/seedance-v2.5/reference-to-video'],
+      },
+    ],
+  },
   {
     gateway: 'volcengine-ark',
     label: 'Volcengine Ark',
@@ -75,34 +106,6 @@ export const QUICK_SETUP_TEMPLATES: QuickSetupTemplate[] = [
         name: 'Seedance (ModelArk)',
         baseUrl: MODELARK,
         models: ['dreamina-seedance-2-0-260128', 'dreamina-seedance-2-5-260628'],
-      },
-    ],
-  },
-  {
-    gateway: 'modelrunner',
-    label: 'ModelRunner',
-    keyUrl: 'https://modelrunner.ai/settings/api-keys',
-    services: [
-      {
-        serviceType: 'text',
-        provider: 'modelrunner',
-        name: 'Text (ModelRunner)',
-        baseUrl: MODELRUNNER_TEXT,
-        models: ['deepseek/v4.1-flash'],
-      },
-      {
-        serviceType: 'image',
-        provider: 'modelrunner',
-        name: 'Seedream (ModelRunner)',
-        baseUrl: MODELRUNNER_QUEUE,
-        models: ['bytedance/seedream-v5-pro/text-to-image'],
-      },
-      {
-        serviceType: 'video',
-        provider: 'modelrunner',
-        name: 'Seedance (ModelRunner)',
-        baseUrl: MODELRUNNER_QUEUE,
-        models: ['bytedance/seedance-v2/reference-to-video'],
       },
     ],
   },

@@ -153,6 +153,7 @@
         "body": "一个 {gateway} API Key 就能同时配置好文本、图像和视频服务，之后仍可修改。",
         "getKey": "获取 API Key",
         "platform": "平台",
+        "recommended": "{gateway}（推荐）",
         "key": "API Key",
         "keyPlaceholder": "粘贴你的 API Key",
         "apply": "一键配置",
