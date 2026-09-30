@@ -1,0 +1,10 @@
+# Command — an instruction to change domain state.
+name: CleanUpOrphanedMedia
+description: >-
+  Delete the stored files nothing refers to any more (the OrphanedMedia list), after the creator confirms it in the
+  storage settings. The list is worked out again on the server at that moment, never taken from the client.
+actor: Creator
+handled_by: MediaFile
+rejections: []
+adr_refs:
+  - adr-0009

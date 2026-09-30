@@ -63,7 +63,7 @@ Left nav (220 px) with the six tabs; tab in the URL query so links deep-link.
 - **General**: content language (four buttons → unified language dialog), appearance (light/dark/system).
 - **Style presets**: list with active count, rows (name, key mono tag, disabled tag, prompt preview, description, switch, edit, delete confirm), dialog (name, key immutable on edit, prompt, description, sort order defaulting to last + 1).
 - **Agents**: agent list (four agents with skill counts) + main area with "System prompt" / "Skills (n)" sub-tabs and the editing-language note; prompt pane (file hint, fallback tag, textarea, Reset / Saved / Save); skills pane (expandable cards with textarea, path hint, Save; "Add skill" dialog with directory name, name, description; delete confirm).
-- **Storage**: data directory card (mode tag, paths), usage breakdown by bucket with "counting…" while stale (poll `GET /storage` every 2 s until fresh), disk free, notes.
+- **Storage**: data directory card (mode tag, paths), usage breakdown by bucket with "counting…" while stale (poll `GET /storage` every 2 s until fresh), disk free, notes; an "Unused files" card (`GET /storage/orphans` on open, no polling) whose delete goes through a confirmation.
 - **About**: version from `GET /health`, links, the exposure note (no authentication; keep the web port private or put an authenticating proxy in front). Update checks are out of scope.
 
 ### 4.4 Project page `/drama/[id]`

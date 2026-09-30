@@ -1,0 +1,23 @@
+name: OrphanedMedia
+description: >-
+  Stored files that no row in the database mentions any more, with their count and size per bucket: an asset image that
+  was replaced, a take whose generation task was deleted, an upload that was never attached. Only files the store wrote
+  (uuid names and their renditions) in the uploads, images, videos and merged buckets count, and only once they are
+  older than the grace period; temp is never included.
+fields:
+  - name: files
+    type: number
+  - name: bytes
+    type: number
+  - name: byBucket
+    type: BucketUsage[]
+  - name: graceHours
+    type: number
+subscribes_to:
+  - MediaUploaded
+  - MediaStored
+  - OrphanedMediaRemoved
+used_by:
+  - Creator
+adr_refs:
+  - adr-0009

@@ -288,6 +288,19 @@
         "temp": "Temporary",
         "workspace": "Workspace",
         "other": "Other"
+      },
+      "unused": {
+        "title": "Unused files",
+        "checking": "Checking for unused files",
+        "failed": "Couldn’t check for unused files.",
+        "explain": "Files nothing in Open Drama uses any more: an asset image you replaced, a take whose history entry you deleted, an upload that was never attached. Files from the last {hours} hours stay, and so do the files of deleted projects, episodes and assets.",
+        "none": "No unused files.",
+        "found": "{count, plural, one {# unused file} other {# unused files}}, {size}",
+        "delete": "Delete unused files",
+        "confirmTitle": "Delete {count, plural, one {# unused file} other {# unused files}}?",
+        "confirmBody": "This frees {size}. The files are removed from disk and cannot be restored.",
+        "confirm": "Delete files",
+        "removed": "{count, plural, =0 {No files were removed} one {Removed # file ({size})} other {Removed # files ({size})}}"
       }
     },
     "about": {

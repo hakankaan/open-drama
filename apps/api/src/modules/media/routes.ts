@@ -2,6 +2,7 @@ import { Hono, type Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { created, ok } from '../../http/envelope';
 import { invalid } from '../../http/errors';
+import { cleanUpOrphanedMedia, findOrphanedMedia } from './orphans';
 import { getStorageUsage } from './storage-usage';
 import type { MediaKind } from './store';
 import { UPLOAD_RULES, uploadMedia } from './upload';
@@ -25,4 +26,6 @@ export const mediaRoutes = new Hono()
   .post('/media/upload/image', limit('image'), upload('image'))
   .post('/media/upload/video', limit('video'), upload('video'))
   .post('/media/upload/audio', limit('audio'), upload('audio'))
-  .get('/storage', (c) => ok(c, getStorageUsage()));
+  .get('/storage', (c) => ok(c, getStorageUsage()))
+  .get('/storage/orphans', async (c) => ok(c, await findOrphanedMedia()))
+  .delete('/storage/orphans', async (c) => ok(c, await cleanUpOrphanedMedia()));

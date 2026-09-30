@@ -15,6 +15,7 @@ A stored file with its relative path, kind (image, video, audio, film), MIME typ
 - File names are uuids with the original extension; a path is never reused, so immutable caching is safe.
 - Uploads are validated by extension and MIME (video ≤ 50 MB, audio ≤ 20 MB, images by extension).
 - Rendition derivation never blocks or fails the main operation; a missing rendition is tolerated by the UI.
+- A file is deleted only when no value anywhere in the database mentions its uuid and it is older than the grace period (24 h); renditions share the uuid of their original.
 
 
 ## Relationships
@@ -25,9 +26,11 @@ A stored file with its relative path, kind (image, video, audio, film), MIME typ
 | Handles | `StoreRemoteFile` |
 | Handles | `StoreInlineImage` |
 | Handles | `DeriveRenditions` |
+| Handles | `CleanUpOrphanedMedia` |
 | Emits | `MediaUploaded` |
 | Emits | `MediaStored` |
 | Emits | `RenditionsDerived` |
+| Emits | `OrphanedMediaRemoved` |
 
 ## Linked ADRs
 

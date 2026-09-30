@@ -9,6 +9,8 @@ const FRESH_MS = 60_000;
 
 let cache: { value: StorageUsage; at: number } | null = null;
 let computing: Promise<void> | null = null;
+/** Bumped by invalidateStorageUsage; a count that started before the bump is stored as already stale. */
+let generation = 0;
 
 async function* files(dir: string): AsyncGenerator<{ path: string; size: number }> {
   let entries;
@@ -88,14 +90,21 @@ async function compute(): Promise<StorageUsage> {
 }
 
 function refresh() {
+  const startedAt = generation;
   computing ??= compute()
     .then((value) => {
-      cache = { value, at: Date.now() };
+      cache = { value, at: startedAt === generation ? Date.now() : 0 };
     })
     .catch((err) => logger.warn({ err: (err as Error).message }, 'storage usage failed'))
     .finally(() => {
       computing = null;
     });
+}
+
+/** The next read recounts (after files were removed), showing the old numbers as stale meanwhile. */
+export function invalidateStorageUsage(): void {
+  generation++;
+  if (cache) cache = { ...cache, at: 0 };
 }
 
 /**

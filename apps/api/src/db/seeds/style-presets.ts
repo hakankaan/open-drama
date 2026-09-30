@@ -15,7 +15,7 @@ export const STYLE_PRESET_SEEDS: SeedPreset[] = [
     value: 'cinematic',
     name: 'Cinematic live action',
     prompt:
-      'photorealistic live-action film still, natural skin texture, anamorphic lens, shallow depth of field, motivated practical lighting, subtle film grain, graded like a modern feature film',
+      'photorealistic live-action cinematography, natural skin texture, anamorphic lens, shallow depth of field, motivated practical lighting, subtle film grain, graded like a modern feature film',
     description: 'Realistic footage that looks shot on a cinema camera.',
   },
   {

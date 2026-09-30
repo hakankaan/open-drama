@@ -24,6 +24,15 @@ export const StorageUsage = z.object({
 });
 export type StorageUsage = z.infer<typeof StorageUsage>;
 
+/** Stored files nothing refers to any more (older than the grace period); also the result of cleaning them up. */
+export const OrphanedMedia = z.object({
+  files: z.number().int(),
+  bytes: z.number(),
+  byBucket: z.array(z.object({ bucket: StorageBucket, files: z.number().int(), bytes: z.number() })),
+  graceHours: z.number(),
+});
+export type OrphanedMedia = z.infer<typeof OrphanedMedia>;
+
 export const IMAGE_UPLOAD_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'] as const;
 export const IMAGE_UPLOAD_MAX_BYTES = 20 * 1024 * 1024;
 

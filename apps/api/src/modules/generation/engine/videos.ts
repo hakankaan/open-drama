@@ -49,8 +49,8 @@ function writeBack(tx: Tx, shotId: number, path: string, durationSeconds: number
   tx.update(shots).set({ videoPath: path, videoDurationSeconds: durationSeconds }).where(eq(shots.id, shotId)).run();
 }
 
-async function complete(taskId: number, shotId: number, media: ResultMedia) {
-  const path = media.file ? media.file : media.url ? await storeRemoteFile(media.url, 'video') : null;
+async function complete(taskId: number, shotId: number, media: ResultMedia, serviceBaseUrl: string | undefined) {
+  const path = media.file ? media.file : media.url ? await storeRemoteFile(media.url, 'video', serviceBaseUrl) : null;
   if (!path) throw new ProviderError('The provider returned no video');
   const durationSeconds = await assertVideo(path);
   await deriveRenditions(path, 'video');
@@ -96,7 +96,7 @@ async function run(taskId: number, resolved: ResolvedVideo, input: SubmitVideoIn
   };
   // Preparing the references can take a while too: check once more right before the provider is paid.
   if (!stillWanted(taskId, input.shotId)) return;
-  await complete(taskId, input.shotId, await generate(taskId, resolved, record, POLL, 'video'));
+  await complete(taskId, input.shotId, await generate(taskId, resolved, record, POLL, 'video'), resolved.config?.baseUrl);
 }
 
 /**

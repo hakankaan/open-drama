@@ -19,15 +19,17 @@ Local media storage under the data directory. Uploads and persisted generation r
 |-------|-------------|-----------|--------|
 | [MediaStored](MediaStored.md) | A generation result (downloaded or decoded) or a rendered film was written to local storage. | `MediaFile` | path (string), kind (string) |
 | [MediaUploaded](MediaUploaded.md) | A creator upload was stored and is addressable by path. | `MediaFile` | path (string), kind (string), mimeType (string), sizeBytes (number) |
+| [OrphanedMediaRemoved](OrphanedMediaRemoved.md) | Unused stored files were deleted from disk by a cleanup; the storage usage is recounted. | `MediaFile` | files (number), bytes (number) |
 | [RenditionsDerived](RenditionsDerived.md) | A thumbnail or poster frame now exists next to the stored file. | `MediaFile` | path (string), renditionPath (string) |
 
 ## Commands
 
 | Command | Description | Actor | Handled By | Fields |
 |---------|-------------|-------|------------|--------|
+| [CleanUpOrphanedMedia](CleanUpOrphanedMedia.md) | Delete the stored files nothing refers to any more (the OrphanedMedia list), after the creator confirms it in the storage settings. The list is worked out again on the server at that moment, never taken from the client. | `Creator` | `MediaFile` | — |
 | [DeriveRenditions](DeriveRenditions.md) | Produce the thumbnail (images) or poster frame (videos, films) for a stored file next to it. Skipped silently when FFmpeg is unavailable for videos. | `GenerationWorker` | `MediaFile` | path (string), kind (string) |
 | [StoreInlineImage](StoreInlineImage.md) | Decode a base64 image returned inline by a provider (for example Gemini) and store it with the extension matching its MIME type. | `GenerationWorker` | `MediaFile` | base64Data (string), mimeType (string) |
-| [StoreRemoteFile](StoreRemoteFile.md) | Download a provider result URL into the images or videos directory and return the relative path. | `GenerationWorker` | `MediaFile` | url (string), kind (string) |
+| [StoreRemoteFile](StoreRemoteFile.md) | Download a provider result URL into the images or videos directory and return the relative path. The URL comes from the provider's response, so the download goes through the same guarded fetch as remote reference images: loopback, link-local and cloud-metadata addresses are refused on every hop, except the service's own configured host (a local relay), and the file is capped at 200 MB. The caller decodes the bytes afterwards. | `GenerationWorker` | `MediaFile` | url (string), kind (string), serviceBaseUrl (string) |
 | [UploadMedia](UploadMedia.md) | Accept a creator upload (image, video or audio) into the uploads directory after validating type and size, and return its path. | `Creator` | `MediaFile` | kind (string), file (File) |
 
 ## Policies
@@ -40,12 +42,13 @@ Local media storage under the data directory. Uploads and persisted generation r
 
 | Aggregate | Description | Handles | Emits |
 |-----------|-------------|---------|-------|
-| [MediaFile](MediaFile.md) | A stored file with its relative path, kind (image, video, audio, film), MIME type, size and derived renditions. | UploadMedia, StoreRemoteFile, StoreInlineImage, DeriveRenditions | MediaUploaded, MediaStored, RenditionsDerived |
+| [MediaFile](MediaFile.md) | A stored file with its relative path, kind (image, video, audio, film), MIME type, size and derived renditions. | UploadMedia, StoreRemoteFile, StoreInlineImage, DeriveRenditions, CleanUpOrphanedMedia | MediaUploaded, MediaStored, RenditionsDerived, OrphanedMediaRemoved |
 
 ## Read Models
 
 | Read Model | Description | Subscribes To | Used By |
 |------------|-------------|---------------|---------|
+| [OrphanedMedia](OrphanedMedia.md) | Stored files that no row in the database mentions any more, with their count and size per bucket: an asset image that was replaced, a take whose generation task was deleted, an upload that was never attached. Only files the store wrote (uuid names and their renditions) in the uploads, images, videos and merged buckets count, and only once they are older than the grace period; temp is never included. | MediaUploaded, MediaStored, OrphanedMediaRemoved | Creator |
 | [StorageUsage](StorageUsage.md) | The storage card in settings — data directory paths, deployment mode, disk usage broken down by bucket (database, images, videos, merged, uploads, temp, other), free space and when it was computed (cached with stale-while-revalidate). | MediaUploaded, MediaStored | Creator |
 
 ## Linked ADRs

@@ -288,6 +288,19 @@
         "temp": "临时文件",
         "workspace": "工作区",
         "other": "其他"
+      },
+      "unused": {
+        "title": "未使用的文件",
+        "checking": "正在检查未使用的文件",
+        "failed": "无法检查未使用的文件。",
+        "explain": "Open Drama 中已不再使用的文件：被替换的素材图片、已删除历史记录的视频版本、从未关联的上传文件。最近 {hours} 小时内的文件会保留，已删除的项目、剧集和素材的文件也会保留。",
+        "none": "没有未使用的文件。",
+        "found": "{count} 个未使用的文件，共 {size}",
+        "delete": "删除未使用的文件",
+        "confirmTitle": "删除 {count} 个未使用的文件？",
+        "confirmBody": "将释放 {size}。文件会从磁盘中删除，无法恢复。",
+        "confirm": "删除文件",
+        "removed": "{count, plural, =0 {没有删除任何文件} other {已删除 {count} 个文件（{size}）}}"
       }
     },
     "about": {

@@ -2,9 +2,14 @@
 
 import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tag } from '@/components/ui/tag';
-import { useStorageUsage } from '../../media/api';
+import { useToastError } from '@/lib/errors';
+import { useCleanUpOrphanedMedia, useOrphanedMedia, useStorageUsage } from '../../media/api';
 
 const formatBytes = (bytes: number, locale: string) => {
   const units = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte'] as const;
@@ -21,6 +26,72 @@ const formatBytes = (bytes: number, locale: string) => {
     maximumFractionDigits: value < 10 && unit > 0 ? 1 : 0,
   }).format(value);
 };
+
+/** CleanUpOrphanedMedia: files no row refers to any more, shown with their size and removed after a confirmation. */
+function UnusedFiles() {
+  const t = useTranslations('settings.storage.unused');
+  const locale = useLocale();
+  const toastError = useToastError();
+  const tc = useTranslations('common');
+  const { data, isFetching, isError, refetch } = useOrphanedMedia();
+  const cleanUp = useCleanUpOrphanedMedia();
+  const [confirming, setConfirming] = useState(false);
+
+  const confirm = () =>
+    cleanUp.mutate(undefined, {
+      onSuccess: (removed) => {
+        setConfirming(false);
+        toast.success(t('removed', { count: removed.files, size: formatBytes(removed.bytes, locale) }));
+      },
+      onError: (err) => {
+        setConfirming(false);
+        toastError(err);
+      },
+    });
+
+  return (
+    <section className="rounded-lg border border-line bg-surface p-5" aria-labelledby="unused">
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 id="unused" className="text-base font-semibold">
+          {t('title')}
+        </h2>
+        {isFetching && !data ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" aria-label={t('checking')} /> : null}
+        {data && data.files > 0 ? (
+          <Button size="sm" className="ml-auto" onClick={() => setConfirming(true)}>
+            {t('delete')}
+          </Button>
+        ) : null}
+      </div>
+      <p className="mt-2 text-[13px] text-ink-2">{t('explain', { hours: data?.graceHours ?? 24 })}</p>
+      {isError && !data ? (
+        <p className="mt-3 flex flex-wrap items-center gap-3 text-sm text-danger" role="alert">
+          {t('failed')}
+          <Button size="sm" variant="ghost" onClick={() => void refetch()} loading={isFetching}>
+            {tc('retry')}
+          </Button>
+        </p>
+      ) : null}
+      {data ? (
+        <p className="mt-3 text-sm" aria-live="polite">
+          {data.files === 0 ? (
+            <span className="text-muted">{t('none')}</span>
+          ) : (
+            t('found', { count: data.files, size: formatBytes(data.bytes, locale) })
+          )}
+        </p>
+      ) : null}
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={t('confirmTitle', { count: data?.files ?? 0 })}
+        description={t('confirmBody', { size: formatBytes(data?.bytes ?? 0, locale) })}
+        confirmLabel={t('confirm')}
+        onConfirm={confirm}
+        pending={cleanUp.isPending}
+      />
+    </section>
+  );
+}
 
 export function StorageTab() {
   const t = useTranslations('settings.storage');
@@ -88,6 +159,8 @@ export function StorageTab() {
           </ul>
         )}
       </section>
+
+      <UnusedFiles />
     </div>
   );
 }

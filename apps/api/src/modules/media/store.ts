@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import { env } from '../../env';
 import { logger } from '../../http/logger';
 import { ffmpegBin, probeDurationSeconds, run } from '../../lib/ffmpeg';
+import { fetchPublic } from '../../lib/remote';
 import { toAbsolute, toMediaPath } from '../../lib/paths';
 
 export type Bucket = 'uploads' | 'images' | 'videos' | 'merged' | 'temp';
@@ -93,16 +94,29 @@ export async function assertVideo(mediaPath: string): Promise<number> {
   return seconds;
 }
 
-/** StoreRemoteFile: downloads a provider result so the provider URL is never the source of truth (adr-0009). */
-export async function storeRemoteFile(url: string, kind: MediaKind): Promise<string> {
-  const res = await fetch(url, { signal: AbortSignal.timeout(5 * 60_000) });
-  if (!res.ok) throw new Error(`Downloading the result failed (${res.status})`);
-  if (Number(res.headers.get('content-length') ?? 0) > MAX_REMOTE_BYTES) throw new Error('The result file is too large');
-  const bytes = new Uint8Array(await res.arrayBuffer());
-  if (bytes.byteLength > MAX_REMOTE_BYTES) throw new Error('The result file is too large');
+/**
+ * StoreRemoteFile: downloads a provider result so the provider URL is never the source of truth (adr-0009). The URL
+ * comes from the provider's response, so it goes through the guarded fetch; only the service's own configured host
+ * (`serviceBaseUrl`, possibly a local relay) is reached without the address check. The bytes are decoded by the caller.
+ */
+export async function storeRemoteFile(url: string, kind: MediaKind, serviceBaseUrl: string | undefined): Promise<string> {
+  const { bytes, contentType } = await fetchPublic(url, {
+    what: 'result',
+    maxBytes: MAX_REMOTE_BYTES,
+    timeoutMs: 5 * 60_000,
+    trustedHost: serviceBaseUrl ? hostOf(serviceBaseUrl) : undefined,
+  });
   const bucket: Bucket = kind === 'image' ? 'images' : 'videos';
-  return storeBuffer(bucket, extFor(res.headers.get('content-type'), url, kind === 'image' ? '.png' : '.mp4'), bytes);
+  return storeBuffer(bucket, extFor(contentType || null, url, kind === 'image' ? '.png' : '.mp4'), bytes);
 }
+
+const hostOf = (url: string) => {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return undefined;
+  }
+};
 
 /** StoreInlineImage: base64 results (for example Gemini) become an ordinary stored file. */
 export async function storeInlineImage(base64: string, mimeType: string): Promise<string> {

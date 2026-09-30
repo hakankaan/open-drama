@@ -215,6 +215,8 @@ Endpoints, grouped by context (command / read model they implement in parenthese
 | POST | `/media/upload/video` · `/audio` | UploadMedia for reference media — lands with Plan 2 Phase F (first adapter that accepts them) |
 | GET | `/static/*` | file serving from `STORAGE_ROOT` with `Cache-Control: public, max-age=31536000, immutable`, range requests |
 | GET | `/storage` | StorageUsage (60 s cache, stale-while-revalidate) |
+| GET | `/storage/orphans` | OrphanedMedia: stored files no database value mentions, older than 24 h (`adr-0009` amendment) |
+| DELETE | `/storage/orphans` | CleanUpOrphanedMedia: recomputes the list and deletes it; the usage is recounted |
 
 **configuration**
 
@@ -245,7 +247,7 @@ Endpoints, grouped by context (command / read model they implement in parenthese
 |---|---|---|
 | GET | `/health` | `{ status, version, timestamp }` |
 
-Read model → endpoint map for the implicit ones: `VideoPromptBatchStatus` and `EpisodeJobs` → `GET /episodes/:id/jobs`; `LatestMergeStatus` → `/episodes/:id/films/latest`; `StorageUsage` → `/storage`; `DramaAssetLibrary` → `/dramas/:id/assets`; `AppSettingsView` → `/settings`.
+Read model → endpoint map for the implicit ones: `VideoPromptBatchStatus` and `EpisodeJobs` → `GET /episodes/:id/jobs`; `LatestMergeStatus` → `/episodes/:id/films/latest`; `StorageUsage` → `/storage`; `OrphanedMedia` → `/storage/orphans`; `DramaAssetLibrary` → `/dramas/:id/assets`; `AppSettingsView` → `/settings`.
 
 ## 6. Cross-cutting design
 
@@ -273,7 +275,7 @@ Read model → endpoint map for the implicit ones: `VideoPromptBatchStatus` and 
 
 **Jobs** (`modules/jobs`): `runJob({ kind, episodeId, dramaId, target }, fn)` returns the existing job (`alreadyRunning: true`) when one is running for the key, otherwise inserts an `agent_jobs` row, runs `fn(progress)` detached, records `done`/`failed` with timestamps, and lets `fn` update `progress` (used by the prompt batch: total/completed/failed/currentShotId). The breakdown job parks the episode's shots on its first `replaceExisting` batch (`parkedByJobId = jobId`), purges them on `done`, restores them on `failed`; boot cleanup performs the same restore. `GET /episodes/:id/jobs` returns the latest job per (kind, target). Generation tasks keep their own table because they carry provider state; boot cleanup applies to both.
 
-**Media** (`modules/media`): uuid file names with the original extension under `static/{uploads|images|videos|merged|temp}`; `storeRemoteFile(url, kind)`, `storeInlineImage(b64, mime)`, `deriveRenditions(path, kind)` (400 px WebP thumbnail via sharp; 640 px JPEG poster at 0.5 s via FFmpeg; never throws), `toAbsolute(rel)` that refuses paths escaping `STORAGE_ROOT`, upload validation (image by extension; video ≤ 50 MB `.mp4/.mov/.webm/.m4v`; audio ≤ 20 MB `.mp3/.wav/.m4a/.aac`; MIME checked when present and not `octet-stream`), and `storageUsage()` walking the data dir by bucket with a 60 s cache.
+**Media** (`modules/media`): uuid file names with the original extension under `static/{uploads|images|videos|merged|temp}`; `storeRemoteFile(url, kind, serviceBaseUrl)` (through the guarded fetch in `lib/remote.ts`: no loopback, link-local or metadata targets except the service's own host, 200 MB cap), `storeInlineImage(b64, mime)`, `deriveRenditions(path, kind)` (400 px WebP thumbnail via sharp; 640 px JPEG poster at 0.5 s via FFmpeg; never throws), `toAbsolute(rel)` that refuses paths escaping `STORAGE_ROOT`, upload validation (image by extension; video ≤ 50 MB `.mp4/.mov/.webm/.m4v`; audio ≤ 20 MB `.mp3/.wav/.m4a/.aac`; MIME checked when present and not `octet-stream`), and `storageUsage()` walking the data dir by bucket with a 60 s cache.
 
 **Compositing** (`modules/compositing`): `mergeShots(episodeId, shotIds?)` → load live shots in shot order, filter to those with `videoPath`, verify each file exists (reject naming missing shot numbers), verify the FFmpeg suite, reject with `409` if a film for the episode is processing, insert `films` row `processing`, then detached: ffprobe every clip (size, frame rate, audio, duration), spawn `ffmpeg-static` directly with the concat filter — each clip scaled and padded into the first clip's frame at its frame rate, with its own audio resampled to 48 kHz stereo and padded/trimmed to the clip's length, or generated silence when it has none (the concat demuxer cannot join clips that differ in any of these, which mixed providers and uploads do) — encoding `-c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p -c:a aac -ar 48000 -b:a 192k -movflags +faststart`, then ffprobe the duration, `deriveRenditions(film, 'video')`, update the film row, `AttachEpisodeFilm`. Failures set `error`. No `fluent-ffmpeg` (unmaintained); `lib/ffmpeg.ts` wraps `child_process.spawn` with timeouts and stderr capture.
 
@@ -365,4 +367,4 @@ Estimated total: 8–11 working days for one engineer, assuming Plan 2 phases A�
 
 ## 10. Later
 
-Electron desktop shell (utility-process API + same-origin window + data-dir migration + updater), in-app update checks, multi-user auth, SSE/WebSocket push instead of polling, shot frame images (first/last frame stills for image-to-video providers), a cleanup command for orphaned media files.
+Electron desktop shell (utility-process API + same-origin window + data-dir migration + updater), in-app update checks, multi-user auth, SSE/WebSocket push instead of polling, shot frame images (first/last frame stills for image-to-video providers), purging soft-deleted projects so their media can be reclaimed (the unused-files cleanup itself shipped, `adr-0009` amendment).

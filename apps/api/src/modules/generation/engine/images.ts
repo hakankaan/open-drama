@@ -37,13 +37,13 @@ function writeBack(tx: Tx, kind: AssetKind, id: number, path: string) {
   tx.update(table).set({ imagePath: path }).where(eq(table.id, id)).run();
 }
 
-async function complete(taskId: number, owner: SubmitImageInput['owner'], media: ResultMedia) {
+async function complete(taskId: number, owner: SubmitImageInput['owner'], media: ResultMedia, serviceBaseUrl: string | undefined) {
   const path = media.file
     ? media.file
     : media.base64
       ? await storeInlineImage(media.base64.data, media.base64.mimeType)
       : media.url
-        ? await storeRemoteFile(media.url, 'image')
+        ? await storeRemoteFile(media.url, 'image', serviceBaseUrl)
         : null;
   if (!path) throw new ProviderError('The provider returned no image');
   await assertImage(path);
@@ -75,7 +75,7 @@ async function run(taskId: number, resolved: ResolvedGeneration<ImageAdapter>, i
   const referenceImages = await normalizeReferenceImages(input.referenceImages ?? [], resolved.adapter.limits.images);
   const record = { taskId, prompt: input.prompt, referenceImages, aspectRatio: input.aspectRatio };
   if (!stillWanted(taskId, input.owner)) return;
-  await complete(taskId, input.owner, await generate(taskId, resolved, record, POLL, 'image'));
+  await complete(taskId, input.owner, await generate(taskId, resolved, record, POLL, 'image'), resolved.config?.baseUrl);
 }
 
 /**

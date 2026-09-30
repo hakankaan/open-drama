@@ -28,7 +28,7 @@ export async function normalizeReferenceImages(refs: string[], max: number): Pro
     seen.add(ref);
     if (ref.startsWith('data:')) out.push(ref);
     else if (/^https?:\/\//.test(ref)) {
-      const { bytes } = await fetchPublic(ref, { maxBytes: REMOTE_IMAGE_MAX_BYTES, accept: /^image\//i, timeoutMs: 30_000 });
+      const { bytes } = await fetchPublic(ref, { what: 'reference image', maxBytes: REMOTE_IMAGE_MAX_BYTES, accept: /^image\//i, timeoutMs: 30_000 });
       out.push(await compress(bytes));
     } else out.push(await compress(toAbsolute(ref)));
   }

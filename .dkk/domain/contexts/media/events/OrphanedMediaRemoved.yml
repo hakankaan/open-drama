@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: OrphanedMediaRemoved
+description: Unused stored files were deleted from disk by a cleanup; the storage usage is recounted.
+fields:
+  - name: files
+    type: number
+  - name: bytes
+    type: number
+raised_by: MediaFile
