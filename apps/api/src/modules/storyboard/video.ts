@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { fitResolution, type RequestShotVideo, type ShotVideoStarted } from '@open-drama/contracts';
+import { clampDuration, fitResolution, type RequestShotVideo, type ShotVideoStarted } from '@open-drama/contracts';
 import { invalid, precondition } from '../../http/errors';
 import { withStylePrefix } from '../assets/extraction';
 import { resolveVideo, submitShotVideo } from '../generation/engine/videos';
@@ -22,15 +22,21 @@ const key = (name: string) => name.trim().toLowerCase();
  * RequestShotVideo: builds the ordered reference slots (bound scene → characters → props, assets without an image
  * skipped, then the shot's uploaded images, then the request's extra images; deduplicated by path, capped by the
  * model), turns each `@[Name]` of a bound asset into its slot token, prepends the drama's style, and submits the
- * task in the episode's locked video service. A shot whose video task is still processing is refused (409).
+ * task in the episode's locked video service. A shot whose video task is still processing is refused (409), and so
+ * is a drama whose shape the model does not render (412).
  */
-export function requestShotVideo(shotId: number, body: z.output<typeof RequestShotVideo>): ShotVideoStarted {
+export async function requestShotVideo(shotId: number, body: z.output<typeof RequestShotVideo>): Promise<ShotVideoStarted> {
+  const lockedId = getEpisodeRow(getShotRow(shotId).episodeId).videoServiceId;
+  const resolved = await resolveVideo({ explicitId: body.videoServiceId, lockedId, model: body.model });
+  const { caps, formatMention } = resolved;
+  // Reading the model's limits can take seconds: the shot and its episode are read, and checked, after it.
   const shot = getShotRow(shotId);
   const ep = getEpisodeRow(shot.episodeId);
   assertNoBreakdown(ep.id);
   const drama = getDramaRow(ep.dramaId);
-  const resolved = resolveVideo({ explicitId: body.videoServiceId, lockedId: ep.videoServiceId, model: body.model });
-  const { caps, adapter } = resolved;
+  if (drama.aspectRatio !== 'adaptive' && caps.aspectRatios && !caps.aspectRatios.includes(drama.aspectRatio)) {
+    throw precondition(`${resolved.model} renders no ${drama.aspectRatio} video; it offers ${caps.aspectRatios.join(', ')}`);
+  }
 
   const videos = [...new Set([...(shot.referenceMedia.videoUrls ?? []), ...(body.referenceVideoUrls ?? [])])];
   const audios = [...new Set([...(shot.referenceMedia.audioUrls ?? []), ...(body.referenceAudioUrls ?? [])])];
@@ -72,13 +78,12 @@ export function requestShotVideo(shotId: number, body: z.output<typeof RequestSh
   const rendered = raw.replace(MENTION, (_m, name: string) => {
     const trimmed = name.trim();
     const slot = slotOf.get(key(trimmed));
-    if (slot) return adapter.formatMention(slot, trimmed);
+    if (slot) return formatMention(slot, trimmed);
     if (!bound.has(key(trimmed))) unmatched.add(trimmed);
     return trimmed;
   });
 
-  const [min, max] = caps.durationRange;
-  const durationSeconds = Math.min(max, Math.max(min, Math.round(body.durationSeconds ?? shot.durationSeconds)));
+  const durationSeconds = clampDuration(caps, body.durationSeconds ?? shot.durationSeconds);
   const unmatchedMentions = [...unmatched];
   const taskId = submitShotVideo(resolved, {
     shotId: shot.id,

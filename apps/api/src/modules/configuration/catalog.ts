@@ -5,17 +5,18 @@ import { offersEndpoint } from '../generation/adapters/modelrunner';
 
 /**
  * ModelCatalog (adr-0013): the ModelRunner endpoints a service of a type can use, with their prices. The catalog is
- * public and keyless. It is queried on every request and nothing is kept, because the terms forbid compiling a copy.
+ * public and keyless. It is queried on every request and nothing is kept, because the terms forbid compiling a copy;
+ * for the same reason the list is picked by category and mode name, without reading each endpoint's input schema.
  */
 const CATALOG_URL = 'https://api.modelrunner.run/models';
 const PAGE_SIZE = 50;
 const MAX_PAGES = 5;
 
-/** What narrows the catalog to a type before the adapter's own rule picks the endpoints it drives. */
+/** What narrows the catalog to a type before the adapter's own rule picks the endpoints it can drive. */
 const QUERY: Record<ServiceType, Record<string, string>> = {
   text: { category: 'text-to-text' },
-  image: { search: 'seedream' },
-  video: { search: 'seedance' },
+  image: { outputModality: 'image' },
+  video: { outputModality: 'video' },
 };
 
 const decimal = z.coerce.number().nonnegative();
@@ -23,6 +24,7 @@ const Entry = z.object({
   ownerName: z.string(),
   alias: z.string(),
   name: z.string(),
+  category: z.string().nullish(),
   shortDescription: z.string().nullish(),
   pricingMode: z.string().nullish(),
   pricePerOutput: decimal.nullish(),
@@ -74,7 +76,7 @@ export async function browseModelRunnerCatalog(type: ServiceType): Promise<Catal
     const entry = Entry.safeParse(raw);
     if (!entry.success) continue;
     const id = `${entry.data.ownerName}/${entry.data.alias}`;
-    if (type !== 'text' && !offersEndpoint(type, id)) continue;
+    if (type !== 'text' && !offersEndpoint(type, id, entry.data.category)) continue;
     models.push({ id, name: entry.data.name, description: entry.data.shortDescription ?? '', price: priceOf(entry.data) });
   }
   return models.sort((a, b) => a.id.localeCompare(b.id));

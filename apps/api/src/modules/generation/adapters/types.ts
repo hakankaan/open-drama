@@ -1,4 +1,4 @@
-import type { AspectRatio, Resolution } from '@open-drama/contracts';
+import type { AspectRatio, Resolution, VideoProviderCaps } from '@open-drama/contracts';
 
 export interface ServiceConfig {
   provider: string;
@@ -72,7 +72,8 @@ export interface Dialect<R> {
    */
   submitTimeoutMs?: number;
   generateLocal?(record: R): Promise<GenerateOutcome>;
-  buildGenerateRequest?(config: ServiceConfig, record: R): ProviderRequest;
+  /** Async for adapters that read the model's inputs from the provider first (ModelRunner). */
+  buildGenerateRequest?(config: ServiceConfig, record: R): ProviderRequest | Promise<ProviderRequest>;
   parseGenerateResponse?(body: unknown, config: ServiceConfig): GenerateOutcome;
   buildPollRequest?(config: ServiceConfig, providerTaskId: string): ProviderRequest;
   parsePollResponse?(body: unknown): PollOutcome;
@@ -83,12 +84,21 @@ export interface Dialect<R> {
 
 export interface ImageAdapter extends Dialect<ImageRecord> {
   limits: { images: number };
+  /** The configured model's own limit, for adapters that read it from the provider; it replaces `limits`. */
+  describeModel?(model: string): Promise<{ images: number }>;
 }
+
+export type FormatMention = (slot: number, name: string) => string;
 
 /** Video adapters take their reference limits from the shared caps table (`videoCapsFor` in contracts). */
 export interface VideoAdapter extends Dialect<VideoRecord> {
   /** The provider's token for reference image slot N (1-based), or the plain name when it has none. */
-  formatMention(slot: number, name: string): string;
+  formatMention: FormatMention;
+  /**
+   * What the configured model accepts, for adapters that read it from the provider: the caps it states (laid over
+   * the table's) and its mention syntax when that differs per model.
+   */
+  describeModel?(model: string): Promise<{ caps: Partial<VideoProviderCaps>; formatMention?: FormatMention }>;
 }
 
 /** An error the provider reported, with its HTTP status when there was one. */

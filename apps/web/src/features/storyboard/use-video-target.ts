@@ -1,7 +1,8 @@
 'use client';
 
-import { videoCapsFor, type EpisodeView } from '@open-drama/contracts';
+import { clampDuration, type EpisodeView } from '@open-drama/contracts';
 import { useModelServices } from '../configuration/api';
+import { useVideoCaps } from '../generation/api';
 import type { ModelPicks } from '../configuration/model-picks';
 
 /**
@@ -14,7 +15,7 @@ export function useVideoTarget(episode: EpisodeView, picks: ModelPicks) {
   const locked = episode.services.video;
   const provider = picked?.provider ?? locked?.provider ?? null;
   const model = picked ? picks.video!.model : (locked?.defaultModel ?? null);
-  const caps = videoCapsFor(provider, model);
-  const clamp = (seconds: number) => Math.min(caps.durationRange[1], Math.max(caps.durationRange[0], Math.round(seconds)));
+  const caps = useVideoCaps(provider, model);
+  const clamp = (seconds: number) => clampDuration(caps, seconds);
   return { provider, model, caps, clamp, lockedName: locked?.name ?? null };
 }

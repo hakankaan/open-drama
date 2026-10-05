@@ -7,8 +7,10 @@ import { env } from '../../../env';
 import { logger } from '../../../http/logger';
 import { keyedLimiter } from '../../../lib/limiter';
 import { assertVideo, deriveRenditions, storeRemoteFile } from '../../media/store';
+import { precondition } from '../../../http/errors';
 import { videoAdapterFor } from '../adapters/registry';
-import { ProviderError, type ResultMedia, type VideoAdapter } from '../adapters/types';
+import { ProviderError, type FormatMention, type ResultMedia, type VideoAdapter } from '../adapters/types';
+import { ConfigError } from './errors';
 import { claimTask, detach, generate, resolveGeneration, type ResolvedGeneration, type Tx } from './lifecycle';
 import { normalizeReferenceImages, resolvePublicMediaUrls } from './references';
 
@@ -18,12 +20,41 @@ const POLL = { intervalMs: 10_000, attempts: 300, maxMs: 55 * 60_000 };
 /** At most OPEN_DRAMA_VIDEO_CONCURRENCY shot videos of one episode talk to the provider at once. */
 const perEpisode = keyedLimiter(env.OPEN_DRAMA_VIDEO_CONCURRENCY);
 
-export type ResolvedVideo = ResolvedGeneration<VideoAdapter> & { caps: VideoProviderCaps };
+export type ResolvedVideo = ResolvedGeneration<VideoAdapter> & { caps: VideoProviderCaps; formatMention: FormatMention };
 
-/** The video adapter, credentials and reference limits for a request (explicit → episode lock → active). */
-export function resolveVideo(opts: { explicitId?: number; lockedId?: number | null; model?: string }): ResolvedVideo {
+/**
+ * What a model accepts and how its prompts address references: the caps table, overlaid with what the adapter reads
+ * from the provider (adr-0013 amendment 5). A model the adapter cannot drive is refused (412); when its description
+ * cannot be read the table stands in, and the request itself reads it again before anything is paid.
+ */
+export async function videoModelLimits(
+  adapter: VideoAdapter,
+  provider: string,
+  model: string,
+): Promise<{ caps: VideoProviderCaps; formatMention: FormatMention }> {
+  const caps = videoCapsFor(provider, model);
+  if (!adapter.describeModel) return { caps, formatMention: adapter.formatMention };
+  try {
+    const learned = await adapter.describeModel(model);
+    return { caps: { ...caps, ...learned.caps }, formatMention: learned.formatMention ?? adapter.formatMention };
+  } catch (err) {
+    if (err instanceof ConfigError) throw precondition(err.message);
+    logger.warn({ provider, model, err: (err as Error).message }, 'video model limits could not be read; using the caps table');
+    return { caps, formatMention: adapter.formatMention };
+  }
+}
+
+/** The video adapter, credentials and the model's limits for a request (explicit → episode lock → active). */
+export async function resolveVideo(opts: { explicitId?: number; lockedId?: number | null; model?: string }): Promise<ResolvedVideo> {
   const resolved = resolveGeneration('video', videoAdapterFor, opts);
-  return { ...resolved, caps: videoCapsFor(resolved.provider, resolved.model) };
+  return { ...resolved, ...(await videoModelLimits(resolved.adapter, resolved.provider, resolved.model)) };
+}
+
+/** What a model accepts, for the studio's pickers (`GET /video-models/caps`); in stub mode, the offline adapter's. */
+export async function videoCapsOf(provider: string, model?: string): Promise<VideoProviderCaps> {
+  const adapter = videoAdapterFor(provider);
+  if (!adapter || !model) return videoCapsFor(adapter?.provider ?? provider, model);
+  return (await videoModelLimits(adapter, adapter.provider, model)).caps;
 }
 
 export interface SubmitVideoInput {

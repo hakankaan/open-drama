@@ -198,6 +198,7 @@ Endpoints, grouped by context (command / read model they implement in parenthese
 | GET | `/generation-tasks/:id` | GenerationTaskStatus |
 | DELETE | `/generation-tasks/:id` | DeleteGenerationTask |
 | GET | `/episodes/:id/generation-tasks?limit` | EpisodeGenerationTasks (tasks + films, newest first, default 50 tasks / 20 films) |
+| GET | `/video-models/caps?provider&model` | the model's video limits: `videoCapsFor` merged with what the adapter learns from the model (ModelRunner input schemas, `adr-0013` amendment 5); `412` when the adapter cannot drive the model |
 
 **compositing**
 

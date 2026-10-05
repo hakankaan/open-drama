@@ -72,7 +72,7 @@ Left nav (220 px) with the six tabs; tab in the URL query so links deep-link.
 - Asset generation from the library needs an episode for the prompt agent: when the drama has no episode, the Generate and Generate-prompt buttons are disabled with the tooltip "Create an episode first"; otherwise the first episode's id is used. Readiness comes from the card's latest image task; the library query polls while any card is generating.
 
 ### 4.5 Episode studio `/drama/[id]/episode/[n]`
-**Top bar**: back, drama title, episode chip, stage label + progress, counts; right: model pickers (text / image / video from `GET /model-services?type=…` active services, composite key `provider/model`, "Default · first model"), resolution picker (tiers depend on the selected video provider), locale switcher, help, refresh, "Tasks" button with active-count badge.
+**Top bar**: back, drama title, episode chip, stage label + progress, counts; right: model pickers (text / image / video from `GET /model-services?type=…` active services, composite key `provider/model`, "Default · first model"), resolution picker (tiers and length clamp from `GET /video-models/caps` for the selected video model, falling back to the contract's `videoCapsFor`), locale switcher, help, refresh, "Tasks" button with active-count badge.
 
 **Sidebar** (collapsible, persisted): three sections (Script: raw / AI rewrite; Production: assets / video production; Export: merge & export) with derived state icons, the progress marquee (4 segments, clickable), collapse toggle, refresh.
 

@@ -72,7 +72,13 @@ function stillWanted(taskId: number, owner: SubmitImageInput['owner']): boolean 
 }
 
 async function run(taskId: number, resolved: ResolvedGeneration<ImageAdapter>, input: SubmitImageInput) {
-  const referenceImages = await normalizeReferenceImages(input.referenceImages ?? [], resolved.adapter.limits.images);
+  const { adapter, model } = resolved;
+  // The model's own limit when the adapter can read it (none for a model without an edit endpoint).
+  const limit = adapter.describeModel ? (await adapter.describeModel(model)).images : adapter.limits.images;
+  const referenceImages = await normalizeReferenceImages(input.referenceImages ?? [], limit);
+  if (referenceImages.length < new Set(input.referenceImages).size) {
+    logger.info({ taskId, model, limit }, 'image references beyond the model limit were left out');
+  }
   const record = { taskId, prompt: input.prompt, referenceImages, aspectRatio: input.aspectRatio };
   if (!stillWanted(taskId, input.owner)) return;
   await complete(taskId, input.owner, await generate(taskId, resolved, record, POLL, 'image'), resolved.config?.baseUrl);

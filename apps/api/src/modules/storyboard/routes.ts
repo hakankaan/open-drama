@@ -19,8 +19,8 @@ const id = v('param', IdParam);
 
 export const storyboardRoutes = new Hono()
   .get('/episodes/:id/shots', id, (c) => ok(c, getEpisodeShots(c.req.valid('param').id)))
-  .post('/episodes/:id/breakdown', id, v('json', TextModelOverride.default({})), (c) =>
-    ok(c, startBreakdown(c.req.valid('param').id, c.req.valid('json'))),
+  .post('/episodes/:id/breakdown', id, v('json', TextModelOverride.default({})), async (c) =>
+    ok(c, await startBreakdown(c.req.valid('param').id, c.req.valid('json'))),
   )
   .post('/episodes/:id/video-prompts', id, v('json', StartVideoPromptBatch.default({})), (c) =>
     ok(c, startVideoPromptBatch(c.req.valid('param').id, c.req.valid('json'))),
@@ -31,8 +31,8 @@ export const storyboardRoutes = new Hono()
   .post('/shots/:id/video-prompt', id, v('json', TextModelOverride.default({})), async (c) =>
     ok(c, { videoPrompt: await generateShotVideoPrompt(c.req.valid('param').id, c.req.valid('json')) }),
   )
-  .post('/shots/:id/video', id, v('json', RequestShotVideo.default({})), (c) =>
-    ok(c, requestShotVideo(c.req.valid('param').id, c.req.valid('json'))),
+  .post('/shots/:id/video', id, v('json', RequestShotVideo.default({})), async (c) =>
+    ok(c, await requestShotVideo(c.req.valid('param').id, c.req.valid('json'))),
   )
   .get('/shots/:id/videos', id, (c) => {
     const shot = getShotRow(c.req.valid('param').id);

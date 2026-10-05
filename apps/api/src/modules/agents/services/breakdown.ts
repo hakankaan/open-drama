@@ -35,7 +35,9 @@ function hasAssetCandidates(episodeId: number): boolean {
  * shots) and marks the last one final. Only then is the job done, and the parked shots are purged in the same
  * transaction; on failure or restart they come back. Missing video prompts are filled by the separate prompt batch.
  */
-export function startBreakdown(episodeId: number, opts: z.input<typeof TextModelOverride> = {}) {
+export async function startBreakdown(episodeId: number, opts: z.input<typeof TextModelOverride> = {}) {
+  // Reading the video model's limits can take seconds: everything checked below is read after it.
+  const video = await describeVideoModel(getEpisodeRow(episodeId).videoServiceId);
   const ep = getEpisodeRow(episodeId);
   if (!ep.scriptContent?.trim()) throw precondition('Finish the script (rewrite or skip) before breaking it into shots');
   if (!hasAssetCandidates(ep.id)) throw precondition('Extract or add the episode’s assets before breaking it into shots');
@@ -62,9 +64,8 @@ export function startBreakdown(episodeId: number, opts: z.input<typeof TextModel
     if (merging) throw conflict('The episode film is being merged; break down once it has finished', { filmId: merging.id });
   }
 
-  const video = describeVideoModel(ep.videoServiceId);
   const message = [
-    `Break this episode's script into shots. The video model is ${video.label}; keep every shot between ${video.min} and ${video.max} seconds.`,
+    `Break this episode's script into shots. The video model is ${video.label}; keep every shot ${video.lengths}.`,
     "Read the script and the project's characters, scenes and props with read_storyboard_context, then save every shot with save_shots in batches of at most 8, in story order. The first batch sets replaceExisting: true and the batch holding the last shot sets final: true. Bind assets only by the ids the context gives, and write each shot's videoPrompt.",
   ].join(' ');
   return runJob(

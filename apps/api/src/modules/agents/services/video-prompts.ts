@@ -10,7 +10,7 @@ import { getEpisodeJobs, runJob } from '../../jobs/run-job';
 import { getEpisodeRow } from '../../production/episodes';
 import { assertNoBreakdown, getShotRow, liveShotRows } from '../../storyboard/service';
 import { runAgentUntilSaved } from '../runtime/run-agent';
-import { describeVideoModel } from './video-model';
+import { videoModelLabel } from './video-model';
 
 /** Single-shot prompt runs in flight per episode; a breakdown waits for them (it would replace their shots). */
 const promptRuns = new Map<number, number>();
@@ -27,13 +27,13 @@ export async function generateShotVideoPrompt(
   const shot = getShotRow(shotId);
   const ep = getEpisodeRow(shot.episodeId);
   assertNoBreakdown(ep.id);
-  const video = describeVideoModel(ep.videoServiceId);
+  const videoModel = videoModelLabel(ep.videoServiceId);
   promptRuns.set(ep.id, (promptRuns.get(ep.id) ?? 0) + 1);
   try {
     await runAgentUntilSaved(
       {
         agentType: 'prompt_generator',
-        message: `Write the video prompt for shot #${shot.shotNumber} (id ${shot.id}) for the video model ${video.label}. Read the shot with read_storyboard_context using shotId ${shot.id}, then save only its videoPrompt with update_shot.`,
+        message: `Write the video prompt for shot #${shot.shotNumber} (id ${shot.id}) for the video model ${videoModel}. Read the shot with read_storyboard_context using shotId ${shot.id}, then save only its videoPrompt with update_shot.`,
         episodeId: ep.id,
         dramaId: ep.dramaId,
         target: { kind: 'shot', id: shot.id },

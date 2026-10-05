@@ -181,7 +181,7 @@ export async function generate<R>(
     throw new ProviderError(`The ${adapter.provider} ${what} adapter is incomplete`);
   }
   const outcome = adapter.parseGenerateResponse(
-    await send(adapter.buildGenerateRequest(config, record), adapter.submitTimeoutMs ?? SUBMIT_TIMEOUT_MS),
+    await send(await adapter.buildGenerateRequest(config, record), adapter.submitTimeoutMs ?? SUBMIT_TIMEOUT_MS),
     config,
   );
   if (outcome.kind === 'result') return outcome;
