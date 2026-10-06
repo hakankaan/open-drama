@@ -1,7 +1,7 @@
 name: agents
 description: >-
-  The agent runtime and its editable knowledge. Four production agents (script rewriter, extractor, storyboard breaker,
-  prompt generator) run as tool-calling loops against the configured text model; their instructions come from prompt
+  The agent runtime and its editable knowledge. Five production agents (script rewriter, extractor, storyboard breaker,
+  prompt generator, recap writer) run as tool-calling loops against the configured text model; their instructions come from prompt
   files and skill files in a writable workspace, per content language, and are editable from the settings page.
 glossary:
   - term: Agent

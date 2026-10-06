@@ -6,7 +6,7 @@
 
 ## Summary
 
-The project page — the drama with its episodes (number, title, status, resolution, script and film presence) and the drama-wide asset library (characters, scenes, props).
+The project page — the drama (with its serial flag) with its episodes (number, title, status, resolution, script, film and recap presence, recap staleness) and the drama-wide asset library (characters, scenes, props). The studio counts the earlier episodes' ready, stale and missing recaps from it before a rewrite.
 
 
 ## Fields
@@ -29,6 +29,8 @@ The project page — the drama with its episodes (number, title, status, resolut
 | Subscribes to | `EpisodeCreated` |
 | Subscribes to | `EpisodeContentUpdated` |
 | Subscribes to | `ScriptSaved` |
+| Subscribes to | `ScriptRewriteSkipped` |
+| Subscribes to | `RecapSaved` |
 | Subscribes to | `EpisodeResolutionChanged` |
 | Subscribes to | `EpisodeStatusChanged` |
 | Subscribes to | `EpisodeFilmAttached` |

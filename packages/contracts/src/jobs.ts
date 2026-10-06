@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ExtractionTarget, JobKind, JobStatus, Timestamp } from './common';
 
-/** One agent job (rewrite, extraction per target, breakdown, video-prompt batch), adr-0008. */
+/** One agent job (rewrite, extraction per target, breakdown, video-prompt batch, recap), adr-0008. */
 export const AgentJob = z.object({
   id: z.number().int(),
   kind: JobKind,
@@ -29,5 +29,7 @@ export const EpisodeJobs = z.object({
   extraction: z.record(ExtractionTarget, AgentJob.nullable()),
   breakdown: AgentJob.nullable(),
   videoPromptBatch: AgentJob.nullable(),
+  /** The latest recap job of the episode, whichever script revision it was keyed by (adr-0014). */
+  recap: AgentJob.nullable(),
 });
 export type EpisodeJobs = z.infer<typeof EpisodeJobs>;

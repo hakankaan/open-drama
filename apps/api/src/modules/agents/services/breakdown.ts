@@ -10,6 +10,7 @@ import { getEpisodeRow } from '../../production/episodes';
 import { liveShotRows, purgeParkedShots, restoreParkedShots } from '../../storyboard/service';
 import { runAgentUntilDone } from '../runtime/run-agent';
 import { breakdownFinished, forgetBreakdown } from '../tools/storyboard';
+import { SERIES_NOTE } from './recap';
 import { describeVideoModel } from './video-model';
 import { promptRunsInFlight } from './video-prompts';
 
@@ -39,11 +40,14 @@ export async function startBreakdown(episodeId: number, opts: z.input<typeof Tex
   // Reading the video model's limits can take seconds: everything checked below is read after it.
   const video = await describeVideoModel(getEpisodeRow(episodeId).videoServiceId);
   const ep = getEpisodeRow(episodeId);
-  if (!ep.scriptContent?.trim()) throw precondition('Finish the script (rewrite or skip) before breaking it into shots');
-  if (!hasAssetCandidates(ep.id)) throw precondition('Extract or add the episode’s assets before breaking it into shots');
   const jobs = getEpisodeJobs(ep.id);
   if (jobs.breakdown?.status !== 'running') {
-    // A running breakdown is returned below; otherwise nothing may still be writing to the shots it will replace.
+    // A running breakdown is returned below; otherwise the script must be settled (checked first: while it is being
+    // rewritten, nothing else about the episode is worth reporting), present and extracted, and nothing may still be
+    // writing to the shots the breakdown will replace.
+    if (jobs.rewrite?.status === 'running') throw conflict('The script is being rewritten; break down once it is saved');
+    if (!ep.scriptContent?.trim()) throw precondition('Finish the script (rewrite or skip) before breaking it into shots');
+    if (!hasAssetCandidates(ep.id)) throw precondition('Extract or add the episode’s assets before breaking it into shots');
     if (jobs.videoPromptBatch?.status === 'running' || promptRunsInFlight(ep.id)) {
       throw conflict('Video prompts are being written; break down once they are done');
     }
@@ -67,6 +71,7 @@ export async function startBreakdown(episodeId: number, opts: z.input<typeof Tex
   const message = [
     `Break this episode's script into shots. The video model is ${video.label}; keep every shot ${video.lengths}.`,
     "Read the script and the project's characters, scenes and props with read_storyboard_context, then save every shot with save_shots in batches of at most 8, in story order. The first batch sets replaceExisting: true and the batch holding the last shot sets final: true. Bind assets only by the ids the context gives, and write each shot's videoPrompt.",
+    SERIES_NOTE,
   ].join(' ');
   return runJob(
     { kind: 'breakdown', episodeId: ep.id, dramaId: ep.dramaId },

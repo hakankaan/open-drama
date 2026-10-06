@@ -17,6 +17,7 @@ import {
   savePropFinalPrompt,
   saveSceneFinalPrompt,
 } from './image-prompts';
+import { readEpisodeForRecap, saveRecap } from './recap';
 import { readEpisodeScript, saveScript } from './script';
 import { readStoryboardContext, saveShotsTool, updateShotTool } from './storyboard';
 
@@ -43,4 +44,5 @@ export const AGENT_TOOLS: Record<AgentType, ToolSpec[]> = {
     readStoryboardContext,
     updateShotTool,
   ],
+  recap_writer: [readEpisodeForRecap, saveRecap],
 };

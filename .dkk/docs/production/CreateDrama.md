@@ -19,6 +19,7 @@ Create a new drama project with a title, an aspect ratio and a visual style. No 
 | `style` | `string` | StylePreset value (e.g. 3d, anime) |
 | `aspectRatio` | `string` | 16:9 or 9:16, fixed after creation |
 | `tags` | `string[]` | — |
+| `serial` | `boolean` | Episodes continue one story; default true |
 
 ## Rules & Invariants
 

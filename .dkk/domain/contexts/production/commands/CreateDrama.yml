@@ -17,6 +17,9 @@ fields:
     description: 16:9 or 9:16, fixed after creation
   - name: tags
     type: "string[]"
+  - name: serial
+    type: boolean
+    description: Episodes continue one story; default true
 actor: Creator
 handled_by: Drama
 preconditions:

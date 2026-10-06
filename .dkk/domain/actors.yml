@@ -21,9 +21,9 @@ actors:
   - name: AgentRuntime
     type: system
     description: >-
-      The in-process agent runtime inside the API. Runs the four production agents (script rewriter, extractor,
-      storyboard breaker, prompt generator) as tool-calling loops against a text model, and executes their tools as
-      commands on the domain.
+      The in-process agent runtime inside the API. Runs the five production agents (script rewriter, extractor,
+      storyboard breaker, prompt generator, recap writer) as tool-calling loops against a text model, and executes
+      their tools as commands on the domain.
     capabilities:
       - Resolve an agent's instructions from its prompt file, its skills and the content-language directive
       - Resolve the text model service (episode default or per-request override) and patch provider quirks

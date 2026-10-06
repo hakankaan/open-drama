@@ -104,10 +104,15 @@
       "name": "Name",
       "nameRequired": "Give the project a name.",
       "namePlaceholder": "The Lantern Seller",
+      "synopsis": "Synopsis",
+      "synopsisHint": "Optional. Given to the script and storyboard agents as the series premise.",
+      "synopsisPlaceholder": "A lantern seller in a rain-soaked night market refuses to sell the one lantern a stranger wants.",
       "style": "Visual style",
       "stylePlaceholder": "Choose a style",
       "aspectRatio": "Frame shape",
       "aspectRatioHint": "Fixed after creation. Use 9:16 for phone-first dramas.",
+      "serial": "Episodes continue one story",
+      "serialHint": "Earlier episodes' recaps are given to the agents. Turn off for anthologies or standalone skits.",
       "submit": "Create project"
     },
     "card": {
@@ -421,6 +426,11 @@
     "counts": "{episodes, plural, one {# episode} other {# episodes}}, {characters, plural, one {# character} other {# characters}}, {scenes, plural, one {# scene} other {# scenes}}, {props, plural, one {# prop} other {# props}}",
     "addEpisode": "Add episode",
     "addEpisodeN": "Add episode {number}",
+    "edit": {
+      "open": "Edit project",
+      "title": "Edit project",
+      "description": "The visual style and the frame shape stay as created."
+    },
     "tabs": {
       "episodes": "Episodes",
       "assets": "Asset library"
@@ -471,7 +481,21 @@
       "script": "Script",
       "again": "Rewrite again",
       "againTitle": "Rewrite the script?",
-      "againBody": "The AI writes a new script from the raw content and replaces the current one, including your edits."
+      "againBody": "The AI writes a new script from the raw content and replaces the current one, including your edits.",
+      "recap": {
+        "title": "Recap",
+        "hint": "Given to the agents of the next episodes.",
+        "placeholder": "What changed in this episode, where things stand, open threads.",
+        "save": "Save",
+        "saved": "Recap saved.",
+        "write": "Write recap",
+        "rewrite": "Rewrite recap",
+        "running": "Writing the recap…",
+        "failed": "The recap failed: {error}",
+        "stale": "The script changed since this recap was written. Rewrite it, or edit it to match.",
+        "earlier": "Recaps of {ready} of {n, plural, one {# earlier episode} other {# earlier episodes}} are ready ({stale, plural, =0 {none stale} one {# stale} other {# stale}}, {missing, plural, =0 {none missing} one {# missing} other {# missing}}). Open those episodes to write them.",
+        "allReady": "The {n, plural, one {recap of the earlier episode is} other {recaps of all # earlier episodes are}} ready for the agents."
+      }
     },
     "models": {
       "default": "Default model",

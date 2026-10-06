@@ -104,10 +104,15 @@
       "name": "이름",
       "nameRequired": "프로젝트 이름을 입력해 주세요.",
       "namePlaceholder": "등불 장수",
+      "synopsis": "시놉시스",
+      "synopsisHint": "선택 사항. 시리즈의 전제로 대본·스토리보드 에이전트에 전달됩니다.",
+      "synopsisPlaceholder": "비 내리는 야시장에서 등불 장수는 낯선 손님이 원하는 단 하나의 등불을 팔기를 거부한다.",
       "style": "비주얼 스타일",
       "stylePlaceholder": "스타일 선택",
       "aspectRatio": "화면 비율",
       "aspectRatioHint": "만든 후에는 바꿀 수 없어요. 휴대폰으로 보는 드라마라면 9:16을 고르세요.",
+      "serial": "에피소드가 하나의 이야기로 이어짐",
+      "serialHint": "이전 에피소드의 요약이 에이전트에 전달됩니다. 옴니버스나 독립 단편이라면 끄세요.",
       "submit": "프로젝트 만들기"
     },
     "card": {
@@ -421,6 +426,11 @@
     "counts": "{episodes, plural, other {에피소드 #개}}, {characters, plural, other {캐릭터 #명}}, {scenes, plural, other {씬 #개}}, {props, plural, other {소품 #개}}",
     "addEpisode": "에피소드 추가",
     "addEpisodeN": "{number}화 추가",
+    "edit": {
+      "open": "프로젝트 편집",
+      "title": "프로젝트 편집",
+      "description": "화풍과 화면 비율은 만들 때 그대로 유지됩니다."
+    },
     "tabs": {
       "episodes": "에피소드",
       "assets": "에셋 라이브러리"
@@ -471,7 +481,21 @@
       "script": "대본",
       "again": "다시 쓰기",
       "againTitle": "대본을 다시 쓰시겠어요?",
-      "againBody": "AI가 원문으로 새 대본을 쓰고, 직접 수정한 내용을 포함해 현재 대본을 대체해요."
+      "againBody": "AI가 원문으로 새 대본을 쓰고, 직접 수정한 내용을 포함해 현재 대본을 대체해요.",
+      "recap": {
+        "title": "요약",
+        "hint": "다음 에피소드의 에이전트에 전달됩니다.",
+        "placeholder": "이번 화에서 바뀐 것, 현재 상황, 남은 복선.",
+        "save": "저장",
+        "saved": "요약을 저장했습니다.",
+        "write": "요약 쓰기",
+        "rewrite": "요약 다시 쓰기",
+        "running": "요약을 쓰는 중…",
+        "failed": "요약 작성에 실패했습니다: {error}",
+        "stale": "이 요약을 쓴 뒤 대본이 바뀌었습니다. 다시 쓰거나 맞게 고쳐 주세요.",
+        "earlier": "이전 {n, plural, other {#화}} 중 {ready}화의 요약이 준비되었습니다({stale, plural, =0 {오래된 것 없음} other {#화 오래됨}}, {missing, plural, =0 {빠진 것 없음} other {#화 없음}}). 해당 에피소드를 열어 작성하세요.",
+        "allReady": "이전 {n, plural, other {#화}}의 요약이 모두 준비되었습니다."
+      }
     },
     "models": {
       "default": "기본 모델",

@@ -1,6 +1,9 @@
 # Command — an instruction to change domain state.
 name: UpdateEpisodeContent
-description: Save the creator's edits to an episode's raw content, formatted script, title or description. Used by the script workbench autosave.
+description: >-
+  Save the creator's edits to an episode's raw content, formatted script, recap, title or description. A recap is
+  pinned to the current script revision; with scriptContent in the same command the script is written first and the
+  recap pinned to the new revision.
 fields:
   - name: episodeId
     type: ID
@@ -10,6 +13,9 @@ fields:
   - name: scriptContent
     type: string
     description: Formatted script (manual edits)
+  - name: recap
+    type: string
+    description: The episode's recap (manual edits), at most 2000 characters
   - name: title
     type: string
   - name: description
@@ -18,3 +24,5 @@ actor: Creator
 handled_by: Episode
 rejections:
   - No updatable field supplied
+  - scriptContent while the script is being rewritten (the agent's save would replace the edit)
+  - recap while the recap is being written

@@ -1,0 +1,11 @@
+name: RunRecapWriter
+description: >-
+  When a recap is requested, run the recap_writer agent scoped to the episode (agents.RunAgent — a cross-context
+  command, see flow ScriptStage) with the script revision the job started from. The agent reads the script and the
+  SeriesContext and calls SaveRecap; the recap card shows a writing state until the run completes.
+when:
+  events:
+    - RecapRequested
+adr_refs:
+  - adr-0006
+  - adr-0014

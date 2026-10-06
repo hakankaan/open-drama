@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: RecapCompleted
+description: The recap run finished and a recap was saved for the job's script revision.
+fields:
+  - name: episodeId
+    type: ID
+  - name: jobId
+    type: ID
+raised_by: RecapJob

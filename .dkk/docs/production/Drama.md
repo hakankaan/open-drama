@@ -6,7 +6,7 @@
 
 ## Summary
 
-A short-drama project — the root under which episodes, characters, scenes and props live. Fixes the aspect ratio and the visual style used by every image and video prompt.
+A short-drama project — the root under which episodes, characters, scenes and props live. Fixes the aspect ratio and the visual style used by every image and video prompt, and whether its episodes continue one story (serial).
 
 
 
@@ -15,6 +15,7 @@ A short-drama project — the root under which episodes, characters, scenes and 
 - aspectRatio is chosen at creation and never changes afterwards; every video generated for the drama uses it.
 - style must reference an active StylePreset value at creation; the preset's prompt fragment is prepended to every image and video prompt of the drama.
 - Deletion is a soft delete; episodes, assets and generation records stay on disk but become unreachable.
+- serial defaults to true. When false (an anthology, standalone skits), the agents get the premise but no episode recaps and no recap is written.
 
 
 ## Relationships
@@ -30,4 +31,6 @@ A short-drama project — the root under which episodes, characters, scenes and 
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0014](../../adr/adr-0014.md) | Series continuity through episode recaps | accepted |

@@ -22,6 +22,7 @@ Ask the storyboard-breaker agent to split the episode's script into shots with d
 - The episode has a script
 - Assets have been extracted (bindings need candidates)
 - Episode has no script
+- The script is being rewritten (a running RewriteScript job)
 
 
 ## Relationships

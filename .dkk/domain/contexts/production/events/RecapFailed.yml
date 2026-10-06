@@ -1,0 +1,13 @@
+# Domain event — something that happened in the domain.
+name: RecapFailed
+description: >-
+  The recap agent failed, finished without saving, found the script moved on, or was interrupted by a restart; the
+  recap card shows the error and the creator can write it again or edit the recap by hand.
+fields:
+  - name: episodeId
+    type: ID
+  - name: jobId
+    type: ID
+  - name: error
+    type: string
+raised_by: RecapJob

@@ -20,6 +20,7 @@ import {
   skipRewrite,
   updateEpisode,
 } from './episodes';
+import { maybeStartRecap, startRecap } from '../agents/services/recap';
 import { startRewrite } from '../agents/services/rewrite';
 import { getPipelineStatus } from './pipeline';
 
@@ -41,7 +42,15 @@ export const productionRoutes = new Hono()
   .post('/episodes/:id/rewrite', v('param', IdParam), v('json', TextModelOverride.default({})), (c) =>
     ok(c, startRewrite(c.req.valid('param').id, c.req.valid('json'))),
   )
-  .post('/episodes/:id/skip-rewrite', v('param', IdParam), (c) => ok(c, skipRewrite(c.req.valid('param').id)))
+  .post('/episodes/:id/skip-rewrite', v('param', IdParam), (c) => {
+    const { id } = c.req.valid('param');
+    const episode = skipRewrite(id);
+    maybeStartRecap(id);
+    return ok(c, episode);
+  })
+  .post('/episodes/:id/recap', v('param', IdParam), v('json', TextModelOverride.default({})), (c) =>
+    ok(c, startRecap(c.req.valid('param').id, c.req.valid('json'))),
+  )
   .get('/episodes/:id/pipeline-status', v('param', IdParam), (c) =>
     ok(c, getPipelineStatus(c.req.valid('param').id)),
   )

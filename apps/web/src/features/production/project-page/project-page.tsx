@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -14,6 +14,7 @@ import { useToastError } from '@/lib/errors';
 import { AssetLibrary } from '../../assets/asset-library';
 import { useStylePresets } from '../../configuration/api';
 import { useDramaDetail, useUpdateDrama } from '../api';
+import { EditProjectDialog } from './edit-project-dialog';
 import { AddEpisodeDialog, EpisodesTab } from './episodes-tab';
 
 export function ProjectPage({ dramaId }: { dramaId: number }) {
@@ -27,6 +28,7 @@ export function ProjectPage({ dramaId }: { dramaId: number }) {
   const presets = useStylePresets(true);
   const update = useUpdateDrama();
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   if (detail.isLoading) return <Skeleton className="h-40" />;
   if (detail.isError || !detail.data) {
@@ -69,10 +71,16 @@ export function ProjectPage({ dramaId }: { dramaId: number }) {
             })}
           </p>
         </div>
-        <Button variant="primary" onClick={() => setAdding(true)}>
-          <Plus className="h-4 w-4" aria-hidden />
-          {t('addEpisode')}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setEditing(true)}>
+            <Pencil className="h-4 w-4" aria-hidden />
+            {t('edit.open')}
+          </Button>
+          <Button variant="primary" onClick={() => setAdding(true)}>
+            <Plus className="h-4 w-4" aria-hidden />
+            {t('addEpisode')}
+          </Button>
+        </div>
       </header>
 
       <div className="flex gap-6 border-b border-line" role="tablist">
@@ -95,6 +103,7 @@ export function ProjectPage({ dramaId }: { dramaId: number }) {
 
       {tab === 'episodes' ? <EpisodesTab drama={drama} onAdd={() => setAdding(true)} /> : <AssetLibrary dramaId={drama.id} episodeId={drama.episodes[0]?.id} />}
       {adding ? <AddEpisodeDialog drama={drama} onClose={() => setAdding(false)} /> : null}
+      {editing ? <EditProjectDialog drama={drama} onClose={() => setEditing(false)} /> : null}
     </div>
   );
 }

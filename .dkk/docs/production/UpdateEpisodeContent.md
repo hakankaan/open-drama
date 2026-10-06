@@ -6,7 +6,7 @@
 
 ## Summary
 
-Save the creator's edits to an episode's raw content, formatted script, title or description. Used by the script workbench autosave.
+Save the creator's edits to an episode's raw content, formatted script, recap, title or description. A recap is pinned to the current script revision; with scriptContent in the same command the script is written first and the recap pinned to the new revision.
 
 
 ## Fields
@@ -16,12 +16,15 @@ Save the creator's edits to an episode's raw content, formatted script, title or
 | `episodeId` | `ID` | — |
 | `content` | `string` | Raw source text |
 | `scriptContent` | `string` | Formatted script (manual edits) |
+| `recap` | `string` | The episode's recap (manual edits), at most 2000 characters |
 | `title` | `string` | — |
 | `description` | `string` | — |
 
 ## Rules & Invariants
 
 - No updatable field supplied
+- scriptContent while the script is being rewritten (the agent's save would replace the edit)
+- recap while the recap is being written
 
 
 ## Relationships

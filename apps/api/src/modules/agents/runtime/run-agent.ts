@@ -20,6 +20,7 @@ export interface RunAgentInput {
   maxSteps?: number;
   target?: AgentContext['target'];
   jobId?: number;
+  scriptRevision?: number;
   /** Ends the loop as soon as this holds (the result is already saved). */
   isDone?: (calls: ToolCallRecord[]) => boolean;
 }
@@ -58,6 +59,7 @@ export async function runAgent(input: RunAgentInput): Promise<AgentRunResult & R
     log: logger.child({ agent: input.agentType, episodeId: input.episodeId, model: resolved.modelId }),
     target: input.target,
     jobId: input.jobId,
+    scriptRevision: input.scriptRevision,
   };
   const started = performance.now();
   ctx.log.info({ language }, 'agent run started');

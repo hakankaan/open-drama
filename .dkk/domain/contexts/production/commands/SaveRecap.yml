@@ -1,0 +1,22 @@
+# Command — an instruction to change domain state.
+name: SaveRecap
+description: >-
+  Persist the recap produced by the recap writer (its save_recap tool), pinned to the script revision its job started
+  from. The creator's own edit of the recap goes through UpdateEpisodeContent and is pinned to the current revision.
+fields:
+  - name: episodeId
+    type: ID
+  - name: recap
+    type: string
+  - name: scriptRevision
+    type: number
+    description: The revision the recap was written for
+actor: AgentRuntime
+handled_by: Episode
+rejections:
+  - Recap shorter than 20 characters
+  - Recap longer than 2000 characters
+  - The script revision has moved on since the job started
+  - Called outside a recap job (no revision to pin to)
+adr_refs:
+  - adr-0014

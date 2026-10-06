@@ -20,7 +20,7 @@
 | Actor | Type | Description |
 |-------|------|-------------|
 | Creator | human | The person producing a short drama. Creates projects and episodes, pastes source text, reviews AI output at every stage, and exports the finished film. |
-| AgentRuntime | system | The in-process agent runtime inside the API. Runs the four production agents (script rewriter, extractor, storyboard breaker, prompt generator) as tool-calling loops against a text model, and executes their tools as commands on the domain. |
+| AgentRuntime | system | The in-process agent runtime inside the API. Runs the five production agents (script rewriter, extractor, storyboard breaker, prompt generator, recap writer) as tool-calling loops against a text model, and executes their tools as commands on the domain. |
 | GenerationWorker | system | The background worker inside the API that drives image and video generation tasks — builds provider requests, submits them, polls for completion, persists results locally and writes them back to the owning asset or shot. |
 | RenderWorker | system | The background worker that concatenates shot videos into an episode film by driving the bundled FFmpeg binaries. |
 | Bootstrap | system | The API process at startup. Applies database migrations, seeds style presets, copies the agent workspace template once into the data directory and marks interrupted generation tasks as failed. |
@@ -60,10 +60,13 @@
 | Public base URL | [media](media/index.md) | The externally reachable origin of the API, needed when a provider must fetch a local reference video or audio file. |
 | Quick setup | [configuration](configuration/index.md) | Writing a recommended text, image and video service in one step from a single API key of a compatible gateway. |
 | Raw content | [production](production/index.md) | The source text the creator pastes (novel chapter, outline, shot list) before any rewrite. |
+| Recap | [production](production/index.md) | A short account (at most 2000 characters) of what happened in an episode, written for the writers of the next episodes, not for viewers: what changed, where things stand, objects that will matter, open threads. Written by the recap writer after every saved script of a serial drama and editable by the creator. |
 | Reference binding | [storyboard](storyboard/index.md) | The characters, scene and props whose reference images are sent with the shot's video request. Extra reference images, videos or audio can be uploaded per shot. |
 | Reference image | [assets](assets/index.md) | The generated or uploaded image attached to an asset. Bound to shots and passed to the video provider so the asset looks the same in every clip. |
 | Reference normalisation | [generation](generation/index.md) | Turning local media paths into what a provider can consume — compressed data URLs for images, public URLs (via the configured public base URL) for videos and audio. |
 | Rendition | [media](media/index.md) | A derived file next to the original — a 400px WebP thumbnail for images, a 640px JPEG poster frame for videos — addressed by naming convention. |
+| Script revision | [production](production/index.md) | A counter on the episode that moves on every change of the script. A recap records the revision it was written for and is stale once the script's revision differs; a recap job is keyed by the revision it started from. |
+| Serial drama | [production](production/index.md) | A drama whose episodes continue one story ("Episodes continue one story" in the project settings, the default). Its agents get the earlier episodes' recaps; an anthology or a set of standalone skits turns it off and gets the premise only. |
 | Service type | [configuration](configuration/index.md) | text, image or video — each stage needs exactly one active service of the type it uses. |
 | Skill | [agents](agents/index.md) | A SKILL.md document (frontmatter name and description plus a body) in a directory under the workspace. Every skill under an agent's prefix is injected in full into its instructions; new skill directories are discovered without restart. |
 | Stage rail | [production](production/index.md) | The per-episode progress indicator. It is derived from data (script present, assets ready, shots with videos, film rendered, status completed), never stored directly. |
@@ -76,7 +79,7 @@
 
 ## Decisions
 
-13 accepted
+14 accepted
 
 | ADR | Title | Status |
 |-----|-------|--------|
@@ -93,6 +96,7 @@
 | [adr-0011](../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | accepted |
 | [adr-0012](../adr/adr-0012.md) | Licence: CC BY-NC-SA 4.0 | accepted |
 | [adr-0013](../adr/adr-0013.md) | Model providers: official endpoints of supported models, plus BytePlus and ModelRunner | accepted |
+| [adr-0014](../adr/adr-0014.md) | Series continuity through episode recaps | accepted |
 
 → [Full decision log](adr/index.md)
 
@@ -127,7 +131,7 @@ sequenceDiagram
 
 ### ScriptStage
 
-The creator creates a drama and an episode, pastes raw content and lets the script rewriter agent produce a formatted script (or skips the rewrite).
+The creator creates a drama and an episode, pastes raw content and lets the script rewriter agent produce a formatted script (or skips the rewrite); in a serial drama the saved script then gets its recap for the next episodes.
 
 ```mermaid
 sequenceDiagram
@@ -150,6 +154,15 @@ sequenceDiagram
     ctx_production-->>ctx_production: ScriptSaved
     ctx_production-->>ctx_production: ScriptRewriteCompleted
     ctx_production-->>ctx_production: [Read] EpisodePipelineStatus
+    ctx_production->>ctx_production: [Policy] WriteRecapAfterScript
+    actor_Creator->>ctx_production: WriteRecap
+    ctx_production-->>ctx_production: RecapRequested
+    ctx_production->>ctx_production: [Policy] RunRecapWriter
+    actor_AgentRuntime->>ctx_agents: RunAgent
+    ctx_production-->>ctx_production: [Read] SeriesContext
+    actor_AgentRuntime->>ctx_production: SaveRecap
+    ctx_production-->>ctx_production: RecapSaved
+    ctx_production-->>ctx_production: RecapCompleted
 ```
 
 | # | Step | Type |
@@ -167,6 +180,15 @@ sequenceDiagram
 | 11 | `production.ScriptSaved` | event |
 | 12 | `production.ScriptRewriteCompleted` | event |
 | 13 | `production.EpisodePipelineStatus` | read_model |
+| 14 | `production.WriteRecapAfterScript` | policy |
+| 15 | `production.WriteRecap` | command |
+| 16 | `production.RecapRequested` | event |
+| 17 | `production.RunRecapWriter` | policy |
+| 18 | `agents.RunAgent` | command |
+| 19 | `production.SeriesContext` | read_model |
+| 20 | `production.SaveRecap` | command |
+| 21 | `production.RecapSaved` | event |
+| 22 | `production.RecapCompleted` | event |
 
 ### AssetStage
 

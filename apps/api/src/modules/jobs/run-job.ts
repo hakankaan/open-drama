@@ -105,6 +105,15 @@ const latest = (episodeId: number, kind: JobKind, target = '') =>
     .orderBy(desc(agentJobs.id))
     .get();
 
+/** Recap jobs are keyed by script revision; the studio shows the latest one whichever revision it was for. */
+const latestOfKind = (episodeId: number, kind: JobKind) =>
+  db
+    .select()
+    .from(agentJobs)
+    .where(and(eq(agentJobs.episodeId, episodeId), eq(agentJobs.kind, kind)))
+    .orderBy(desc(agentJobs.id))
+    .get();
+
 const view = (row: Row | undefined) => (row ? toAgentJob(row) : null);
 
 export const latestExtractionJobs = (episodeId: number): EpisodeJobs['extraction'] => ({
@@ -113,7 +122,7 @@ export const latestExtractionJobs = (episodeId: number): EpisodeJobs['extraction
   props: view(latest(episodeId, 'extraction', 'props')),
 });
 
-/** EpisodeJobs: the latest job per kind (per target for extraction). */
+/** EpisodeJobs: the latest job per kind (per target for extraction, any target for recap). */
 export function getEpisodeJobs(episodeId: number): EpisodeJobs {
   return {
     episodeId,
@@ -121,5 +130,6 @@ export function getEpisodeJobs(episodeId: number): EpisodeJobs {
     extraction: latestExtractionJobs(episodeId),
     breakdown: view(latest(episodeId, 'breakdown')),
     videoPromptBatch: view(latest(episodeId, 'videoPromptBatch')),
+    recap: view(latestOfKind(episodeId, 'recap')),
   };
 }

@@ -24,6 +24,8 @@ export const Drama = z.object({
   status: DramaStatus,
   tags: z.array(z.string()),
   thumbnail: MediaPath.nullable(),
+  /** Episodes continue one story: the agents get earlier episodes' recaps (adr-0014). Off for anthologies. */
+  serial: z.boolean(),
   createdAt: Timestamp,
   updatedAt: Timestamp,
 });
@@ -60,6 +62,7 @@ export const CreateDrama = z.object({
   style: StylePresetValueRef,
   aspectRatio: AspectRatio.default('16:9'),
   tags: tags.default([]),
+  serial: z.boolean().default(true),
 });
 export type CreateDrama = z.input<typeof CreateDrama>;
 
@@ -71,6 +74,7 @@ export const UpdateDrama = z.strictObject({
   style: StylePresetValueRef.optional(),
   status: DramaStatus.optional(),
   tags: tags.optional(),
+  serial: z.boolean().optional(),
 });
 export type UpdateDrama = z.input<typeof UpdateDrama>;
 
@@ -84,6 +88,10 @@ export const Episode = z.object({
   description: z.string(),
   content: z.string(),
   scriptContent: z.string().nullable(),
+  /** What happened in this episode, for the writers of the next ones (adr-0014); empty until written. */
+  recap: z.string(),
+  /** The script changed since the recap was written (the revision numbers themselves stay internal). */
+  recapStale: z.boolean(),
   status: EpisodeStatus,
   resolution: Resolution,
   imageServiceId: z.number().int().nullable(),
@@ -113,9 +121,10 @@ export const EpisodeView = Episode.extend({
 export type EpisodeView = z.infer<typeof EpisodeView>;
 
 /** Episode card on the project page. */
-export const EpisodeSummary = Episode.omit({ content: true, scriptContent: true }).extend({
+export const EpisodeSummary = Episode.omit({ content: true, scriptContent: true, recap: true }).extend({
   hasContent: z.boolean(),
   hasScript: z.boolean(),
+  hasRecap: z.boolean(),
   shotCount: z.number().int(),
 });
 export type EpisodeSummary = z.infer<typeof EpisodeSummary>;
@@ -135,16 +144,48 @@ export const CreateEpisode = z.object({
 });
 export type CreateEpisode = z.input<typeof CreateEpisode>;
 
-/** Field-based dispatch: content → UpdateEpisodeContent, scriptContent → SaveScript, resolution, status. */
+export const RECAP_MAX_CHARS = 2000;
+
+/**
+ * Field-based dispatch: content → UpdateEpisodeContent, scriptContent → SaveScript, recap → SaveRecap (pinned to
+ * the current script revision; with scriptContent in the same patch, to the new one), resolution, status.
+ */
 export const UpdateEpisode = z.strictObject({
   title: z.string().trim().min(1).max(120).optional(),
   description: z.string().trim().max(2000).optional(),
   content: z.string().max(200_000).optional(),
   scriptContent: z.string().max(400_000).optional(),
+  recap: z.string().trim().max(RECAP_MAX_CHARS).optional(),
   resolution: Resolution.optional(),
   status: EpisodeStatus.optional(),
 });
 export type UpdateEpisode = z.input<typeof UpdateEpisode>;
+
+// SeriesContext (adr-0014): what the script and storyboard agents are told about the rest of the drama.
+
+export const RecapStatus = z.enum(['ready', 'stale', 'missing']);
+export type RecapStatus = z.infer<typeof RecapStatus>;
+
+export const EarlierEpisode = z.object({
+  episodeNumber: z.number().int(),
+  title: z.string(),
+  /** ready: recap matches the script; stale: the script changed since (text still given); missing: no recap. */
+  status: RecapStatus,
+  recap: z.string().optional(),
+});
+export type EarlierEpisode = z.infer<typeof EarlierEpisode>;
+
+export const SeriesContext = z.object({
+  title: z.string(),
+  description: z.string().optional(),
+  genre: z.string().optional(),
+  serial: z.boolean(),
+  /** Serial dramas only: the live episodes numbered below this one, in order. */
+  earlierEpisodes: z.array(EarlierEpisode).optional(),
+  /** Episode numbers whose recaps were dropped (oldest first) to stay within the context budget. */
+  omittedEpisodes: z.array(z.number().int()).optional(),
+});
+export type SeriesContext = z.infer<typeof SeriesContext>;
 
 // EpisodePipelineStatus (the stage rail, derived on read)
 

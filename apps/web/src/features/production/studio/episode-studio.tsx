@@ -5,7 +5,7 @@ import { ArrowLeft, ChevronDown, CircleHelp, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useEffect, useMemo } from 'react';
-import { Resolution as ResolutionEnum, type EpisodePipelineStatus, type EpisodeView } from '@open-drama/contracts';
+import { Resolution as ResolutionEnum, type DramaDetail, type EpisodePipelineStatus, type EpisodeView } from '@open-drama/contracts';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { useTour } from '@/components/tour';
 import { ModelSelect } from '@/components/model-select';
@@ -120,8 +120,9 @@ function TopBar({
 }
 
 /** The loaded studio: one owner for the current panel, shared by the top bar and the sidebar. */
-function StudioBody({ dramaId, dramaTitle, episode }: { dramaId: number; dramaTitle: string; episode: EpisodeView }) {
+function StudioBody({ drama, episode }: { drama: DramaDetail; episode: EpisodeView }) {
   const t = useTranslations('studio');
+  const dramaId = drama.id;
   const pipeline = usePipelineStatus(episode.id);
   useSettleRefresh(episode.id, dramaId);
   const [stored, setPanel, loaded] = usePersistedState<Panel | null>(`studio-panel:${episode.id}`, null);
@@ -146,7 +147,7 @@ function StudioBody({ dramaId, dramaTitle, episode }: { dramaId: number; dramaTi
 
   return (
     <div className="flex h-dvh flex-col">
-      <TopBar dramaTitle={dramaTitle} dramaId={dramaId} episode={episode} stage={t(`panels.${panel}`)} onHelp={replayTour} />
+      <TopBar dramaTitle={drama.title} dramaId={dramaId} episode={episode} stage={t(`panels.${panel}`)} onHelp={replayTour} />
       {!loaded ? (
         <Skeleton className="m-6 h-[70dvh]" />
       ) : (
@@ -154,7 +155,7 @@ function StudioBody({ dramaId, dramaTitle, episode }: { dramaId: number; dramaTi
           <StudioSidebar panel={panel} onPanel={setPanel} pipeline={pipeline.data} collapsed={collapsed} onCollapse={setCollapsed} />
           <main className="min-w-0 flex-1 overflow-y-auto p-6">
             {panel === 'raw' ? <RawContentPanel episode={episode} onNext={() => setPanel('rewrite')} /> : null}
-            {panel === 'rewrite' ? <RewritePanel episode={episode} onRaw={() => setPanel('raw')} /> : null}
+            {panel === 'rewrite' ? <RewritePanel episode={episode} drama={drama} onRaw={() => setPanel('raw')} /> : null}
             {panel === 'assets' ? <AssetsStage episode={episode} onScript={() => setPanel('rewrite')} /> : null}
             {panel === 'video' ? (
               <VideoStage episode={episode} onScript={() => setPanel('rewrite')} onAssets={() => setPanel('assets')} />
@@ -184,5 +185,5 @@ export function EpisodeStudio({ dramaId, episodeNumber }: { dramaId: number; epi
       </div>
     );
   }
-  return <StudioBody dramaId={dramaId} dramaTitle={drama.data.title} episode={episode.data} />;
+  return <StudioBody drama={drama.data} episode={episode.data} />;
 }

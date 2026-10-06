@@ -1,0 +1,11 @@
+name: WriteRecapAfterScript
+description: >-
+  When a script is saved by the rewriter or the rewrite is skipped, issue WriteRecap for the episode if the drama is
+  serial; a standalone drama gets no recap. A manual script save (UpdateEpisodeContent) marks the existing recap stale
+  and does not re-run the writer: the creator decides from the recap card.
+when:
+  events:
+    - ScriptSaved
+    - ScriptRewriteSkipped
+adr_refs:
+  - adr-0014

@@ -49,6 +49,15 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
     defaultPrompt:
       'Write the generation prompt for the one target named in the request. Read it first, then save the prompt with the matching save tool. Never add visual-style words.',
   },
+  recap_writer: {
+    type: 'recap_writer',
+    name: 'Recap writer',
+    promptFile: 'recap_writer',
+    skillPrefixes: ['recap-writer'],
+    maxSteps: 8,
+    defaultPrompt:
+      'Write a short recap of this episode for the writers of the next ones: what changed, where things stand, open threads; names spelled as in the script; nothing invented. Call read_episode_for_recap, then save_recap once.',
+  },
 };
 
 /** The agent that primarily owns a skill id (its first prefix match), for grouping in the UI. */

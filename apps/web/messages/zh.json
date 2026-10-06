@@ -104,10 +104,15 @@
       "name": "名称",
       "nameRequired": "给项目起个名字吧。",
       "namePlaceholder": "卖灯人",
+      "synopsis": "故事梗概",
+      "synopsisHint": "可选。会作为整部剧的前提交给剧本和分镜智能体。",
+      "synopsisPlaceholder": "雨夜的夜市里，卖灯人拒绝把唯一一盏灯卖给陌生人。",
       "style": "画风",
       "stylePlaceholder": "选择画风",
       "aspectRatio": "画幅",
       "aspectRatioHint": "创建后无法更改。竖屏短剧请选 9:16。",
+      "serial": "各集延续同一个故事",
+      "serialHint": "前几集的剧情回顾会交给智能体。单元剧或独立小品请关闭。",
       "submit": "创建项目"
     },
     "card": {
@@ -421,6 +426,11 @@
     "counts": "{episodes, plural, other {# 集}}，{characters, plural, other {# 个角色}}，{scenes, plural, other {# 个场景}}，{props, plural, other {# 个道具}}",
     "addEpisode": "添加剧集",
     "addEpisodeN": "添加第 {number} 集",
+    "edit": {
+      "open": "编辑项目",
+      "title": "编辑项目",
+      "description": "画风和画幅保持创建时的设置。"
+    },
     "tabs": {
       "episodes": "剧集",
       "assets": "素材库"
@@ -471,7 +481,21 @@
       "script": "剧本",
       "again": "重新改写",
       "againTitle": "重新改写剧本？",
-      "againBody": "AI 会根据原始内容重新写一版剧本，替换当前剧本，你的修改也会被覆盖。"
+      "againBody": "AI 会根据原始内容重新写一版剧本，替换当前剧本，你的修改也会被覆盖。",
+      "recap": {
+        "title": "剧情回顾",
+        "hint": "会交给后续各集的智能体。",
+        "placeholder": "这一集发生了什么变化、现在的局面、未了结的线索。",
+        "save": "保存",
+        "saved": "回顾已保存。",
+        "write": "生成回顾",
+        "rewrite": "重新生成回顾",
+        "running": "正在写回顾…",
+        "failed": "回顾生成失败：{error}",
+        "stale": "写完这份回顾后剧本又改过了。请重新生成，或手动改到一致。",
+        "earlier": "前 {n, plural, other {# 集}}中有 {ready} 集的回顾已就绪（{stale, plural, =0 {无过期} other {# 集过期}}，{missing, plural, =0 {无缺失} other {# 集缺失}}）。请打开那些集去生成。",
+        "allReady": "前 {n, plural, other {# 集}}的回顾都已就绪，可交给智能体。"
+      }
     },
     "models": {
       "default": "默认模型",

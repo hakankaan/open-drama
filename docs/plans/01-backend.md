@@ -116,8 +116,8 @@ SQLite, one file `data/open-drama.sqlite3`. Ids are integer autoincrement; times
 
 | Table | Key columns | Domain aggregate / notes |
 |---|---|---|
-| `dramas` | title, description, genre, style, aspectRatio, status, tags(json), thumbnail, createdAt, updatedAt, deletedAt | production.Drama — aspectRatio immutable (enforced in service); status `draft | active | completed` |
-| `episodes` | dramaId, episodeNumber, title, description, content, scriptContent, status, resolution, imageServiceId, videoServiceId, filmPath, filmDurationSeconds, durationSeconds, createdAt, updatedAt, deletedAt | production.Episode — unique(dramaId, episodeNumber) among live rows; status `draft | active | completed` |
+| `dramas` | title, description, genre, style, aspectRatio, status, tags(json), thumbnail, serial, createdAt, updatedAt, deletedAt | production.Drama — aspectRatio immutable (enforced in service); status `draft | active | completed`; `serial` (default true) means the episodes continue one story (`adr-0014`) |
+| `episodes` | dramaId, episodeNumber, title, description, content, scriptContent, scriptRevision, recap, recapRevision, status, resolution, imageServiceId, videoServiceId, filmPath, filmDurationSeconds, durationSeconds, createdAt, updatedAt, deletedAt | production.Episode — unique(dramaId, episodeNumber) among live rows; status `draft | active | completed`; `scriptRevision` moves on every change of `scriptContent`, `recap` (≤ 2000 chars) is pinned to the revision it was written for and reported stale when they differ (`adr-0014`) |
 | `characters` | dramaId, name, role, description, appearance, styling, finalPrompt, finalPromptStale, imagePath, sortOrder, createdAt, updatedAt, deletedAt | assets.Character |
 | `scenes` | dramaId, location, time, prompt, lighting, finalPrompt, finalPromptStale, imagePath, … | assets.Scene (no status column: readiness is derived from tasks) |
 | `props` | dramaId, name, type, description, finalPrompt, finalPromptStale, imagePath, … | assets.Prop |
@@ -126,7 +126,7 @@ SQLite, one file `data/open-drama.sqlite3`. Ids are integer autoincrement; times
 | `shot_characters`, `shot_props` | shotId, assetId (pk pair) | shot bindings |
 | `generation_tasks` | type(image/video), dramaId, shotId, characterId, sceneId, propId, serviceId, provider, model, prompt, params(json), providerTaskId, resultUrl, localPath, durationSeconds, status, error, errorClass, createdAt, updatedAt, completedAt | generation.GenerationTask — indexes on (type), (dramaId), (shotId), (status) |
 | `films` | episodeId, dramaId, clipPaths(json), encoder, status, filmPath, durationSeconds, posterPath, error, createdAt, completedAt | compositing.Film |
-| `agent_jobs` | kind(`rewrite | extraction | breakdown | videoPromptBatch`), episodeId, dramaId, target, status(`running | done | failed`), progress(json), error, startedAt, finishedAt | production.ScriptRewriteJob, assets.ExtractionJob, storyboard.StoryboardBreakdown, storyboard.VideoPromptBatch — one active job per (kind, episodeId, target) |
+| `agent_jobs` | kind(`rewrite | extraction | breakdown | videoPromptBatch | recap`), episodeId, dramaId, target, status(`running | done | failed`), progress(json), error, startedAt, finishedAt | production.ScriptRewriteJob, production.RecapJob (target = script revision), assets.ExtractionJob, storyboard.StoryboardBreakdown, storyboard.VideoPromptBatch — one active job per (kind, episodeId, target) |
 | `model_services` | serviceType, provider, name, baseUrl, apiKey, models(json), priority, isActive, settings(json: temperature), createdAt, updatedAt | configuration.ModelService — hard delete; apiKey never leaves the process |
 | `style_presets` | name, value(unique), prompt, description, sortOrder, isActive, createdAt, updatedAt | configuration.StylePreset — seeded |
 | `app_settings` | key(pk), value, updatedAt | configuration.AppSettings (`contentLanguage`, `toursSeen`) |

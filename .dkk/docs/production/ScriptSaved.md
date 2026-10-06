@@ -6,7 +6,7 @@
 
 ## Summary
 
-A formatted script was persisted for the episode (by the rewriter agent). The script stage is now done and extraction can start.
+A formatted script was persisted for the episode (by the rewriter agent) and the script revision moved. The script stage is now done, extraction can start, and in a serial drama the recap is written.
 
 
 ## Fields

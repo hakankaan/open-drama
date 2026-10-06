@@ -6,7 +6,7 @@
 
 ## Summary
 
-Update a drama's title, description, genre, style, status or tags. The aspect ratio is immutable and is ignored if supplied.
+Update a drama's title, description, genre, style, status, tags or serial flag. The aspect ratio is immutable and is ignored if supplied.
 
 
 ## Fields
@@ -20,6 +20,7 @@ Update a drama's title, description, genre, style, status or tags. The aspect ra
 | `style` | `string` | — |
 | `status` | `string` | draft | active | completed (project-level status shown on the launcher) |
 | `tags` | `string[]` | — |
+| `serial` | `boolean` | — |
 
 ## Rules & Invariants
 

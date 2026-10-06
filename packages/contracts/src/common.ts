@@ -28,13 +28,13 @@ export type TaskErrorClass = z.infer<typeof TaskErrorClass>;
 export const JobStatus = z.enum(['running', 'done', 'failed']);
 export type JobStatus = z.infer<typeof JobStatus>;
 
-export const JobKind = z.enum(['rewrite', 'extraction', 'breakdown', 'videoPromptBatch']);
+export const JobKind = z.enum(['rewrite', 'extraction', 'breakdown', 'videoPromptBatch', 'recap']);
 export type JobKind = z.infer<typeof JobKind>;
 
 export const ExtractionTarget = z.enum(['characters', 'scenes', 'props']);
 export type ExtractionTarget = z.infer<typeof ExtractionTarget>;
 
-export const AgentType = z.enum(['script_rewriter', 'extractor', 'storyboard_breaker', 'prompt_generator']);
+export const AgentType = z.enum(['script_rewriter', 'extractor', 'storyboard_breaker', 'prompt_generator', 'recap_writer']);
 export type AgentType = z.infer<typeof AgentType>;
 
 export const ContentLanguage = z.enum(['en', 'zh', 'ja', 'ko']);

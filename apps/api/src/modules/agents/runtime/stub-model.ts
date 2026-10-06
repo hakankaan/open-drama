@@ -1,3 +1,4 @@
+import { env } from '../../../env';
 import type { LanguageModelV4 } from './sdk';
 
 /**
@@ -51,6 +52,24 @@ function stubScript(content: string): string {
     .map((s) => s.trim())
     .filter(Boolean);
   return ['## S01 | INT Main location | Day', '', ...sentences.flatMap((s) => [s, ''])].join('\n').trim();
+}
+
+/** The story's first sentences, headings dropped, as a placeholder recap labelled with the episode number. */
+function stubRecap(episodeNumber: number, script: string): string {
+  const sentences = script
+    .split(/\n\s*\n/)
+    .map((p) => p.replace(/\s+/g, ' ').trim())
+    .filter((p) => p && !p.startsWith('#'))
+    .join(' ')
+    .split(/(?<=[.!?。！？])\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  let text = `Episode ${episodeNumber}:`;
+  for (const s of sentences) {
+    if (`${text} ${s}`.length > 600) break;
+    text += ` ${s}`;
+  }
+  return sentences.length > 0 ? text : `${text} nothing happens yet; the script is still empty.`;
 }
 
 function stubCharacters(script: string, existing: string[]): Json[] {
@@ -157,6 +176,15 @@ function plan(options: CallOptions): Step {
     return { text: 'Saved the script.' };
   }
 
+  if (tools.has('save_recap')) {
+    if (!done.has('read_episode_for_recap')) return next('read_episode_for_recap');
+    if (!done.has('save_recap')) {
+      const read = done.get('read_episode_for_recap') as { episodeNumber?: number; script?: string } | null;
+      return next('save_recap', { recap: stubRecap(read?.episodeNumber ?? 0, read?.script ?? '') });
+    }
+    return { text: 'Saved the recap.' };
+  }
+
   if (tools.has('save_dedup_characters')) {
     const target = /\bscenes\b/i.test(message) ? 'scenes' : /\bprops\b/i.test(message) ? 'props' : 'characters';
     if (!done.has('read_script_for_extraction')) return next('read_script_for_extraction');
@@ -228,6 +256,7 @@ export function stubLanguageModel(): LanguageModelV4 {
     modelId: 'stub-text',
     supportedUrls: {},
     async doGenerate(options) {
+      if (env.OPEN_DRAMA_STUB_DELAY_MS > 0) await new Promise((r) => setTimeout(r, env.OPEN_DRAMA_STUB_DELAY_MS));
       const step = plan(options);
       const usage = {
         inputTokens: { total: 0, noCache: 0, cacheRead: undefined, cacheWrite: undefined },

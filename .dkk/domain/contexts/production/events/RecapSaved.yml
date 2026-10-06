@@ -1,0 +1,9 @@
+# Domain event — something that happened in the domain.
+name: RecapSaved
+description: A recap was persisted for the episode, by the recap writer or by the creator, pinned to a script revision.
+fields:
+  - name: episodeId
+    type: ID
+  - name: scriptRevision
+    type: number
+raised_by: Episode

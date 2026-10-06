@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { isNarrator, SHOT_DURATION_MAX, SHOT_DURATION_MIN } from '@open-drama/contracts';
 import { db } from '../../../db/client';
 import { characters, episodeCharacters, episodeProps, episodeScenes, episodes, props, scenes } from '../../../db/schema';
+import { seriesContext } from '../../production/series';
 import { getShotRow, liveShotRows, loadBindings, saveShots, writeShotUpdate } from '../../storyboard/service';
 import { defineTool } from '../runtime/tool';
 
@@ -25,7 +26,7 @@ const linked = <T extends { id: number }>(rows: T[], links: { id: number }[]) =>
 export const readStoryboardContext = defineTool({
   id: 'read_storyboard_context',
   description:
-    "Without shotId: the episode's script, the project's characters, scenes and props with their ids, and the current shots. With shotId: that shot's description, atmosphere, duration and bound asset names.",
+    "Without shotId: the episode's script, a `series` block (the project's premise and, for a serial drama, the earlier episodes' recaps), the project's characters, scenes and props with their ids, and the current shots. With shotId: that shot's description, atmosphere, duration and bound asset names.",
   input: z.object({ shotId: z.number().int().optional().describe('Read one shot of this episode') }),
   execute: ({ shotId }, ctx) => {
     if (shotId !== undefined) {
@@ -64,6 +65,8 @@ export const readStoryboardContext = defineTool({
     const linkedScenes = db.select({ id: episodeScenes.sceneId }).from(episodeScenes).where(eq(episodeScenes.episodeId, ctx.episodeId)).all();
     const linkedProps = db.select({ id: episodeProps.propId }).from(episodeProps).where(eq(episodeProps.episodeId, ctx.episodeId)).all();
     return {
+      episodeNumber: ep.episodeNumber,
+      series: seriesContext(ctx.dramaId, ctx.episodeId, ctx.log),
       script: ep.scriptContent?.trim() || ep.content,
       characters: linked(chars, linkedChars),
       scenes: linked(scs, linkedScenes),

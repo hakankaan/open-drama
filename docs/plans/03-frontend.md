@@ -53,7 +53,7 @@ Governing decisions: `adr-0002` (Next.js), `adr-0007` (contract), `adr-0010` (to
 - Head: title/subtitle, stat tags (projects, active, visual styles), help "?" (replays the tour), primary "New project".
 - Toolbar: search (client-side over title/style/status), status chips (all / draft "Not started" / active "In progress" / completed), sort (recently updated / name).
 - Grid of project cards: cover with initial + aspect-ratio badge, status badge menu (optimistic `PATCH /dramas/:id` with rollback), "…" menu (open / delete), title, style tag, meta counts, relative time. 8 skeletons while loading; two empty states.
-- Create dialog: name (required), visual style (searchable select from `GET /style-presets`, hint = description), aspect ratio (16:9 default / 9:16 / 1:1 / adaptive with the "fixed after creation" hint). Submit → `POST /dramas` → navigate to the project.
+- Create dialog: name (required), synopsis (optional, "given to the script and storyboard agents as the series premise"), visual style (searchable select from `GET /style-presets`, hint = description), aspect ratio (16:9 default / 9:16 / 1:1 / adaptive with the "fixed after creation" hint), the switch "Episodes continue one story" (`serial`, on by default; off for anthologies, `adr-0014`). Submit → `POST /dramas` → navigate to the project.
 - Delete confirm dialog → `DELETE /dramas/:id`.
 - Tour (3 steps: welcome, settings, create) on first visit.
 
@@ -67,7 +67,7 @@ Left nav (220 px) with the six tabs; tab in the URL query so links deep-link.
 - **About**: version from `GET /health`, links, the exposure note (no authentication; keep the web port private or put an authenticating proxy in front). Update checks are out of scope.
 
 ### 4.4 Project page `/drama/[id]`
-- Header card: back, title, style tag, counts, "Add episode".
+- Header card: back, title, style tag, counts, "Edit project" (dialog: title, synopsis, the serial switch → `PATCH /dramas/:id`; style and frame shape stay as created), "Add episode".
 - Tabs: **Episodes** (cards with EP number, title, duration, "script ready" / "merged" tags, relative time, status menu, resolution menu 480p/720p/1080p, delete, "Open studio"; trailing "Add episode N" card; add dialog with optional title + resolution and the "locks current services" note; delete confirm) and **Asset library** from `GET /dramas/:id/assets` (segmented filter all/character/scene/prop, grouped cards with image/readiness badge/summary/final-prompt line with a "stale" tag/generate/upload, detail dialog with full field editing, final prompt generate/regenerate + textarea, upload, generate image, save; image viewer).
 - Asset generation from the library needs an episode for the prompt agent: when the drama has no episode, the Generate and Generate-prompt buttons are disabled with the tooltip "Create an episode first"; otherwise the first episode's id is used. Readiness comes from the card's latest image task; the library query polls while any card is generating.
 
@@ -76,7 +76,9 @@ Left nav (220 px) with the six tabs; tab in the URL query so links deep-link.
 
 **Sidebar** (collapsible, persisted): three sections (Script: raw / AI rewrite; Production: assets / video production; Export: merge & export) with derived state icons, the progress marquee (4 segments, clickable), collapse toggle, refresh.
 
-**Script stage**: step 0 raw content (char count, Save → `PATCH /episodes/:id {content}` awaited, textarea) and step 1 AI rewrite (empty state with Start / Skip; running state while the rewrite job is `running` — polled via `/jobs`; a `failed` job shows its error with Retry / Skip; textarea with explicit Save; "Rewrite again"; "Skip rewrite" → `POST /episodes/:id/skip-rewrite`, after which the rail shows Script done because the script was persisted). The user's step is kept across refreshes; only a data change (script appearing) moves it.
+**Script stage**: step 0 raw content (char count, Save → `PATCH /episodes/:id {content}` awaited, textarea) and step 1 AI rewrite (empty state with Start / Skip and, in a serial drama with earlier episodes, one line counting their ready, stale and missing recaps from `DramaDetail`; running state while the rewrite job is `running` — polled via `/jobs`; a `failed` job shows its error with Retry / Skip; textarea with explicit Save; "Rewrite again"; "Skip rewrite" → `POST /episodes/:id/skip-rewrite`, after which the rail shows Script done because the script was persisted). The user's step is kept across refreshes; only a data change (script appearing) moves it.
+
+**Recap card** (serial dramas, under the script editor, `adr-0014`): the episode's recap as an editable textarea with explicit Save (`PATCH /episodes/:id {recap}`), "Write recap" / "Rewrite recap" → `POST /episodes/:id/recap` with the text-model override; while the recap job runs a spinner replaces the editor, so an edit cannot race the save; a failed job shows its error; a stale recap (`recapStale`, the script changed since) shows a warning. The recap job starts on its own after a rewrite or a skip.
 
 **Production guard**: without a script, the production panel shows "finish the script first" with a link.
 
@@ -106,7 +108,7 @@ Left nav (220 px) with the six tabs; tab in the URL query so links deep-link.
 
 | Query | Interval | Active while |
 |---|---|---|
-| `/episodes/:id/jobs` | 2.5 s | any job `running` |
+| `/episodes/:id/jobs` | 2.5 s | any job `running` (rewrite, extraction, breakdown, prompt batch, recap) |
 | `/episodes/:id/assets` | 3 s | any asset generating |
 | `/episodes/:id/shots` | 4 s | any shot generating |
 | `/dramas/:id/assets` (library) | 3 s | any card generating |

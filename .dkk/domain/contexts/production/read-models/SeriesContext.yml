@@ -1,0 +1,34 @@
+# Read model — a query-optimised projection.
+name: SeriesContext
+description: >-
+  What the script rewriter, storyboard breaker and recap writer are told about the rest of the drama, attached as the
+  `series` block of their read tools' results. Always the premise (title, synopsis and genre when set); for a serial
+  drama also the earlier live episodes in order, each with its recap and whether that recap is ready, stale (the
+  script changed since it was written) or missing, so gaps are named rather than silently absent. Beyond a character
+  budget the oldest recaps are dropped and listed as omitted.
+fields:
+  - name: title
+    type: string
+  - name: description
+    type: string
+    description: The drama's synopsis, when set
+  - name: genre
+    type: string
+  - name: serial
+    type: boolean
+  - name: earlierEpisodes
+    type: "EarlierEpisode[]"
+    description: Serial only — episodeNumber, title, status (ready | stale | missing), recap
+  - name: omittedEpisodes
+    type: "number[]"
+    description: Episode numbers whose recaps were dropped for the budget
+subscribes_to:
+  - DramaUpdated
+  - ScriptSaved
+  - ScriptRewriteSkipped
+  - EpisodeContentUpdated
+  - RecapSaved
+used_by:
+  - AgentRuntime
+adr_refs:
+  - adr-0014

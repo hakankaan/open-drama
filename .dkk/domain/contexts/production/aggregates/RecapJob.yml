@@ -1,0 +1,20 @@
+# Aggregate — a consistency boundary that handles commands and emits events.
+name: RecapJob
+description: >-
+  A running recap write for one script revision of an episode. Wraps the recap_writer agent run so the studio can
+  poll it, and records failure explicitly.
+handles:
+  commands:
+    - WriteRecap
+emits:
+  events:
+    - RecapRequested
+    - RecapCompleted
+    - RecapFailed
+invariants:
+  - Key is the episode and the script revision the job started from; a newer revision's job may start while an older one still runs, and starting again for the same revision returns the running job (alreadyRunning).
+  - Success is judged by SaveRecap succeeding for the job's revision; a save refused because the script moved on fails the job at once, without the usual retry.
+  - A restart marks a running recap as failed.
+adr_refs:
+  - adr-0008
+  - adr-0014

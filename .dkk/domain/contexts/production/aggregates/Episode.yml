@@ -1,12 +1,14 @@
-# Aggregate — a consistency boundary that handles commands and emits events.
 name: Episode
-description: One episode of a drama. Holds the raw content and the formatted script, the locked image/video services and resolution, the production status and, once merged, the film.
+description: >-
+  One episode of a drama. Holds the raw content and the formatted script with its revision, the recap for the writers of
+  later episodes, the locked image/video services and resolution, the production status and, once merged, the film.
 handles:
   commands:
     - CreateEpisode
     - UpdateEpisodeContent
     - SaveScript
     - SkipRewrite
+    - SaveRecap
     - SetEpisodeResolution
     - SetEpisodeStatus
     - AttachEpisodeFilm
@@ -17,13 +19,32 @@ emits:
     - EpisodeContentUpdated
     - ScriptSaved
     - ScriptRewriteSkipped
+    - RecapSaved
     - EpisodeResolutionChanged
     - EpisodeStatusChanged
     - EpisodeFilmAttached
     - EpisodeDeleted
 invariants:
   - episodeNumber is unique among the drama's non-deleted episodes and assigned as max(existing) + 1.
-  - imageServiceId and videoServiceId are snapshotted at creation from the highest-priority active model service of each type; creation is rejected when either type has no active service.
-  - resolution is one of 480p, 720p or 1080p and applies to every video generated for the episode; adapters map it to the provider's nearest tier.
-  - status is one of draft, active or completed (the same vocabulary as Drama); completed is a manual mark set from the export stage and can be undone.
-  - scriptContent is the single script used downstream. RewriteScript fills it through SaveScript; SkipRewrite copies the raw content into it, so a skip is persisted and survives reloads.
+  - >-
+    imageServiceId and videoServiceId are snapshotted at creation from the highest-priority active model service of each
+    type; creation is rejected when either type has no active service.
+  - >-
+    resolution is one of 480p, 720p or 1080p and applies to every video generated for the episode; adapters map it to
+    the provider's nearest tier.
+  - >-
+    status is one of draft, active or completed (the same vocabulary as Drama); completed is a manual mark set from the
+    export stage and can be undone.
+  - >-
+    scriptContent is the single script used downstream. RewriteScript fills it through SaveScript; SkipRewrite copies
+    the raw content into it, so a skip is persisted and survives reloads.
+  - >-
+    scriptRevision increments on every change of scriptContent, whoever writes it; a save of identical text does not
+    move it.
+  - >-
+    recap is at most 2000 characters, written by the recap writer for one script revision or edited by the creator, who
+    pins it to the current revision. A recap is stale when its revision is not the script's; staleness is derived, never
+    stored.
+  - An agent save of a recap for an older script revision is refused; the newer revision has its own recap job.
+adr_refs:
+  - adr-0014

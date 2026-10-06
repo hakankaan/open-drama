@@ -122,8 +122,20 @@ export const useUpdateEpisode = () =>
     request(EpisodeView, 'PATCH', `/episodes/${id}`, body),
   );
 
-export const useSkipRewrite = () =>
-  useEpisodeMutation((id: number) => request(EpisodeView, 'POST', `/episodes/${id}/skip-rewrite`));
+/** The skip may start the episode's recap job, so the jobs query is invalidated like a job start. */
+export function useSkipRewrite() {
+  const qc = useQueryClient();
+  const invalidate = useInvalidateDramas();
+  return useMutation({
+    mutationFn: (id: number) => request(EpisodeView, 'POST', `/episodes/${id}/skip-rewrite`),
+    onSuccess: (data) => {
+      qc.setQueryData(productionKeys.episode(data.id), data);
+      void qc.invalidateQueries({ queryKey: productionKeys.pipeline(data.id) });
+      invalidate(data.dramaId);
+    },
+    onSettled: (_data, _err, id) => void qc.invalidateQueries({ queryKey: productionKeys.jobs(id) }),
+  });
+}
 
 export function useDeleteEpisode(dramaId: number) {
   const invalidate = useInvalidateDramas();
@@ -137,7 +149,9 @@ export function useDeleteEpisode(dramaId: number) {
 
 const anyRunning = (jobs: EpisodeJobs | undefined) =>
   !!jobs &&
-  [jobs.rewrite, jobs.breakdown, jobs.videoPromptBatch, ...Object.values(jobs.extraction)].some((j) => j?.status === 'running');
+  [jobs.rewrite, jobs.breakdown, jobs.videoPromptBatch, jobs.recap, ...Object.values(jobs.extraction)].some(
+    (j) => j?.status === 'running',
+  );
 
 export const useEpisodeJobs = (id: number | undefined) =>
   useQuery({
@@ -152,6 +166,14 @@ export function useStartRewrite(episodeId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: TextModelOverride) => request(JobStarted, 'POST', `/episodes/${episodeId}/rewrite`, body),
+    onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.jobs(episodeId) }),
+  });
+}
+
+export function useStartRecap(episodeId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: TextModelOverride) => request(JobStarted, 'POST', `/episodes/${episodeId}/recap`, body),
     onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.jobs(episodeId) }),
   });
 }

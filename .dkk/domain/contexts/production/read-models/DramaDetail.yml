@@ -1,6 +1,9 @@
 # Read model — a query-optimised projection.
 name: DramaDetail
-description: The project page — the drama with its episodes (number, title, status, resolution, script and film presence) and the drama-wide asset library (characters, scenes, props).
+description: >-
+  The project page — the drama (with its serial flag) with its episodes (number, title, status, resolution, script,
+  film and recap presence, recap staleness) and the drama-wide asset library (characters, scenes, props). The studio
+  counts the earlier episodes' ready, stale and missing recaps from it before a rewrite.
 fields:
   - name: dramaId
     type: ID
@@ -17,6 +20,8 @@ subscribes_to:
   - EpisodeCreated
   - EpisodeContentUpdated
   - ScriptSaved
+  - ScriptRewriteSkipped
+  - RecapSaved
   - EpisodeResolutionChanged
   - EpisodeStatusChanged
   - EpisodeFilmAttached

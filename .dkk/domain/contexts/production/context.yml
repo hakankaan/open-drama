@@ -25,6 +25,22 @@ glossary:
       owns episodes and shared assets.
     aliases:
       - Drama project
+  - term: Recap
+    definition: >-
+      A short account (at most 2000 characters) of what happened in an episode, written for the writers of the next
+      episodes, not for viewers: what changed, where things stand, objects that will matter, open threads. Written by
+      the recap writer after every saved script of a serial drama and editable by the creator.
+  - term: Serial drama
+    definition: >-
+      A drama whose episodes continue one story ("Episodes continue one story" in the project settings, the default).
+      Its agents get the earlier episodes' recaps; an anthology or a set of standalone skits turns it off and gets the
+      premise only.
+    aliases:
+      - Serial
+  - term: Script revision
+    definition: >-
+      A counter on the episode that moves on every change of the script. A recap records the revision it was written
+      for and is stale once the script's revision differs; a recap job is keyed by the revision it started from.
 adr_refs:
   - adr-0001
   - adr-0002
@@ -32,6 +48,7 @@ adr_refs:
   - adr-0004
   - adr-0007
   - adr-0012
+  - adr-0014
 code_refs:
   - apps/api/src/modules/production/**
   - apps/api/src/modules/jobs/**

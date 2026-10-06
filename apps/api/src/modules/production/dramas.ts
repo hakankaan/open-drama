@@ -16,6 +16,7 @@ import { db } from '../../db/client';
 import { characters, dramas, episodes, props, scenes, shots } from '../../db/schema';
 import { assertSomething, invalid, notFound } from '../../http/errors';
 import { getPresetByValue } from '../configuration/presets';
+import { toEpisode } from './episodes';
 
 type Row = typeof dramas.$inferSelect;
 
@@ -147,12 +148,16 @@ export function getDramaDetail(id: number): DramaDetail {
       .get()?.n ?? 0;
   return {
     ...drama,
-    episodes: eps.map(({ content, scriptContent, deletedAt: _d, ...e }) => ({
-      ...e,
-      hasContent: content.trim().length > 0,
-      hasScript: scriptContent !== null && scriptContent.trim().length > 0,
-      shotCount: shotCounts.get(e.id) ?? 0,
-    })),
+    episodes: eps.map((row) => {
+      const { content, scriptContent, recap, ...e } = toEpisode(row);
+      return {
+        ...e,
+        hasContent: content.trim().length > 0,
+        hasScript: scriptContent !== null && scriptContent.trim().length > 0,
+        hasRecap: recap.trim().length > 0,
+        shotCount: shotCounts.get(e.id) ?? 0,
+      };
+    }),
     counts: { characters: characterCounts([id]).get(id) ?? 0, scenes: liveCount(scenes), props: liveCount(props) },
   };
 }

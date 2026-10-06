@@ -6,8 +6,9 @@ import { useState } from 'react';
 import { AspectRatio as AspectRatioEnum, type AspectRatio } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
-import { Field, Input } from '@/components/ui/input';
+import { Field, Input, Textarea } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/cn';
 import { useToastError } from '@/lib/errors';
 import { useStylePresets } from '../../configuration/api';
@@ -20,6 +21,28 @@ const SHAPE: Record<AspectRatio, string> = {
   adaptive: 'h-5 w-6 border-dashed',
 };
 
+/** The serial switch with its label and hint, shared by the create and edit dialogs. */
+export function SerialField({
+  checked,
+  onCheckedChange,
+  disabled,
+}: {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  const t = useTranslations('launcher.create');
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="flex items-center gap-2 text-[13px] font-medium text-ink-2">
+        <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} label={t('serial')} />
+        {t('serial')}
+      </label>
+      <p className="text-xs text-muted">{t('serialHint')}</p>
+    </div>
+  );
+}
+
 export function CreateProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const t = useTranslations('launcher.create');
   const tc = useTranslations('common');
@@ -29,6 +52,8 @@ export function CreateProjectDialog({ open, onOpenChange }: { open: boolean; onO
   const presets = useStylePresets();
   const create = useCreateDrama();
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [serial, setSerial] = useState(true);
   const [style, setStyle] = useState<string>();
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('16:9');
   const [touched, setTouched] = useState(false);
@@ -41,9 +66,17 @@ export function CreateProjectDialog({ open, onOpenChange }: { open: boolean; onO
     setTouched(true);
     if (!title.trim() || !selectedStyle) return;
     try {
-      const drama = await create.mutateAsync({ title: title.trim(), style: selectedStyle, aspectRatio });
+      const drama = await create.mutateAsync({
+        title: title.trim(),
+        description: description.trim(),
+        serial,
+        style: selectedStyle,
+        aspectRatio,
+      });
       onOpenChange(false);
       setTitle('');
+      setDescription('');
+      setSerial(true);
       setTouched(false);
       router.push(`/drama/${drama.id}`);
     } catch (err) {
@@ -63,6 +96,16 @@ export function CreateProjectDialog({ open, onOpenChange }: { open: boolean; onO
               maxLength={120}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t('namePlaceholder')}
+            />
+          </Field>
+          <Field label={t('synopsis')} htmlFor="project-synopsis" hint={t('synopsisHint')}>
+            <Textarea
+              id="project-synopsis"
+              value={description}
+              maxLength={2000}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t('synopsisPlaceholder')}
+              className="min-h-20"
             />
           </Field>
           <Field label={t('style')} htmlFor="project-style" hint={preset?.description}>
@@ -101,6 +144,7 @@ export function CreateProjectDialog({ open, onOpenChange }: { open: boolean; onO
             </div>
             <p className="text-xs text-muted">{t('aspectRatioHint')}</p>
           </fieldset>
+          <SerialField checked={serial} onCheckedChange={setSerial} />
           <DialogFooter>
             <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={create.isPending}>
               {tc('cancel')}

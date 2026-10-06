@@ -1,0 +1,15 @@
+# Domain event — something that happened in the domain.
+name: RecapRequested
+description: A recap was requested for a script revision of the episode; the recap_writer agent should run.
+fields:
+  - name: episodeId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: scriptRevision
+    type: number
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+raised_by: RecapJob

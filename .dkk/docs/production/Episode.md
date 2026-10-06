@@ -6,7 +6,7 @@
 
 ## Summary
 
-One episode of a drama. Holds the raw content and the formatted script, the locked image/video services and resolution, the production status and, once merged, the film.
+One episode of a drama. Holds the raw content and the formatted script with its revision, the recap for the writers of later episodes, the locked image/video services and resolution, the production status and, once merged, the film.
 
 
 
@@ -17,6 +17,9 @@ One episode of a drama. Holds the raw content and the formatted script, the lock
 - resolution is one of 480p, 720p or 1080p and applies to every video generated for the episode; adapters map it to the provider's nearest tier.
 - status is one of draft, active or completed (the same vocabulary as Drama); completed is a manual mark set from the export stage and can be undone.
 - scriptContent is the single script used downstream. RewriteScript fills it through SaveScript; SkipRewrite copies the raw content into it, so a skip is persisted and survives reloads.
+- scriptRevision increments on every change of scriptContent, whoever writes it; a save of identical text does not move it.
+- recap is at most 2000 characters, written by the recap writer for one script revision or edited by the creator, who pins it to the current revision. A recap is stale when its revision is not the script's; staleness is derived, never stored.
+- An agent save of a recap for an older script revision is refused; the newer revision has its own recap job.
 
 
 ## Relationships
@@ -27,6 +30,7 @@ One episode of a drama. Holds the raw content and the formatted script, the lock
 | Handles | `UpdateEpisodeContent` |
 | Handles | `SaveScript` |
 | Handles | `SkipRewrite` |
+| Handles | `SaveRecap` |
 | Handles | `SetEpisodeResolution` |
 | Handles | `SetEpisodeStatus` |
 | Handles | `AttachEpisodeFilm` |
@@ -35,6 +39,7 @@ One episode of a drama. Holds the raw content and the formatted script, the lock
 | Emits | `EpisodeContentUpdated` |
 | Emits | `ScriptSaved` |
 | Emits | `ScriptRewriteSkipped` |
+| Emits | `RecapSaved` |
 | Emits | `EpisodeResolutionChanged` |
 | Emits | `EpisodeStatusChanged` |
 | Emits | `EpisodeFilmAttached` |
@@ -42,4 +47,6 @@ One episode of a drama. Holds the raw content and the formatted script, the lock
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0014](../../adr/adr-0014.md) | Series continuity through episode recaps | accepted |

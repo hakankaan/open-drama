@@ -27,3 +27,7 @@ Items the product owner has decided on but pushed out of the current iteration, 
 - ModelRunner catalog picker lists endpoints the adapter refuses (LongCat needs a start frame): checking a model when it is added in Settings, through the same schema read, would catch it before a shot request does.
 - Seedance 2.5 on Ark: the model's `duration: -1` (model picks the length) is not offered.
 - Drag-and-drop shot reordering, workbench keyboard shortcuts — Plan 3 "Later".
+- Rolling series summary for very long series: the `series` block (`adr-0014`) lists every earlier episode's recap and drops the oldest beyond 40k characters; a maintained whole-series summary would keep the early episodes present at a fixed cost.
+- Prompt and skill templates do not upgrade unedited built-ins the way style presets do (content-addressed seed): the series paragraph added to the rewriter and breaker prompt files (`adr-0014`) reaches new installs only; existing workspaces rely on the sentence in the agent message.
+- The breakdown has no script snapshot: a manual script edit while a breakdown runs is not detected (the rewrite job is refused, `adr-0014`); keying the breakdown by script revision would catch it.
+- Seedance 2.0 on ModelRunner refused its own generated soundtrack once (`OutputAudioSensitiveContentDetected.PolicyViolation`, 2026-10-06, four minutes in): the task failed cleanly, and the same request with `generateAudio: false` completed. The video panel could offer that retry when the error carries this code.

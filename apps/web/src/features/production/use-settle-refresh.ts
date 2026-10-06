@@ -26,6 +26,7 @@ export function useSettleRefresh(episodeId: number, dramaId: number) {
       ['rewrite', j.rewrite],
       ['breakdown', j.breakdown],
       ['videoPromptBatch', j.videoPromptBatch],
+      ['recap', j.recap],
       ...Object.entries(j.extraction).map(([target, job]) => [`extraction:${target}`, job] as const),
     ] as const;
     for (const [key, job] of jobList) if (job) current.set(key, `${job.id}:${job.status}`);

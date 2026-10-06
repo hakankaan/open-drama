@@ -15,6 +15,13 @@
       "when": 1790592501928,
       "tag": "0001_shots_created_by_job",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791295012308,
+      "tag": "0002_series_context",
+      "breakpoints": true
     }
   ]
 }

@@ -19,6 +19,8 @@ const EnvSchema = z.object({
   FFMPEG_BIN: z.string().optional(),
   FFPROBE_BIN: z.string().optional(),
   OPEN_DRAMA_STUB_PROVIDERS: flag,
+  // Pause before every stub text reply, to watch running states and races (a slow recap, a restart) by hand.
+  OPEN_DRAMA_STUB_DELAY_MS: z.coerce.number().int().min(0).max(600_000).default(0),
   // Shot videos generating at once per episode; further requests wait for a slot (cost and rate-limit guard).
   OPEN_DRAMA_VIDEO_CONCURRENCY: z.coerce.number().int().min(1).max(32).default(4),
   // Text transport patches for relays (Plan 2 §4).

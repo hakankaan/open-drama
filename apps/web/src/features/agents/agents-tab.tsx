@@ -171,6 +171,7 @@ const PREFIX: Record<AgentType, string> = {
   extractor: 'extractor/',
   storyboard_breaker: 'storyboard-breaker/',
   prompt_generator: 'prompt-generator/',
+  recap_writer: 'recap-writer/',
 };
 
 function AddSkillDialog({ agent, onClose }: { agent: AgentType; onClose: () => void }) {

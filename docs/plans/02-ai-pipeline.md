@@ -112,14 +112,17 @@ workspace/  (repo root, template copied to $DATA_DIR/workspace)
 
 **Agent user messages**: kept in the API next to each agent as English templates (rewrite, extract-per-target, breakdown with asset lists, single video prompt, final prompt per asset type). The web app never composes agent prompts.
 
-## 5. The four agents
+## 5. The five agents
 
 | Agent | Tools | Message (summary) | Success check |
 |---|---|---|---|
-| `script_rewriter` | `read_episode_script`, `save_script` | "Read the episode content and rewrite it as a formatted script, then save it." | `episodes.scriptContent` non-empty after the run → `ScriptRewriteCompleted`, else `ScriptRewriteFailed` |
+| `script_rewriter` | `read_episode_script`, `save_script` | "Read the episode content and rewrite it as a formatted script, then save it." + the series note | `episodes.scriptContent` non-empty after the run → `ScriptRewriteCompleted`, else `ScriptRewriteFailed`; in a serial drama the recap job is started before the rewrite settles |
 | `extractor` | `read_script_for_extraction`, `read_existing_characters/scenes/props`, `save_dedup_characters/scenes/props` | per target: "Extract only {characters \| scenes \| plot-critical props} from this episode's script; read existing ones first and reuse matches; save with the dedup tool." | job `done`; counts from the save tool logged |
-| `storyboard_breaker` | `read_storyboard_context`, `save_shots`, `update_shot` | "Break the script into shots. The video model is {label}. Characters: …(id) Scenes: …(id) Props: …(id). Save in batches of at most 8; the first batch replaces existing shots." | live shots exist for the episode after the run (parked shots purged); `videoPrompt` present (else the batch runs) |
+| `storyboard_breaker` | `read_storyboard_context`, `save_shots`, `update_shot` | "Break the script into shots. The video model is {label}. Characters: …(id) Scenes: …(id) Props: …(id). Save in batches of at most 8; the first batch replaces existing shots." + the series note | live shots exist for the episode after the run (parked shots purged); `videoPrompt` present (else the batch runs) |
 | `prompt_generator` | `read_characters/scenes/props`, `save_*_final_prompt`, `read_storyboard_context`, `update_shot` | (a) "Write the {turnaround \| establishing-shot \| product-shot} final prompt for {asset} (id) and save it." (b) "Write the video prompt for shot #{n} (id) for video model {label}; read the shot context first; save only `videoPrompt`." | the target field is non-empty after the run |
+| `recap_writer` | `read_episode_for_recap`, `save_recap` | "Read the script, write its recap following your skills, save it; the `series` block is context only, recap this episode alone." | `save_recap` succeeded for the job's script revision → `RecapCompleted`; a save refused because the script moved on fails the job at once, without the retry (`adr-0014`) |
+
+**The `series` block** (`adr-0014`): `read_episode_script`, `read_storyboard_context` (no `shotId`) and `read_episode_for_recap` attach `series`, built by one `seriesContext(dramaId, episodeId)` in the production module: `{ title, description?, genre?, serial, earlierEpisodes?: [{ episodeNumber, title, status: ready | stale | missing, recap? }], omittedEpisodes? }`. Earlier episodes appear for serial dramas only, in order; `stale` carries the text with the flag; the oldest recaps are dropped beyond 40k characters and listed as omitted. The builder logs `series context attached {serial, ready, stale, missing, omitted}`. The rewriter's and breaker's user messages end with a sentence pointing at the block, so workspaces whose prompt files predate it still get the instruction.
 
 **Skills to author** — English texts in a four-part shape: *what the agent produces* (the artefact and its fields, taken from the aggregate), *how the artefact is judged* (the invariants as acceptance criteria), *worked example*, *tool protocol* (which tool to call, in what order, what a valid call contains). Every text is written from scratch for this repository (`adr-0001`) from the domain glossary and aggregates. Texts use this repository's vocabulary — `[Shot N]` markers, the `@[Name]` mention grammar, `save_shots` / `update_shot` / `shotId` tool names, `durationSeconds` — and follow the invariants stated in the domain model (segment length and sub-shot counts, the dialogue-duration floor, the 0–3 plot-critical prop rule, near-name deduplication, the three reference-image formats, the 3-second line format).
 
@@ -128,6 +131,9 @@ workspace/  (repo root, template copied to $DATA_DIR/workspace)
 - `storyboard-breaker`: artefact = shots with `[Shot N]` sub-shot blocks, bindings, durations; acceptance = Shot invariants and the storyboard glossary (beats, 8–15 s, dialogue floor, never cross scenes, batches ≤ 8, first batch replaces).
 - `prompt-generator/character-prompt`, `scene-prompt`, `prop-prompt`: artefacts = the three reference-image prompts (turnaround sheet, establishing shot with nobody in it, product shot), style words forbidden (injected on save).
 - `prompt-generator/video-prompt`: artefact = header line + one line per 3 s segment mapped 1:1 to sub-shots, `@[Name]` mentions only for bound assets, no invented dialogue, saved through `update_shot` with `shotId` + `videoPrompt` only.
+- `recap-writer`: artefact = the episode recap (120–250 words: what changed, where things stand, objects that will matter, open threads); acceptance = nothing invented, names as in the script, only this episode, no camera or style words or quoted dialogue, ≤ 2000 characters.
+
+**Stub text model**: `OPEN_DRAMA_STUB_DELAY_MS` (default 0) pauses before every stub reply, so running states and the races the domain guards against (a slow recap finishing after a newer script, a restart during a job) can be exercised by hand.
 
 ## 6. Workspace
 

@@ -104,10 +104,15 @@
       "name": "名前",
       "nameRequired": "プロジェクト名を入力してください。",
       "namePlaceholder": "提灯売り",
+      "synopsis": "あらすじ",
+      "synopsisHint": "任意。シリーズの前提として脚本と絵コンテのエージェントに渡されます。",
+      "synopsisPlaceholder": "雨の夜市で、灯籠売りは見知らぬ客が欲しがる唯一の灯籠を売ることを拒む。",
       "style": "ビジュアルスタイル",
       "stylePlaceholder": "スタイルを選択",
       "aspectRatio": "アスペクト比",
       "aspectRatioHint": "作成後は変更できません。スマートフォン向けのドラマには9:16を選んでください。",
+      "serial": "各話がひとつの物語として続く",
+      "serialHint": "前の話のあらすじがエージェントに渡されます。オムニバスや単独のコントではオフにしてください。",
       "submit": "プロジェクトを作成"
     },
     "card": {
@@ -421,6 +426,11 @@
     "counts": "{episodes, plural, other {全#話}}、{characters, plural, other {キャラクター#人}}、{scenes, plural, other {シーン#件}}、{props, plural, other {小道具#点}}",
     "addEpisode": "エピソードを追加",
     "addEpisodeN": "第{number}話を追加",
+    "edit": {
+      "open": "プロジェクトを編集",
+      "title": "プロジェクトを編集",
+      "description": "ビジュアルスタイルと画面比率は作成時のままです。"
+    },
     "tabs": {
       "episodes": "エピソード",
       "assets": "アセットライブラリ"
@@ -471,7 +481,21 @@
       "script": "脚本",
       "again": "もう一度リライト",
       "againTitle": "脚本をリライトし直しますか？",
-      "againBody": "AIが原文から新しい脚本を書き、編集内容も含めて現在の脚本を置き換えます。"
+      "againBody": "AIが原文から新しい脚本を書き、編集内容も含めて現在の脚本を置き換えます。",
+      "recap": {
+        "title": "この話のまとめ",
+        "hint": "次の話以降のエージェントに渡されます。",
+        "placeholder": "この話で何が変わったか、現在の状況、未解決の伏線。",
+        "save": "保存",
+        "saved": "まとめを保存しました。",
+        "write": "まとめを書く",
+        "rewrite": "まとめを書き直す",
+        "running": "まとめを書いています…",
+        "failed": "まとめの作成に失敗しました：{error}",
+        "stale": "このまとめを書いた後に脚本が変わりました。書き直すか、合うように編集してください。",
+        "earlier": "前の {n, plural, other {# 話}}のうち {ready} 話のまとめが準備できています（{stale, plural, =0 {古いものなし} other {# 話が古い}}、{missing, plural, =0 {欠けなし} other {# 話が未作成}}）。該当する話を開いて作成してください。",
+        "allReady": "前の {n, plural, other {# 話}}のまとめはすべて準備できています。"
+      }
     },
     "models": {
       "default": "デフォルトモデル",
