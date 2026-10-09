@@ -13,9 +13,14 @@ import { cn } from '@/lib/cn';
 import { useToastError } from '@/lib/errors';
 import { AssetLibrary } from '../../assets/asset-library';
 import { useStylePresets } from '../../configuration/api';
-import { useDramaDetail, useUpdateDrama } from '../api';
+import { useDramaDetail, useDramaJobs, useUpdateDrama } from '../api';
 import { EditProjectDialog } from './edit-project-dialog';
 import { AddEpisodeDialog, EpisodesTab } from './episodes-tab';
+import { PlanEpisodesDialog } from './plan-episodes-dialog';
+import { StoryTab } from './story-tab';
+
+const TABS = ['episodes', 'story', 'assets'] as const;
+type Tab = (typeof TABS)[number];
 
 export function ProjectPage({ dramaId }: { dramaId: number }) {
   const t = useTranslations('project');
@@ -23,12 +28,16 @@ export function ProjectPage({ dramaId }: { dramaId: number }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
-  const tab = params.get('tab') === 'assets' ? 'assets' : 'episodes';
+  const requested = params.get('tab');
+  const tab: Tab = TABS.find((k) => k === requested) ?? 'episodes';
+  const showTab = (key: Tab) => router.replace(key === 'episodes' ? pathname : `${pathname}?tab=${key}`, { scroll: false });
   const detail = useDramaDetail(dramaId);
+  const jobs = useDramaJobs(dramaId);
   const presets = useStylePresets(true);
   const update = useUpdateDrama();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [planning, setPlanning] = useState(false);
 
   if (detail.isLoading) return <Skeleton className="h-40" />;
   if (detail.isError || !detail.data) {
@@ -84,13 +93,13 @@ export function ProjectPage({ dramaId }: { dramaId: number }) {
       </header>
 
       <div className="flex gap-6 border-b border-line" role="tablist">
-        {(['episodes', 'assets'] as const).map((key) => (
+        {TABS.map((key) => (
           <button
             key={key}
             type="button"
             role="tab"
             aria-selected={tab === key}
-            onClick={() => router.replace(key === 'episodes' ? pathname : `${pathname}?tab=assets`, { scroll: false })}
+            onClick={() => showTab(key)}
             className={cn(
               '-mb-px border-b-2 pb-3 text-sm font-medium transition-colors',
               tab === key ? 'border-ink text-ink' : 'border-transparent text-ink-2 hover:text-ink',
@@ -101,8 +110,20 @@ export function ProjectPage({ dramaId }: { dramaId: number }) {
         ))}
       </div>
 
-      {tab === 'episodes' ? <EpisodesTab drama={drama} onAdd={() => setAdding(true)} /> : <AssetLibrary dramaId={drama.id} episodeId={drama.episodes[0]?.id} />}
+      {tab === 'episodes' ? <EpisodesTab drama={drama} jobs={jobs.data} onAdd={() => setAdding(true)} /> : null}
+      {tab === 'story' ? <StoryTab drama={drama} jobs={jobs.data} onPlan={() => setPlanning(true)} /> : null}
+      {tab === 'assets' ? <AssetLibrary dramaId={drama.id} episodeId={drama.episodes[0]?.id} /> : null}
       {adding ? <AddEpisodeDialog drama={drama} onClose={() => setAdding(false)} /> : null}
+      {planning ? (
+        <PlanEpisodesDialog
+          drama={drama}
+          onClose={() => setPlanning(false)}
+          onStarted={() => {
+            setPlanning(false);
+            showTab('episodes');
+          }}
+        />
+      ) : null}
       {editing ? <EditProjectDialog drama={drama} onClose={() => setEditing(false)} /> : null}
     </div>
   );

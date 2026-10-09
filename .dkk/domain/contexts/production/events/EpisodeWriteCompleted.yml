@@ -1,0 +1,10 @@
+name: EpisodeWriteCompleted
+description: The episode writer finished and a script was saved; in a serial drama the recap follows (WriteRecapAfterScript).
+fields:
+  - name: episodeId
+    type: ID
+  - name: jobId
+    type: ID
+raised_by: EpisodeWriteJob
+adr_refs:
+  - adr-0015

@@ -57,6 +57,7 @@ Raw content  ──►  Script  ──►  Assets  ──►  Storyboard & Video
 ```
 
 - **Script stage** – paste a novel chapter or outline; the script-rewriter agent turns it into a formatted shooting script (or skip the rewrite).
+- **Story development** – the story-writer agent drafts a story outline from your synopsis (or write it yourself on the Story tab); the episode-planner agent cuts the next episodes from it, each with a title, a synopsis and a beat sheet; the episode-writer agent expands a beat sheet into the script. Written episodes feed later plans through their recaps.
 - **Series continuity** – a project whose episodes continue one story gets a recap of every episode, written by the recap-writer agent after the script is saved and editable by you; the script and storyboard agents of later episodes receive the project synopsis and the earlier recaps. Turn it off per project for anthologies.
 - **Assets stage** – the extractor agent pulls characters, scenes and plot-critical props out of the script, deduplicated across the whole drama. Each asset gets an AI-written final prompt and a reference image (turnaround sheet, empty establishing shot, white-background product shot). Upload your own images instead if you prefer.
 - **Storyboard & video stage** – the storyboard-breaker agent splits the script into 8–15 s shots with sub-shot descriptions, bindings and video prompts. Review prompts with `@mentions` of your assets, pick the video model and resolution, generate shot videos singly or in batch, retry failures.

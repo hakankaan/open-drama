@@ -1,6 +1,6 @@
 import { and, eq, isNull, max } from 'drizzle-orm';
 import type { z } from 'zod';
-import type { CreateEpisode, Episode, EpisodeView, LockedService, ServiceType, UpdateEpisode } from '@open-drama/contracts';
+import type { CreateEpisode, Episode, EpisodeView, LockedService, RecapStatus, Resolution, ServiceType, UpdateEpisode } from '@open-drama/contracts';
 import { db } from '../../db/client';
 import { episodes } from '../../db/schema';
 import { assertSomething, conflict, notFound, precondition } from '../../http/errors';
@@ -58,6 +58,25 @@ export function getEpisodeView(id: number): EpisodeView {
  */
 export function createEpisode(input: z.output<typeof CreateEpisode>): EpisodeView {
   const drama = getDramaRow(input.dramaId);
+  const services = lockServices(input);
+  const { id } = db.transaction((tx) =>
+    insertEpisode(tx, {
+      dramaId: drama.id,
+      title: input.title?.trim(),
+      resolution: input.resolution,
+      targetDurationSeconds: input.targetDurationSeconds ?? null,
+      ...services,
+    }),
+  );
+  touchDrama(drama.id);
+  return getEpisodeView(id);
+}
+
+/**
+ * The image and video services a new episode locks: the explicit ids or the highest-priority active ones. Rejected
+ * with the same wording for CreateEpisode and PlanEpisodes when either type has none.
+ */
+export function lockServices(input: { imageServiceId?: number; videoServiceId?: number }): { imageServiceId: number; videoServiceId: number } {
   const image = resolveService('image', { explicitId: input.imageServiceId });
   const video = resolveService('video', { explicitId: input.videoServiceId });
   const missing = [!image && 'image', !video && 'video'].filter(Boolean);
@@ -66,30 +85,86 @@ export function createEpisode(input: z.output<typeof CreateEpisode>): EpisodeVie
       missingTypes: missing,
     });
   }
-  const id = db.transaction((tx) => {
-    const last =
-      tx
-        .select({ n: max(episodes.episodeNumber) })
-        .from(episodes)
-        .where(and(eq(episodes.dramaId, drama.id), isNull(episodes.deletedAt)))
-        .get()?.n ?? 0;
-    const number = last + 1;
-    return tx
-      .insert(episodes)
-      .values({
-        dramaId: drama.id,
-        episodeNumber: number,
-        title: input.title?.trim() || `Episode ${number}`,
-        resolution: input.resolution,
-        targetDurationSeconds: input.targetDurationSeconds ?? null,
-        imageServiceId: image!.row.id,
-        videoServiceId: video!.row.id,
-      })
-      .returning({ id: episodes.id })
-      .get().id;
-  });
-  touchDrama(drama.id);
-  return getEpisodeView(id);
+  return { imageServiceId: image!.row.id, videoServiceId: video!.row.id };
+}
+
+/** What an episode holds, as the story writer and the planner read it (adr-0015). */
+export interface EpisodeState {
+  id: number;
+  episodeNumber: number;
+  title: string;
+  /** written: it has a script; planned: beats (raw content) but no script; empty: neither. */
+  state: 'written' | 'planned' | 'empty';
+  synopsis: string;
+  targetDurationSeconds: number | null;
+  /** Written episodes only. */
+  recapStatus?: RecapStatus;
+  recap?: string;
+  /** Planned episodes only: the beat sheet. */
+  beats?: string;
+}
+
+/** The live episodes of a drama in order, each with its state (adr-0015). */
+export function episodeStates(dramaId: number): EpisodeState[] {
+  return db
+    .select()
+    .from(episodes)
+    .where(and(eq(episodes.dramaId, dramaId), isNull(episodes.deletedAt)))
+    .orderBy(episodes.episodeNumber)
+    .all()
+    .map((row) => {
+      const base = { id: row.id, episodeNumber: row.episodeNumber, title: row.title, synopsis: row.description, targetDurationSeconds: row.targetDurationSeconds };
+      if (row.scriptContent?.trim()) {
+        const recap = row.recap.trim();
+        const recapStatus: RecapStatus = !recap ? 'missing' : isRecapStale(row) ? 'stale' : 'ready';
+        return { ...base, state: 'written' as const, recapStatus, ...(recap ? { recap } : {}) };
+      }
+      const beats = row.content.trim();
+      if (beats) return { ...base, state: 'planned' as const, beats };
+      return { ...base, state: 'empty' as const };
+    });
+}
+
+export interface NewEpisode {
+  dramaId: number;
+  /** Empty or absent: `Episode N`. */
+  title?: string;
+  description?: string;
+  content?: string;
+  resolution: Resolution;
+  targetDurationSeconds: number | null;
+  imageServiceId: number;
+  videoServiceId: number;
+}
+
+/**
+ * The one insert of an episode row, used by CreateEpisode and by the planner's batches (adr-0015): the next number
+ * (max + 1 among live episodes) is taken inside the caller's transaction, so concurrent inserts never collide.
+ */
+export function insertEpisode(tx: Tx, values: NewEpisode): { id: number; episodeNumber: number } {
+  const last =
+    tx
+      .select({ n: max(episodes.episodeNumber) })
+      .from(episodes)
+      .where(and(eq(episodes.dramaId, values.dramaId), isNull(episodes.deletedAt)))
+      .get()?.n ?? 0;
+  const episodeNumber = last + 1;
+  const { id } = tx
+    .insert(episodes)
+    .values({
+      dramaId: values.dramaId,
+      episodeNumber,
+      title: values.title?.trim() || `Episode ${episodeNumber}`,
+      description: values.description ?? '',
+      content: values.content ?? '',
+      resolution: values.resolution,
+      targetDurationSeconds: values.targetDurationSeconds,
+      imageServiceId: values.imageServiceId,
+      videoServiceId: values.videoServiceId,
+    })
+    .returning({ id: episodes.id })
+    .get();
+  return { id, episodeNumber };
 }
 
 /**
@@ -127,22 +202,36 @@ export function writeRecap(id: number, text: string, forRevision?: number, tx: D
   return result.changes > 0;
 }
 
+const SCRIPT_AGENT = {
+  rewrite: 'The script is being rewritten',
+  write: 'The script is being written from its beats',
+} as const;
+
+/**
+ * The script has one agent at a time (adr-0015): a 409 naming the running rewrite or write, with `then` saying what
+ * to do once it is saved. `except` is the kind the caller is about to start; its own duplicate is runJob's business.
+ */
+export function assertScriptFree(id: number, then: string, except?: keyof typeof SCRIPT_AGENT) {
+  const jobs = getEpisodeJobs(id);
+  for (const kind of ['rewrite', 'write'] as const) {
+    if (kind !== except && jobs[kind]?.status === 'running') throw conflict(`${SCRIPT_AGENT[kind]}; ${then}`);
+  }
+}
+
 /**
  * Field-based dispatch of UpdateEpisodeContent, SaveScript, SaveRecap, SetEpisodeResolution, SetEpisodeTargetDuration
  * and SetEpisodeStatus.
  * A patch carrying both the script and the recap writes the script first, so the recap is pinned to the new revision.
- * The script and the recap are refused while their agent is writing them: the agent's save would silently replace
- * the creator's text (the same rule as creator shot commands during a breakdown).
+ * The script, its source and the recap are refused while an agent is writing from or to them: the agent's save would
+ * silently replace the creator's text (the same rule as creator shot commands during a breakdown).
  */
 export function updateEpisode(id: number, input: z.output<typeof UpdateEpisode>): EpisodeView {
   const row = getEpisodeRow(id);
   assertSomething(input);
   const { scriptContent, recap, ...rest } = input;
-  if (scriptContent !== undefined || recap !== undefined) {
-    const jobs = getEpisodeJobs(id);
-    if (scriptContent !== undefined && jobs.rewrite?.status === 'running') throw conflict('The script is being rewritten; edit it once it is saved');
-    if (recap !== undefined && jobs.recap?.status === 'running') throw conflict('The recap is being written; edit it once it is saved');
-  }
+  if (scriptContent !== undefined) assertScriptFree(id, 'edit it once it is saved');
+  else if (rest.content !== undefined) assertScriptFree(id, 'edit the source text once it is saved');
+  if (recap !== undefined && getEpisodeJobs(id).recap?.status === 'running') throw conflict('The recap is being written; edit it once it is saved');
   db.transaction((tx) => {
     if (Object.keys(rest).length > 0) tx.update(episodes).set(rest).where(eq(episodes.id, id)).run();
     if (scriptContent !== undefined) writeScript(id, scriptContent, tx);
@@ -163,6 +252,7 @@ export function deleteEpisode(id: number): { id: number } {
 export function skipRewrite(id: number): EpisodeView {
   const row = getEpisodeRow(id);
   if (!row.content.trim()) throw precondition('Paste the raw content before skipping the rewrite');
+  assertScriptFree(id, 'use the raw content once it is saved');
   writeScript(id, row.content);
   touchDrama(row.dramaId);
   return getEpisodeView(id);

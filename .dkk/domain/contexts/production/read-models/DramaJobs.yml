@@ -1,0 +1,25 @@
+name: DramaJobs
+description: >-
+  The latest outline and plan job for a drama, with status (running / done / failed), progress and error, so the project
+  page polls one endpoint while anything runs at drama scope. The plan's progress carries the request and how many of
+  count were added.
+fields:
+  - name: dramaId
+    type: ID
+  - name: outline
+    type: JobStatus
+  - name: plan
+    type: JobStatus
+subscribes_to:
+  - OutlineRequested
+  - OutlineCompleted
+  - OutlineFailed
+  - EpisodePlanRequested
+  - PlannedEpisodesAdded
+  - EpisodePlanCompleted
+  - EpisodePlanFailed
+used_by:
+  - Creator
+adr_refs:
+  - adr-0007
+  - adr-0015

@@ -1,11 +1,11 @@
-import type { AgentRunResult, AgentType } from '@open-drama/contracts';
+import type { AgentRunResult, AgentType, ContentLanguage } from '@open-drama/contracts';
 import { ApiError } from '../../../http/errors';
 import { logger } from '../../../http/logger';
 import { scrubSecrets } from '../../../lib/secrets';
 import { getAppSettings } from '../../configuration/settings';
 import { AGENTS } from '../agents/definitions';
 import { AGENT_TOOLS } from '../tools';
-import type { AgentContext } from './context';
+import type { AgentContext, DramaAgentContext } from './context';
 import { assembleInstructions } from './instructions';
 import { resolveTextModel } from './model';
 import { isApiCallError, runToolLoop, type RunLoopResult, type ToolCallRecord } from './sdk';
@@ -13,7 +13,8 @@ import { isApiCallError, runToolLoop, type RunLoopResult, type ToolCallRecord } 
 export interface RunAgentInput {
   agentType: AgentType;
   message: string;
-  episodeId: number;
+  /** Required by an episode-scoped agent, absent for a drama-scoped one (adr-0015). */
+  episodeId?: number;
   dramaId: number;
   model?: string;
   textServiceId?: number;
@@ -40,7 +41,23 @@ function wordError(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-/** RunAgent: one tool loop scoped to a drama and episode (Plan 2 §4). Throws ApiError on failure. */
+/** The run's context for its agent's scope: an episode-scoped agent without an episode is a programming error. */
+function contextFor(input: RunAgentInput, language: ContentLanguage, modelId: string): DramaAgentContext {
+  const def = AGENTS[input.agentType];
+  const base: DramaAgentContext = {
+    agentType: input.agentType,
+    dramaId: input.dramaId,
+    language,
+    log: logger.child({ agent: input.agentType, dramaId: input.dramaId, episodeId: input.episodeId, model: modelId }),
+    jobId: input.jobId,
+  };
+  if (def.scope === 'drama') return base;
+  if (input.episodeId === undefined) throw new ApiError('INTERNAL', `The ${def.name} runs on an episode`);
+  const ctx: AgentContext = { ...base, episodeId: input.episodeId, target: input.target, scriptRevision: input.scriptRevision };
+  return ctx;
+}
+
+/** RunAgent: one tool loop scoped to a drama or to one of its episodes (Plan 2 §4, adr-0015). Throws ApiError on failure. */
 export async function runAgent(input: RunAgentInput): Promise<AgentRunResult & RunLoopResult> {
   const def = AGENTS[input.agentType];
   const language = getAppSettings().contentLanguage;
@@ -51,16 +68,7 @@ export async function runAgent(input: RunAgentInput): Promise<AgentRunResult & R
     promptModel,
     textServiceId: input.textServiceId,
   });
-  const ctx: AgentContext = {
-    agentType: input.agentType,
-    episodeId: input.episodeId,
-    dramaId: input.dramaId,
-    language,
-    log: logger.child({ agent: input.agentType, episodeId: input.episodeId, model: resolved.modelId }),
-    target: input.target,
-    jobId: input.jobId,
-    scriptRevision: input.scriptRevision,
-  };
+  const ctx = contextFor(input, language, resolved.modelId);
   const started = performance.now();
   ctx.log.info({ language }, 'agent run started');
   try {

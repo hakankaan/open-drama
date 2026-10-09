@@ -41,6 +41,21 @@ glossary:
     definition: >-
       A counter on the episode that moves on every change of the script. A recap records the revision it was written
       for and is stale once the script's revision differs; a recap job is keyed by the revision it started from.
+  - term: Story outline
+    definition: >-
+      The drama's story as Markdown (at most 20000 characters): logline, cast, world and tone, the story in acts, the
+      season shape (suggested episode count and length) and, for a serial, the threads that carry across episodes.
+      Written by the story writer or by hand on the story tab; the planner splits it into episodes and every agent
+      reads it in the SeriesContext.
+    aliases:
+      - Outline
+  - term: Beat sheet
+    definition: >-
+      A planned episode's raw content as written by the episode planner: the beats of the episode in order, 200 to
+      6000 characters, ending on the hook into the next episode. The episode writer expands it into the formatted
+      script; the creator may edit it first.
+    aliases:
+      - Beats
 adr_refs:
   - adr-0001
   - adr-0002
@@ -49,6 +64,7 @@ adr_refs:
   - adr-0007
   - adr-0012
   - adr-0014
+  - adr-0015
 code_refs:
   - apps/api/src/modules/production/**
   - apps/api/src/modules/jobs/**

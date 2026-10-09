@@ -34,8 +34,9 @@
 | Term | Context | Definition |
 |------|---------|------------|
 | Agent | [agents](agents/index.md) | A named tool-calling loop with a fixed tool set and instructions assembled per run from its prompt file, its skills and the content-language directive. |
-| Agent run | [agents](agents/index.md) | One invocation of an agent scoped to a drama and episode, with an optional text model or service override, bounded by a maximum number of steps. |
+| Agent run | [agents](agents/index.md) | One invocation of an agent scoped to a drama (and, for an episode-scoped agent, an episode), with an optional text model or service override, bounded by a maximum number of steps. |
 | Beat | [storyboard](storyboard/index.md) | A story unit such as the setup, the inciting moment, the climax or a reversal. Two beats never share a shot, so a beat change is always a place where one shot ends and the next begins. |
+| Beat sheet | [production](production/index.md) | A planned episode's raw content as written by the episode planner: the beats of the episode in order, 200 to 6000 characters, ending on the hook into the next episode. The episode writer expands it into the formatted script; the creator may edit it first. |
 | Breakdown | [storyboard](storyboard/index.md) | The storyboard-breaker agent run that replaces the episode's shots from the current script, saving in batches of at most 8 with idempotent upsert by shot number. |
 | Content language | [configuration](configuration/index.md) | The language every agent must write in (scripts, extracted fields, prompts). Changes the prompt and skill variants loaded and appends a highest-priority language directive. |
 | Data directory | [media](media/index.md) | The root holding the database, static media and the writable agent workspace; overridable by environment. |
@@ -70,6 +71,7 @@
 | Service type | [configuration](configuration/index.md) | text, image or video — each stage needs exactly one active service of the type it uses. |
 | Skill | [agents](agents/index.md) | A SKILL.md document (frontmatter name and description plus a body) in a directory under the workspace. Every skill under an agent's prefix is injected in full into its instructions; new skill directories are discovered without restart. |
 | Stage rail | [production](production/index.md) | The per-episode progress indicator. It is derived from data (script present, assets ready, shots with videos, film rendered, status completed), never stored directly. |
+| Story outline | [production](production/index.md) | The drama's story as Markdown (at most 20000 characters): logline, cast, world and tone, the story in acts, the season shape (suggested episode count and length) and, for a serial, the threads that carry across episodes. Written by the story writer or by hand on the story tab; the planner splits it into episodes and every agent reads it in the SeriesContext. |
 | Storyboard segment | [storyboard](storyboard/index.md) | What the Shot aggregate represents — one 8-15 second video-generation unit carrying 2-4 sub-shots. |
 | Style preset | [configuration](configuration/index.md) | A named visual style (3d, anime, ghibli, …) with an English prompt fragment prepended to every image and video prompt of dramas that use it. Built-ins are seeded and upgraded without overwriting user edits. |
 | Sub-shot | [storyboard](storyboard/index.md) | One visual unit of two to six seconds inside a shot, marked as a [Shot N] block in the description. A shot may switch framing between its sub-shots, but all of them happen in the same scene. |
@@ -79,7 +81,7 @@
 
 ## Decisions
 
-14 accepted
+15 accepted
 
 | ADR | Title | Status |
 |-----|-------|--------|
@@ -97,6 +99,7 @@
 | [adr-0012](../adr/adr-0012.md) | Licence: CC BY-NC-SA 4.0 | accepted |
 | [adr-0013](../adr/adr-0013.md) | Model providers: official endpoints of supported models, plus BytePlus and ModelRunner | accepted |
 | [adr-0014](../adr/adr-0014.md) | Series continuity through episode recaps | accepted |
+| [adr-0015](../adr/adr-0015.md) | Story development agents | accepted |
 
 → [Full decision log](adr/index.md)
 
@@ -189,6 +192,73 @@ sequenceDiagram
 | 20 | `production.SaveRecap` | command |
 | 21 | `production.RecapSaved` | event |
 | 22 | `production.RecapCompleted` | event |
+
+### StoryDevelopment
+
+The layer above the script stage. The story writer turns the project's premise into a story outline the creator edits on the story tab; the episode planner splits the outline into new episodes with a synopsis and a beat sheet each; the episode writer expands one episode's beats into the formatted script, after which the script stage continues as usual (recap, assets, storyboard).
+
+```mermaid
+sequenceDiagram
+    participant actor_User as User
+    participant ctx_production as production
+    participant actor_Creator as Creator
+    participant ctx_agents as agents
+    participant actor_AgentRuntime as AgentRuntime
+
+    actor_Creator->>ctx_production: WriteOutline
+    ctx_production-->>ctx_production: OutlineRequested
+    ctx_production->>ctx_production: [Policy] RunStoryWriter
+    actor_AgentRuntime->>ctx_agents: RunAgent
+    actor_AgentRuntime->>ctx_production: SaveOutline
+    ctx_production-->>ctx_production: OutlineSaved
+    ctx_production-->>ctx_production: OutlineCompleted
+    actor_Creator->>ctx_production: UpdateDrama
+    actor_Creator->>ctx_production: PlanEpisodes
+    ctx_production-->>ctx_production: EpisodePlanRequested
+    ctx_production->>ctx_production: [Policy] RunEpisodePlanner
+    actor_AgentRuntime->>ctx_agents: RunAgent
+    actor_AgentRuntime->>ctx_production: AddPlannedEpisodes
+    ctx_production-->>ctx_production: PlannedEpisodesAdded
+    ctx_production-->>ctx_production: [Read] DramaJobs
+    ctx_production-->>ctx_production: EpisodePlanCompleted
+    actor_Creator->>ctx_production: WriteEpisodeScript
+    ctx_production-->>ctx_production: EpisodeWriteRequested
+    ctx_production->>ctx_production: [Policy] RunEpisodeWriter
+    actor_AgentRuntime->>ctx_agents: RunAgent
+    ctx_production-->>ctx_production: [Read] SeriesContext
+    actor_AgentRuntime->>ctx_production: SaveScript
+    ctx_production-->>ctx_production: ScriptSaved
+    ctx_production-->>ctx_production: EpisodeWriteCompleted
+    ctx_production->>ctx_production: [Policy] WriteRecapAfterScript
+```
+
+| # | Step | Type |
+|---|------|------|
+| 1 | `production.WriteOutline` | command |
+| 2 | `production.OutlineRequested` | event |
+| 3 | `production.RunStoryWriter` | policy |
+| 4 | `agents.RunAgent` | command |
+| 5 | `production.SaveOutline` | command |
+| 6 | `production.OutlineSaved` | event |
+| 7 | `production.OutlineCompleted` | event |
+| 8 | `production.UpdateDrama` | command |
+| 9 | `production.PlanEpisodes` | command |
+| 10 | `production.EpisodePlanRequested` | event |
+| 11 | `production.RunEpisodePlanner` | policy |
+| 12 | `agents.RunAgent` | command |
+| 13 | `production.AddPlannedEpisodes` | command |
+| 14 | `production.PlannedEpisodesAdded` | event |
+| 15 | `production.DramaJobs` | read_model |
+| 16 | `production.EpisodePlanCompleted` | event |
+| 17 | `production.WriteEpisodeScript` | command |
+| 18 | `production.EpisodeWriteRequested` | event |
+| 19 | `production.RunEpisodeWriter` | policy |
+| 20 | `agents.RunAgent` | command |
+| 21 | `production.SeriesContext` | read_model |
+| 22 | `production.SaveScript` | command |
+| 23 | `production.ScriptSaved` | event |
+| 24 | `production.EpisodeWriteCompleted` | event |
+| 25 | `production.WriteRecapAfterScript` | policy |
 
 ### AssetStage
 

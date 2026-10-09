@@ -1,0 +1,22 @@
+name: EpisodePlanRequested
+description: An episode plan was requested for the drama; the episode_planner agent should run.
+fields:
+  - name: dramaId
+    type: ID
+  - name: count
+    type: number
+  - name: targetDurationSeconds
+    type: number
+  - name: resolution
+    type: string
+  - name: imageServiceId
+    type: ID
+  - name: videoServiceId
+    type: ID
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+raised_by: EpisodePlanJob
+adr_refs:
+  - adr-0015

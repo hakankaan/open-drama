@@ -1,0 +1,8 @@
+name: OutlineSaved
+description: An outline was persisted for the drama, by the story writer or by the creator.
+fields:
+  - name: dramaId
+    type: ID
+raised_by: Drama
+adr_refs:
+  - adr-0015

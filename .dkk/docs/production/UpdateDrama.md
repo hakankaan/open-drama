@@ -6,7 +6,7 @@
 
 ## Summary
 
-Update a drama's title, description, genre, style, status, tags or serial flag. The aspect ratio is immutable and is ignored if supplied.
+Update a drama's title, description, genre, style, status, tags, serial flag or outline (the creator's edit from the story tab). The aspect ratio is immutable and is ignored if supplied.
 
 
 ## Fields
@@ -21,10 +21,12 @@ Update a drama's title, description, genre, style, status, tags or serial flag. 
 | `status` | `string` | draft | active | completed (project-level status shown on the launcher) |
 | `tags` | `string[]` | — |
 | `serial` | `boolean` | — |
+| `outline` | `string` | Markdown, at most 20000 characters; empty clears it |
 
 ## Rules & Invariants
 
 - Drama not found or deleted
+- outline while an outline job is running (the agent's save would replace the edit)
 
 
 ## Relationships
@@ -36,4 +38,6 @@ Update a drama's title, description, genre, style, status, tags or serial flag. 
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |

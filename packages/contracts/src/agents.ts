@@ -74,7 +74,8 @@ export type UpdateSkill = z.input<typeof UpdateSkill>;
 export const RunAgentRequest = z.object({
   message: z.string().trim().min(1).max(20_000),
   dramaId: z.number().int().positive(),
-  episodeId: z.number().int().positive(),
+  /** Required for an episode-scoped agent, ignored by a drama-scoped one. */
+  episodeId: z.number().int().positive().optional(),
   model: z.string().trim().max(200).optional(),
   textServiceId: z.number().int().positive().optional(),
 });

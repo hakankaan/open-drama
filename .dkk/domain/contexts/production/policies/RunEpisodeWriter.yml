@@ -1,0 +1,12 @@
+name: RunEpisodeWriter
+description: >-
+  When an episode write is requested, run the episode_writer agent scoped to the episode (agents.RunAgent — a
+  cross-context command, see flow StoryDevelopment). The agent reads the beat sheet, the SeriesContext (premise,
+  outline, earlier recaps) and the next episode's beats and calls SaveScript; the script stage shows a writing state
+  until the run completes.
+when:
+  events:
+    - EpisodeWriteRequested
+adr_refs:
+  - adr-0006
+  - adr-0015

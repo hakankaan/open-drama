@@ -1,0 +1,10 @@
+name: EpisodePlanCompleted
+description: The planner run finished and every requested episode was added.
+fields:
+  - name: dramaId
+    type: ID
+  - name: jobId
+    type: ID
+raised_by: EpisodePlanJob
+adr_refs:
+  - adr-0015

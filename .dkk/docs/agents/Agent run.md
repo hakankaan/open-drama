@@ -6,11 +6,11 @@
 
 ## Summary
 
-One invocation of an agent scoped to a drama and episode, with an optional text model or service override, bounded by a maximum number of steps.
+One invocation of an agent scoped to a drama (and, for an episode-scoped agent, an episode), with an optional text model or service override, bounded by a maximum number of steps.
 
 ## Meaning
 
-One invocation of an agent scoped to a drama and episode, with an optional text model or service override, bounded by a maximum number of steps.
+One invocation of an agent scoped to a drama (and, for an episode-scoped agent, an episode), with an optional text model or service override, bounded by a maximum number of steps.
 
 
 

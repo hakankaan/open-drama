@@ -1,10 +1,12 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 import { z } from 'zod';
 import {
   Drama,
   DramaDetail,
+  DramaJobs,
   DramaListResponse,
   DramaStats,
   EpisodePipelineStatus,
@@ -13,6 +15,7 @@ import {
   JobStarted,
   type CreateDrama,
   type CreateEpisode,
+  type PlanEpisodes,
   type TextModelOverride,
   type UpdateDrama,
   type UpdateEpisode,
@@ -26,6 +29,7 @@ export const productionKeys = {
   episode: (id: number) => ['production', 'episode', id] as const,
   pipeline: (id: number) => ['production', 'pipeline', id] as const,
   jobs: (id: number) => ['production', 'jobs', id] as const,
+  dramaJobs: (id: number) => ['production', 'dramaJobs', id] as const,
 };
 
 
@@ -149,7 +153,7 @@ export function useDeleteEpisode(dramaId: number) {
 
 const anyRunning = (jobs: EpisodeJobs | undefined) =>
   !!jobs &&
-  [jobs.rewrite, jobs.breakdown, jobs.videoPromptBatch, jobs.recap, ...Object.values(jobs.extraction)].some(
+  [jobs.rewrite, jobs.write, jobs.breakdown, jobs.videoPromptBatch, jobs.recap, ...Object.values(jobs.extraction)].some(
     (j) => j?.status === 'running',
   );
 
@@ -161,11 +165,73 @@ export const useEpisodeJobs = (id: number | undefined) =>
     refetchInterval: (query) => (anyRunning(query.state.data) ? 2500 : false),
   });
 
+/**
+ * DramaJobs (adr-0015): the outline and plan jobs, polled while either runs. The drama detail is refetched when a job
+ * settles or a plan batch lands (its progress.written grows), so the outline and the new episodes show up.
+ */
+export function useDramaJobs(id: number) {
+  const qc = useQueryClient();
+  const query = useQuery({
+    queryKey: productionKeys.dramaJobs(id),
+    queryFn: () => request(DramaJobs, 'GET', `/dramas/${id}/jobs`),
+    refetchInterval: (q) => {
+      const d = q.state.data;
+      return d && [d.outline, d.plan].some((j) => j?.status === 'running') ? 2500 : false;
+    },
+  });
+  const d = query.data;
+  const written = d?.plan && Array.isArray(d.plan.progress.written) ? d.plan.progress.written.length : 0;
+  const state = d ? `${d.outline?.id}:${d.outline?.status}|${d.plan?.id}:${d.plan?.status}:${written}` : null;
+  const previous = useRef<string | null>(null);
+  useEffect(() => {
+    if (state === null || !d) return;
+    const before = previous.current;
+    previous.current = state;
+    if (before === null) {
+      // The first snapshot: a job that settled after the detail was fetched (a fast one, finished before the jobs
+      // request answered) has changed what the detail shows, so it is refetched once.
+      const fetched = qc.getQueryState(productionKeys.drama(id))?.dataUpdatedAt ?? 0;
+      const settledSince = [d.outline, d.plan].some((j) => j?.finishedAt !== null && j?.finishedAt !== undefined && Date.parse(j.finishedAt) > fetched);
+      if (settledSince) void qc.invalidateQueries({ queryKey: productionKeys.drama(id) });
+      return;
+    }
+    if (before !== state) void qc.invalidateQueries({ queryKey: productionKeys.drama(id) });
+  }, [state, d, qc, id]);
+  return query;
+}
+
+/** The story writer (adr-0015); a duplicate start returns the running job. */
+export function useStartOutline(dramaId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: TextModelOverride) => request(JobStarted, 'POST', `/dramas/${dramaId}/outline`, body),
+    onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.dramaJobs(dramaId) }),
+  });
+}
+
+/** The episode planner (adr-0015): adds the requested episodes batch by batch. */
+export function useStartPlan(dramaId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: PlanEpisodes) => request(JobStarted, 'POST', `/dramas/${dramaId}/plan`, body),
+    onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.dramaJobs(dramaId) }),
+  });
+}
+
 /** Starting a job (or finding one already running) invalidates the jobs query so polling starts at once. */
 export function useStartRewrite(episodeId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: TextModelOverride) => request(JobStarted, 'POST', `/episodes/${episodeId}/rewrite`, body),
+    onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.jobs(episodeId) }),
+  });
+}
+
+/** The episode writer expanding the beat sheet into the script (adr-0015). */
+export function useStartWrite(episodeId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: TextModelOverride) => request(JobStarted, 'POST', `/episodes/${episodeId}/write`, body),
     onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.jobs(episodeId) }),
   });
 }

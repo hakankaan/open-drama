@@ -98,6 +98,79 @@ flows:
         note: Or RecapFailed; the recap card polls EpisodeJobs and lets the creator edit or rewrite the recap
     adr_refs:
       - adr-0014
+  - name: StoryDevelopment
+    description: >-
+      The layer above the script stage. The story writer turns the project's premise into a story outline the creator
+      edits on the story tab; the episode planner splits the outline into new episodes with a synopsis and a beat sheet
+      each; the episode writer expands one episode's beats into the formatted script, after which the script stage
+      continues as usual (recap, assets, storyboard).
+    steps:
+      - ref: production.WriteOutline
+        type: command
+        note: From the story tab; a rewrite asks for confirmation
+      - ref: production.OutlineRequested
+        type: event
+      - ref: production.RunStoryWriter
+        type: policy
+      - ref: agents.RunAgent
+        type: command
+        note: story_writer (drama-scoped) reads the premise, the draft outline and the episode states, then calls SaveOutline
+      - ref: production.SaveOutline
+        type: command
+      - ref: production.OutlineSaved
+        type: event
+      - ref: production.OutlineCompleted
+        type: event
+        note: Or OutlineFailed; the story tab polls DramaJobs
+      - ref: production.UpdateDrama
+        type: command
+        note: The creator edits the outline by hand; refused while an outline job runs
+      - ref: production.PlanEpisodes
+        type: command
+        note: Count, target length, resolution and locks from the plan dialog; refused during an outline job
+      - ref: production.EpisodePlanRequested
+        type: event
+      - ref: production.RunEpisodePlanner
+        type: policy
+      - ref: agents.RunAgent
+        type: command
+        note: episode_planner (drama-scoped) reads the outline and every live episode's state, then calls AddPlannedEpisodes per batch
+      - ref: production.AddPlannedEpisodes
+        type: command
+        note: One transaction per batch of at most 8; final only once count episodes are live
+      - ref: production.PlannedEpisodesAdded
+        type: event
+      - ref: production.DramaJobs
+        type: read_model
+        note: The episodes tab shows how many of the requested episodes are planned and refreshes as batches land
+      - ref: production.EpisodePlanCompleted
+        type: event
+        note: Or EpisodePlanFailed; the episodes added so far stay
+      - ref: production.WriteEpisodeScript
+        type: command
+        note: From the script stage ("Expand the beats into a script"); refused while a rewrite runs
+      - ref: production.EpisodeWriteRequested
+        type: event
+      - ref: production.RunEpisodeWriter
+        type: policy
+      - ref: agents.RunAgent
+        type: command
+        note: episode_writer (episode-scoped) reads the beats, the SeriesContext (with the outline) and the next episode's beats, then calls SaveScript
+      - ref: production.SeriesContext
+        type: read_model
+        note: Premise, outline and earlier recaps; budget 60000 characters, only recaps are dropped
+      - ref: production.SaveScript
+        type: command
+      - ref: production.ScriptSaved
+        type: event
+      - ref: production.EpisodeWriteCompleted
+        type: event
+        note: Or EpisodeWriteFailed; the script stage polls EpisodeJobs
+      - ref: production.WriteRecapAfterScript
+        type: policy
+        note: The recap chain of ScriptStage continues unchanged
+    adr_refs:
+      - adr-0015
   - name: AssetStage
     description: >-
       Characters, scenes and props are extracted from the script by the extractor agent (deduplicated against the

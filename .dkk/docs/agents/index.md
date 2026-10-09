@@ -2,14 +2,14 @@
 
 > Auto-generated — do not edit manually. Run `domain-knowledge-kit render` to regenerate.
 
-The agent runtime and its editable knowledge. Five production agents (script rewriter, extractor, storyboard breaker, prompt generator, recap writer) run as tool-calling loops against the configured text model; their instructions come from prompt files and skill files in a writable workspace, per content language, and are editable from the settings page.
+The agent runtime and its editable knowledge. Eight production agents (story writer, episode planner, episode writer, script rewriter, extractor, storyboard breaker, prompt generator, recap writer) run as tool-calling loops against the configured text model; their instructions come from prompt files and skill files in a writable workspace, per content language, and are editable from the settings page.
 
 ## Glossary
 
 | Term | Definition | Aliases |
 |------|------------|---------|
 | **Agent** | A named tool-calling loop with a fixed tool set and instructions assembled per run from its prompt file, its skills and the content-language directive. | — |
-| **Agent run** | One invocation of an agent scoped to a drama and episode, with an optional text model or service override, bounded by a maximum number of steps. | — |
+| **Agent run** | One invocation of an agent scoped to a drama (and, for an episode-scoped agent, an episode), with an optional text model or service override, bounded by a maximum number of steps. | — |
 | **Prompt file** | The agent's system prompt as Markdown with a small frontmatter (name, optional model override). Language variants sit next to the base file and fall back to it. | — |
 | **Skill** | A SKILL.md document (frontmatter name and description plus a body) in a directory under the workspace. Every skill under an agent's prefix is injected in full into its instructions; new skill directories are discovered without restart. | — |
 | **Workspace** | The writable directory holding prompts and skills. Shipped as a template and copied once into the data directory on first start, so edits survive upgrades. | — |
@@ -35,7 +35,7 @@ The agent runtime and its editable knowledge. Five production agents (script rew
 | [CreateSkill](CreateSkill.md) | Create a skill directory with a starter SKILL.md under an agent's prefix. | `Creator` | `AgentSkill` | id (string), description (string) |
 | [DeleteSkill](DeleteSkill.md) | Remove a skill directory and all its variants; the owning agent stops receiving it. | `Creator` | `AgentSkill` | id (string) |
 | [ResetAgentPrompt](ResetAgentPrompt.md) | Delete the prompt file for a language so the agent falls back (variant → base → built-in default). | `Creator` | `AgentPrompt` | agentType (string), language (string) |
-| [RunAgent](RunAgent.md) | Run one agent with a user message scoped to an episode and drama. Used by the production, assets and storyboard contexts (rewrite, recap, extraction, breakdown, prompts) and by the debugging chat endpoint. | `AgentRuntime` | `AgentRun` | agentType (string), message (string), episodeId (ID), dramaId (ID), model (string), textServiceId (ID), maxSteps (number), scriptRevision (number) |
+| [RunAgent](RunAgent.md) | Run one agent with a user message scoped to a drama and, for an episode-scoped agent, to an episode of it. Used by the production, assets and storyboard contexts (outline, plan, write, rewrite, recap, extraction, breakdown, prompts) and by the debugging chat endpoint. | `AgentRuntime` | `AgentRun` | agentType (string), message (string), episodeId (ID), dramaId (ID), model (string), textServiceId (ID), maxSteps (number), scriptRevision (number) |
 | [SaveAgentPrompt](SaveAgentPrompt.md) | Write an agent's prompt file for a language (name, model override for the base language, and the system prompt body). | `Creator` | `AgentPrompt` | agentType (string), language (string), name (string), model (string), systemPrompt (string) |
 | [UpdateSkill](UpdateSkill.md) | Overwrite a skill's SKILL.md (or a language variant) with new content. | `Creator` | `AgentSkill` | id (string), language (string), content (string) |
 
@@ -70,3 +70,4 @@ _No policies._
 | [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | accepted |
 | [adr-0012](../../adr/adr-0012.md) | Licence: CC BY-NC-SA 4.0 | accepted |
 | [adr-0014](../../adr/adr-0014.md) | Series continuity through episode recaps | accepted |
+| [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |

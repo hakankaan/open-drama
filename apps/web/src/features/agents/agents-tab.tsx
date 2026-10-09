@@ -172,6 +172,9 @@ const PREFIX: Record<AgentType, string> = {
   storyboard_breaker: 'storyboard-breaker/',
   prompt_generator: 'prompt-generator/',
   recap_writer: 'recap-writer/',
+  episode_writer: 'episode-writer/',
+  story_writer: 'story-writer/',
+  episode_planner: 'episode-planner/',
 };
 
 function AddSkillDialog({ agent, onClose }: { agent: AgentType; onClose: () => void }) {

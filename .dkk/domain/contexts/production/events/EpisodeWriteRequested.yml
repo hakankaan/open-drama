@@ -1,0 +1,14 @@
+name: EpisodeWriteRequested
+description: A script was requested for a planned episode; the episode_writer agent should run.
+fields:
+  - name: episodeId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+raised_by: EpisodeWriteJob
+adr_refs:
+  - adr-0015

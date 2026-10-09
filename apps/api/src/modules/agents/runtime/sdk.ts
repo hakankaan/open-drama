@@ -4,7 +4,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { APICallError, type LanguageModelV4 } from '@ai-sdk/provider';
 import { generateText, isStepCount, tool, type LanguageModel } from 'ai';
-import type { AgentContext } from './context';
+import type { DramaAgentContext } from './context';
 import type { ToolSpec } from './tool';
 
 export type { LanguageModel, LanguageModelV4 };
@@ -57,7 +57,7 @@ export async function runToolLoop(opts: {
   instructions: string;
   message: string;
   tools: ToolSpec[];
-  ctx: AgentContext;
+  ctx: DramaAgentContext;
   maxSteps: number;
   temperature?: number;
   abortSignal?: AbortSignal;
@@ -75,9 +75,11 @@ export async function runToolLoop(opts: {
           const started = performance.now();
           try {
             const result = await spec.execute(input, opts.ctx);
-            const ok = !(result && typeof result === 'object' && 'error' in result);
+            // A refusal is a returned { error } the model is expected to act on; its reason goes to the log too.
+            const reason = result && typeof result === 'object' && 'error' in result ? String((result as { error: unknown }).error) : undefined;
+            const ok = reason === undefined;
             toolCalls.push({ tool: spec.id, ok });
-            opts.ctx.log.info({ tool: spec.id, ok, ms: Math.round(performance.now() - started) }, 'tool call');
+            opts.ctx.log.info({ tool: spec.id, ok, ...(ok ? {} : { reason }), ms: Math.round(performance.now() - started) }, 'tool call');
             return result;
           } catch (err) {
             toolCalls.push({ tool: spec.id, ok: false });

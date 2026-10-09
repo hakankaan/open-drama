@@ -1,15 +1,17 @@
 name: RunAgent
 description: >-
-  Run one agent with a user message scoped to an episode and drama. Used by the production, assets and storyboard
-  contexts (rewrite, recap, extraction, breakdown, prompts) and by the debugging chat endpoint.
+  Run one agent with a user message scoped to a drama and, for an episode-scoped agent, to an episode of it. Used by
+  the production, assets and storyboard contexts (outline, plan, write, rewrite, recap, extraction, breakdown,
+  prompts) and by the debugging chat endpoint.
 fields:
   - name: agentType
     type: string
-    description: script_rewriter | extractor | storyboard_breaker | prompt_generator | recap_writer
+    description: script_rewriter | extractor | storyboard_breaker | prompt_generator | recap_writer | story_writer | episode_planner | episode_writer
   - name: message
     type: string
   - name: episodeId
     type: ID
+    description: Required for an episode-scoped agent, absent for a drama-scoped one
   - name: dramaId
     type: ID
   - name: model
@@ -27,7 +29,9 @@ preconditions:
   - A text model service is resolvable
 rejections:
   - Unknown agent type
+  - An episode-scoped agent without an episode, or an episode of another drama
   - No text model service configured
 adr_refs:
   - adr-0006
   - adr-0014
+  - adr-0015

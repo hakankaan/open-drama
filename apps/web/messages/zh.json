@@ -445,6 +445,7 @@
     },
     "tabs": {
       "episodes": "剧集",
+      "story": "故事",
       "assets": "素材库"
     },
     "deleteEpisodeTitle": "删除“{title}”？",
@@ -465,7 +466,38 @@
       "resolution": "分辨率 {resolution}。更改分辨率",
       "scriptReady": "剧本已就绪",
       "merged": "成片已就绪",
-      "open": "打开工作台"
+      "open": "打开工作台",
+      "planned": "节拍表已就绪"
+    },
+    "story": {
+      "title": "故事大纲",
+      "hint": "故事梗概、人物、世界观与基调、分幕剧情和整季走向。AI 会根据简介写出大纲；分集计划从大纲切分而来，写剧本的 AI 也都会读取它。",
+      "chars": "{count} 个字符（上限 {max}）",
+      "placeholder": "在这里写故事大纲，或让 AI 根据简介生成。",
+      "write": "生成大纲",
+      "writeTitle": "生成大纲？",
+      "writeBody": "AI 会根据简介和现有剧集写一份大纲。此处未保存的文字会被丢弃。",
+      "rewrite": "重新生成大纲",
+      "rewriteTitle": "重新生成大纲？",
+      "rewriteBody": "AI 会根据简介和现有剧集写一份新大纲，替换当前大纲（包括你的修改）。",
+      "running": "正在写大纲，通常不到一分钟。",
+      "failed": "大纲生成失败：{error}",
+      "saved": "大纲已保存。",
+      "plan": "规划剧集"
+    },
+    "plan": {
+      "title": "规划剧集",
+      "description": "AI 会把大纲接下来的部分切分成若干集，每集带标题、简介和节拍表，并在写好时逐集加入。",
+      "count": "要规划的集数",
+      "countHint": "1 到 {max}。大纲的整季走向会给出建议集数。",
+      "countInvalid": "请输入 1 到 {max} 之间的整数。",
+      "after": "{last, plural, =0 {从第 1 集开始规划。} other {从第 # 集之后继续规划，已有的剧集保持不变。要从头规划，请先删除它们。}}",
+      "empty": "{count, plural, other {第 {list} 集没有节拍表，会保持空白：规划会跳过它们。请先手动写节拍表，或在规划前删除它们。}}",
+      "submit": "开始规划"
+    },
+    "planning": {
+      "running": "正在规划剧集：{written} / {count}",
+      "failed": "已规划 {written} / {count} 集。{error}"
     }
   },
   "studio": {
@@ -478,13 +510,13 @@
       "chars": "{count, plural, other {# 字}}",
       "save": "保存",
       "saved": "已保存。",
-      "rawHint": "粘贴这一集的原文：小说章节、大纲或笔记都行。下一步 AI 会把它改写成拍摄剧本。",
+      "rawHint": "粘贴这一集的原文：小说章节、大纲、笔记，或剧集规划写好的节拍表。下一步 AI 会把它变成拍摄剧本。",
       "rawPlaceholder": "粘贴这一集的小说章节、大纲或笔记。",
       "toRewrite": "下一步：剧本",
       "toRaw": "前往原始内容",
       "rewriteTitle": "剧本",
       "needRaw": "请先粘贴原始内容，剧本要基于它来写。",
-      "rewriteBody": "AI 会把原始内容改写成包含场景标题、动作和对白的拍摄剧本。你也可以直接把原始内容当作剧本。",
+      "rewriteBody": "AI 会把原始内容变成包含场景标题、动作和对白的拍摄剧本：可以按原文改写，也可以把节拍表扩写成场景。你也可以直接把原始内容当作剧本。",
       "running": "正在写剧本，通常不到一分钟。",
       "start": "生成剧本",
       "skip": "直接用原始内容作剧本",
@@ -494,6 +526,13 @@
       "again": "重新改写",
       "againTitle": "重新改写剧本？",
       "againBody": "AI 会根据原始内容重新写一版剧本，替换当前剧本，你的修改也会被覆盖。",
+      "expanding": "正在把节拍表扩写成剧本，通常不到一分钟。",
+      "expand": "把节拍表扩写成剧本",
+      "expandFailed": "扩写失败：{error}",
+      "expandFailedKept": "上次扩写失败，保留了下面的剧本：{error}",
+      "expandAgain": "重新扩写",
+      "expandAgainTitle": "重新扩写节拍表？",
+      "expandAgainBody": "AI 会根据节拍表写一份新剧本，替换当前剧本（包括你的修改）。",
       "recap": {
         "title": "剧情回顾",
         "hint": "会交给后续各集的智能体。",

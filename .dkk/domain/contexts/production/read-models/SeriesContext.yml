@@ -2,10 +2,11 @@
 name: SeriesContext
 description: >-
   What the script rewriter, storyboard breaker and recap writer are told about the rest of the drama, attached as the
-  `series` block of their read tools' results. Always the premise (title, synopsis and genre when set); for a serial
+  `series` block of their read tools' results. Always the premise (title, synopsis and genre when set) and the story
+  outline when written, serial or not; for a serial
   drama also the earlier live episodes in order, each with its recap and whether that recap is ready, stale (the
   script changed since it was written) or missing, so gaps are named rather than silently absent. Beyond a character
-  budget the oldest recaps are dropped and listed as omitted.
+  budget (60000 characters) the oldest recaps are dropped and listed as omitted; the outline is never cut.
 fields:
   - name: title
     type: string
@@ -14,6 +15,9 @@ fields:
     description: The drama's synopsis, when set
   - name: genre
     type: string
+  - name: outline
+    type: string
+    description: The drama's story outline, whole, when non-empty
   - name: serial
     type: boolean
   - name: earlierEpisodes
@@ -24,6 +28,7 @@ fields:
     description: Episode numbers whose recaps were dropped for the budget
 subscribes_to:
   - DramaUpdated
+  - OutlineSaved
   - ScriptSaved
   - ScriptRewriteSkipped
   - EpisodeContentUpdated
@@ -32,3 +37,4 @@ used_by:
   - AgentRuntime
 adr_refs:
   - adr-0014
+  - adr-0015

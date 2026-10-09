@@ -1,0 +1,23 @@
+name: OutlineJob
+description: >-
+  A running story-outline write for a drama. Wraps the story_writer agent run so the project page can poll it, and
+  records failure explicitly; at most one per drama at a time.
+handles:
+  commands:
+    - WriteOutline
+emits:
+  events:
+    - OutlineRequested
+    - OutlineCompleted
+    - OutlineFailed
+invariants:
+  - >-
+    Key is the drama (no episode); starting while running returns the running job (alreadyRunning) instead of a second
+    run.
+  - >-
+    Success is judged by SaveOutline succeeding during the run, not by the model's reply; the previous outline stays
+    until then.
+  - While it runs, the creator's outline edit (UpdateDrama with outline) and PlanEpisodes are refused.
+  - A restart marks a running outline job as failed.
+adr_refs:
+  - adr-0015

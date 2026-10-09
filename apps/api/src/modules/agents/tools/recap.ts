@@ -19,7 +19,7 @@ export const readEpisodeForRecap = defineTool({
     if (!ep) return { error: 'Episode not found' };
     const script = ep.scriptContent?.trim();
     if (!script) return { error: 'The episode has no script yet' };
-    return { episodeNumber: ep.episodeNumber, title: ep.title, series: seriesContext(ctx.dramaId, ctx.episodeId, ctx.log), script };
+    return { episodeNumber: ep.episodeNumber, title: ep.title, series: seriesContext({ dramaId: ctx.dramaId, beforeEpisodeNumber: ep.episodeNumber }, ctx.log), script };
   },
 });
 

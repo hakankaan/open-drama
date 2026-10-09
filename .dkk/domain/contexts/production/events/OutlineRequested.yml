@@ -1,0 +1,12 @@
+name: OutlineRequested
+description: An outline was requested for the drama; the story_writer agent should run.
+fields:
+  - name: dramaId
+    type: ID
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+raised_by: OutlineJob
+adr_refs:
+  - adr-0015

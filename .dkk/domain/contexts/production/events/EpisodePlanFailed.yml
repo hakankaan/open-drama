@@ -1,0 +1,14 @@
+name: EpisodePlanFailed
+description: >-
+  The episode planner failed, stopped short of the requested count, or was interrupted by a restart; the episodes
+  already added stay and the project page shows how many of count were planned with the error.
+fields:
+  - name: dramaId
+    type: ID
+  - name: jobId
+    type: ID
+  - name: error
+    type: string
+raised_by: EpisodePlanJob
+adr_refs:
+  - adr-0015

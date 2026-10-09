@@ -445,6 +445,7 @@
     },
     "tabs": {
       "episodes": "Episodes",
+      "story": "Story",
       "assets": "Asset library"
     },
     "deleteEpisodeTitle": "Delete {title}?",
@@ -465,7 +466,38 @@
       "resolution": "Resolution {resolution}. Change resolution",
       "scriptReady": "Script ready",
       "merged": "Film ready",
-      "open": "Open studio"
+      "open": "Open studio",
+      "planned": "Beats ready"
+    },
+    "story": {
+      "title": "Story outline",
+      "hint": "Logline, cast, world and tone, the story in acts and the season shape. The AI writes it from the synopsis; the episode plan is cut from it, and every script agent reads it.",
+      "chars": "{count, plural, one {# character} other {# characters}} of {max}",
+      "placeholder": "Write the outline here, or let the AI write it from the synopsis.",
+      "write": "Write the outline",
+      "writeTitle": "Write the outline?",
+      "writeBody": "The AI writes the outline from the synopsis and the existing episodes. The unsaved text here is discarded.",
+      "rewrite": "Rewrite the outline",
+      "rewriteTitle": "Rewrite the outline?",
+      "rewriteBody": "The AI writes a new outline from the synopsis and the existing episodes and replaces the current one, including your edits.",
+      "running": "Writing the outline. This usually takes under a minute.",
+      "failed": "The outline failed: {error}",
+      "saved": "Outline saved.",
+      "plan": "Plan episodes"
+    },
+    "plan": {
+      "title": "Plan episodes",
+      "description": "The AI cuts the next stretch of the outline into episodes, each with a title, a synopsis and a beat sheet, and adds them as it writes them.",
+      "count": "Episodes to plan",
+      "countHint": "1 to {max}. The outline’s season shape suggests a count.",
+      "countInvalid": "Enter a whole number from 1 to {max}.",
+      "after": "{last, plural, =0 {The plan starts at episode 1.} other {The plan continues after episode # and leaves the existing episodes as they are. To plan the story from the beginning, delete them first.}}",
+      "empty": "{count, plural, one {Episode {list} has no beats and stays empty: the plan skips it. Write its beats by hand or delete it before planning.} other {Episodes {list} have no beats and stay empty: the plan skips them. Write their beats by hand or delete them before planning.}}",
+      "submit": "Plan episodes"
+    },
+    "planning": {
+      "running": "Planning episodes: {written} of {count}",
+      "failed": "Planned {written} of {count}. {error}"
     }
   },
   "studio": {
@@ -478,13 +510,13 @@
       "chars": "{count, plural, one {# character} other {# characters}}",
       "save": "Save",
       "saved": "Saved.",
-      "rawHint": "Paste the source for this episode: a novel chapter, an outline or notes. The AI rewrites it into a shooting script next.",
+      "rawHint": "Paste the source for this episode: a novel chapter, an outline, notes, or the beat sheet the episode plan wrote. The AI turns it into a shooting script next.",
       "rawPlaceholder": "Paste a novel chapter, an outline or notes for this episode.",
       "toRewrite": "Continue to the script",
       "toRaw": "Go to raw content",
       "rewriteTitle": "Script",
       "needRaw": "Paste the raw content first; the script is written from it.",
-      "rewriteBody": "The AI turns the raw content into a shooting script with scene headings, action and dialogue. You can also use the raw content as it is.",
+      "rewriteBody": "The AI turns the raw content into a shooting script with scene headings, action and dialogue: rewrite a source as it is, or expand a beat sheet into scenes. You can also use the raw content as it is.",
       "running": "Writing the script. This usually takes under a minute.",
       "start": "Write the script",
       "skip": "Use raw content as the script",
@@ -494,6 +526,13 @@
       "again": "Rewrite again",
       "againTitle": "Rewrite the script?",
       "againBody": "The AI writes a new script from the raw content and replaces the current one, including your edits.",
+      "expanding": "Expanding the beats into a script. This usually takes under a minute.",
+      "expand": "Expand the beats into a script",
+      "expandFailed": "The expansion failed: {error}",
+      "expandFailedKept": "The last expansion failed, so the script below was kept: {error}",
+      "expandAgain": "Expand again",
+      "expandAgainTitle": "Expand the beats again?",
+      "expandAgainBody": "The AI writes a new script from the beat sheet and replaces the current one, including your edits.",
       "recap": {
         "title": "Recap",
         "hint": "Given to the agents of the next episodes.",

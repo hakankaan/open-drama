@@ -58,6 +58,9 @@ function stubScript(content: string): string {
   return ['## S01 | INT Main location | Day', '', ...sentences.flatMap((s) => [s, ''])].join('\n').trim();
 }
 
+/** A beat sheet's list markers and numbering dropped, so the beats read as sentences. */
+const unlisted = (beats: string) => beats.replace(/^\s*(?:[-*•]|\d+[.)])\s+/gm, '');
+
 /** The story's first sentences, headings dropped, as a placeholder recap labelled with the episode number. */
 function stubRecap(episodeNumber: number, script: string): string {
   const sentences = script
@@ -176,11 +179,117 @@ function stubVideoPrompt(read: { shot?: Json; mentionable?: { scene?: string | n
 
 const firstId = (text: string) => Number(/\(id (\d+)\)/.exec(text)?.[1] ?? /\bid[:= ]+(\d+)/i.exec(text)?.[1] ?? 0);
 
+/** The most recent result among the named tools, with the tool it came from. */
+function lastResult(options: CallOptions, names: string[]): { tool: string; value: unknown } | null {
+  let last: { tool: string; value: unknown } | null = null;
+  for (const message of options.prompt) {
+    if (message.role !== 'tool') continue;
+    for (const part of message.content) {
+      if (part.type !== 'tool-result' || !names.includes(part.toolName)) continue;
+      const out = part.output;
+      last = { tool: part.toolName, value: out.type === 'json' ? out.value : out.type === 'text' ? out.value : null };
+    }
+  }
+  return last;
+}
+
+/** Prose sentences of a Markdown text: headings, list markers and blank lines dropped. */
+const proseSentences = (text: string) =>
+  text
+    .split(/\n/)
+    .map((l) => l.replace(/^\s*(?:#+|[-*•]|\d+[.)])\s*/, '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .split(/(?<=[.!?。！？])\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+/** A placeholder outline from the premise: every section the skill asks for, long enough to be accepted. */
+function stubOutline(read: { title?: string; synopsis?: string; genre?: string; serial?: boolean; episodes?: { state?: string }[] } | null): string {
+  const title = read?.title || 'Untitled';
+  const premise = read?.synopsis?.trim() || `${title} follows one person through one decisive night.`;
+  const sentences = proseSentences(premise);
+  const planned = (read?.episodes ?? []).length;
+  return [
+    `# ${title}`,
+    '',
+    '## Logline',
+    sentences[0] ?? premise,
+    '',
+    '## Cast',
+    '- PROTAGONIST: the one the premise is about. Wants what the premise names and must give something up to get it.',
+    '- ANTAGONIST: the one in the way. Wants the same thing for an opposite reason.',
+    '',
+    '## World and tone',
+    `${read?.genre?.trim() || 'Drama'}, close and quiet; the places the premise names, lit as the time of day allows.`,
+    '',
+    '## Story',
+    `Act one: ${sentences[0] ?? premise}`,
+    `Act two: ${sentences[1] ?? 'The refusal costs more than expected and the stranger returns with a better offer.'}`,
+    `Act three: ${sentences[2] ?? 'The choice is made in the open, and what it costs is paid on screen.'}`,
+    '',
+    '## Season shape',
+    `${Math.max(planned, 6)} episodes of about 45 seconds; the acts fall at the end of episodes 2 and 4.`,
+    ...(read?.serial === false ? [] : ['', '## Threads', '- The stranger\'s offer, repeated once per act with the price raised.', '- What the protagonist keeps hidden, shown a little more each episode.']),
+  ].join('\n');
+}
+
+/** A placeholder beat sheet for one planned episode, cut from the outline's prose and padded to the minimum. */
+function stubBeats(outline: string, ordinal: number, total: number): { title: string; synopsis: string; beats: string } {
+  const sentences = proseSentences(outline);
+  const span = Math.max(1, Math.ceil(sentences.length / Math.max(total, 1)));
+  const slice = sentences.slice(ordinal * span, ordinal * span + span);
+  const own = slice.length > 0 ? slice : [`The story moves one step further in episode ${ordinal + 1}.`];
+  const lines = own.map((s, i) => `${i + 1}. ${s}`);
+  let beats = [...lines, `${lines.length + 1}. Hook: what this episode leaves open is the first thing the next one answers.`].join('\n');
+  while (beats.length < 220) beats += '\nThe scene holds a moment longer on what was left unsaid.';
+  const words = own[0]!.split(' ').slice(0, 4).join(' ').replace(/[.,;:!?]+$/, '');
+  return { title: `${words}`, synopsis: own[0]!.slice(0, 200), beats };
+}
+
 function plan(options: CallOptions): Step {
   const tools = new Set((options.tools ?? []).map((t) => t.name));
   const done = toolResults(options);
   const message = userText(options);
   const next = (tool: string, input: Json = {}): Step => ({ tool, input });
+
+  if (tools.has('save_outline')) {
+    if (!done.has('read_story')) return next('read_story');
+    if (!done.has('save_outline')) return next('save_outline', { outline: stubOutline(done.get('read_story') as Parameters<typeof stubOutline>[0]) });
+    return { text: 'Saved the outline.' };
+  }
+
+  if (tools.has('save_episodes')) {
+    if (!done.has('read_story_for_planning')) return next('read_story_for_planning');
+    const read = done.get('read_story_for_planning') as {
+      outline?: string;
+      premise?: { synopsis?: string };
+      request?: { count?: number; remaining?: number; firstEpisodeNumber?: number };
+    } | null;
+    const last = lastResult(options, ['read_story_for_planning', 'save_episodes']);
+    const state = (last?.tool === 'save_episodes' ? last.value : null) as { remaining?: number; final?: boolean } | null;
+    if (state?.final === true) return { text: 'Planned the episodes.' };
+    const count = read?.request?.count ?? 1;
+    const remaining = state?.remaining ?? read?.request?.remaining ?? count;
+    if (remaining <= 0) return next('save_episodes', { episodes: [], final: true });
+    // Without an outline the beats are cut from the synopsis, as the planner would.
+    const outline = read?.outline || read?.premise?.synopsis || '';
+    const batch = resultCount(options, 'save_episodes');
+    // An outline containing #early-final claims final on a first batch of one, to exercise the refusal.
+    const n = outline.includes('#early-final') && batch === 0 ? 1 : Math.min(8, remaining);
+    const written = count - remaining;
+    const episodes = Array.from({ length: n }, (_, i) => stubBeats(outline, written + i, count));
+    return next('save_episodes', { episodes, final: n === remaining || (outline.includes('#early-final') && batch === 0) });
+  }
+
+  if (tools.has('read_episode_for_writing')) {
+    if (!done.has('read_episode_for_writing')) return next('read_episode_for_writing');
+    if (!done.has('save_script')) {
+      const read = done.get('read_episode_for_writing') as { beats?: string } | null;
+      return next('save_script', { content: stubScript(unlisted(read?.beats ?? '')) });
+    }
+    return { text: 'Saved the script.' };
+  }
 
   if (tools.has('save_script')) {
     if (!done.has('read_episode_script')) return next('read_episode_script');

@@ -1,10 +1,10 @@
 'use client';
 
-import { ChevronDown, MoreHorizontal, Plus } from 'lucide-react';
+import { ChevronDown, Loader2, MoreHorizontal, Plus, TriangleAlert } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Resolution as ResolutionEnum, type DramaDetail, type EpisodeSummary } from '@open-drama/contracts';
+import { PlanProgress, Resolution as ResolutionEnum, type DramaDetail, type DramaJobs, type EpisodeSummary } from '@open-drama/contracts';
 import { StatusMenu } from '@/components/status-menu';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -101,6 +101,7 @@ function EpisodeCard({ drama, episode, onDelete }: { drama: DramaDetail; episode
           <p className="text-xs text-muted">
             <time dateTime={episode.updatedAt}>{relativeTime(episode.updatedAt, locale)}</time>
           </p>
+          {episode.description.trim() ? <p className="mt-1 line-clamp-2 text-sm text-ink-2">{episode.description}</p> : null}
         </div>
         <Menu>
           <MenuTrigger asChild>
@@ -136,6 +137,7 @@ function EpisodeCard({ drama, episode, onDelete }: { drama: DramaDetail; episode
             ))}
           </MenuContent>
         </Menu>
+        {episode.hasContent && !episode.hasScript ? <Tag tone="info">{t('planned')}</Tag> : null}
         {episode.hasScript ? <Tag tone="success">{t('scriptReady')}</Tag> : null}
         {episode.filmPath ? <Tag tone="accent">{t('merged')}</Tag> : null}
         {episode.durationSeconds > 0 ? <Tag>{formatDuration(episode.durationSeconds)}</Tag> : null}
@@ -150,7 +152,31 @@ function EpisodeCard({ drama, episode, onDelete }: { drama: DramaDetail; episode
   );
 }
 
-export function EpisodesTab({ drama, onAdd }: { drama: DramaDetail; onAdd: () => void }) {
+/** The plan job's line (adr-0015): how many of the requested episodes are live, while it runs and after a failure. */
+function PlanningLine({ drama, plan }: { drama: DramaDetail; plan: DramaJobs['plan'] }) {
+  const t = useTranslations('project.planning');
+  if (!plan || (plan.status !== 'running' && plan.status !== 'failed')) return null;
+  const progress = PlanProgress.safeParse(plan.progress);
+  if (!progress.success) return null;
+  const written = progress.data.written.filter((id) => drama.episodes.some((e) => e.id === id)).length;
+  const count = progress.data.count;
+  if (plan.status === 'running') {
+    return (
+      <p className="flex items-center gap-2 text-sm text-ink-2" role="status">
+        <Loader2 className="h-4 w-4 animate-spin text-accent" aria-hidden />
+        {t('running', { written, count })}
+      </p>
+    );
+  }
+  return (
+    <p className="flex max-w-2xl items-start gap-2 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger" role="alert">
+      <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+      <span>{t('failed', { written, count, error: plan.error ?? '' })}</span>
+    </p>
+  );
+}
+
+export function EpisodesTab({ drama, jobs, onAdd }: { drama: DramaDetail; jobs: DramaJobs | undefined; onAdd: () => void }) {
   const t = useTranslations('project');
   const toastError = useToastError();
   const remove = useDeleteEpisode(drama.id);
@@ -169,6 +195,7 @@ export function EpisodesTab({ drama, onAdd }: { drama: DramaDetail; onAdd: () =>
 
   return (
     <>
+      <PlanningLine drama={drama} plan={jobs?.plan ?? null} />
       <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
         {drama.episodes.map((episode) => (
           <EpisodeCard key={episode.id} drama={drama} episode={episode} onDelete={() => setDeleting(episode)} />

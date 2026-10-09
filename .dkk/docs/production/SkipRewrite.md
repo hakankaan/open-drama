@@ -18,6 +18,9 @@ Skip the AI rewrite by copying the raw content into scriptContent, so extraction
 ## Rules & Invariants
 
 - Raw content is not empty
+- No rewrite or write job is running for the episode
+- Empty raw content
+- The script is being rewritten or written
 
 
 ## Relationships
@@ -29,4 +32,6 @@ Skip the AI rewrite by copying the raw content into scriptContent, so extraction
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |

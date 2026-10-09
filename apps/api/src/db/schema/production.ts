@@ -15,6 +15,8 @@ export const dramas = sqliteTable('dramas', {
   thumbnail: text(),
   // Episodes continue one story: earlier episodes' recaps are given to the agents (adr-0014).
   serial: bool().notNull().default(true),
+  // The story outline the episodes are planned from (adr-0015); Markdown, empty until written.
+  outline: text().notNull().default(''),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
   deletedAt: deletedAt(),

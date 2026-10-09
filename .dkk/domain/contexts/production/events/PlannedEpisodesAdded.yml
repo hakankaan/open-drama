@@ -1,0 +1,15 @@
+name: PlannedEpisodesAdded
+description: One batch of planned episodes was appended to the drama; the episodes tab refreshes its list and the planning count.
+fields:
+  - name: dramaId
+    type: ID
+  - name: jobId
+    type: ID
+  - name: episodeIds
+    type: ID[]
+  - name: written
+    type: number
+    description: How many of the requested count exist after this batch
+raised_by: Episode
+adr_refs:
+  - adr-0015

@@ -69,7 +69,7 @@ export const readStoryboardContext = defineTool({
       episodeNumber: ep.episodeNumber,
       // A breakdown keeps the length it started with, even when the creator changes it meanwhile.
       targetDurationSeconds: ctx.jobId && targets.has(ctx.jobId) ? (targets.get(ctx.jobId)?.seconds ?? null) : ep.targetDurationSeconds,
-      series: seriesContext(ctx.dramaId, ctx.episodeId, ctx.log),
+      series: seriesContext({ dramaId: ctx.dramaId, beforeEpisodeNumber: ep.episodeNumber }, ctx.log),
       script: ep.scriptContent?.trim() || ep.content,
       characters: linked(chars, linkedChars),
       scenes: linked(scs, linkedScenes),

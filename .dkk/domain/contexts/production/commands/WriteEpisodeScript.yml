@@ -1,0 +1,26 @@
+name: WriteEpisodeScript
+description: >-
+  Ask the episode writer to expand a planned episode's beat sheet into a formatted script, given the outline, the
+  earlier episodes' recaps and, in a serial drama, the next episode's beats. The agent persists its result through
+  SaveScript; the creator may pick a text model or service for this run.
+fields:
+  - name: episodeId
+    type: ID
+  - name: model
+    type: string
+    description: Optional text model override
+  - name: textServiceId
+    type: ID
+    description: Optional text service override
+actor: Creator
+handled_by: EpisodeWriteJob
+preconditions:
+  - Raw content (the beats) is not empty
+  - No rewrite is running for the episode
+  - If a write job is already running for the episode, the running job is returned (alreadyRunning)
+rejections:
+  - Empty raw content
+  - The script is being rewritten
+  - No text model service configured
+adr_refs:
+  - adr-0015

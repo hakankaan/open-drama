@@ -35,12 +35,12 @@ Design notes: no agent framework (`adr-0006`); English canonical texts and `[Sho
 ```
 modules/agents/
   runtime/
-    run-agent.ts          # runAgent({ agentType, message, episodeId, dramaId, model?, textServiceId?, maxSteps? })
+    run-agent.ts          # runAgent({ agentType, message, dramaId, episodeId?, model?, textServiceId?, maxSteps? }); runAgentUntilSaved / runAgentUntilDone (one retry)
     instructions.ts       # assemble: prompt file + skills + language directive
     model.ts              # resolve text service + model; build AI SDK provider with patched fetch
     transport-patches.ts  # thinking-off, temperature, max-tokens fetch wrappers
-    context.ts            # AgentContext { episodeId, dramaId, language, log } passed to every tool
-    tool.ts               # defineTool({ id, description, input: zod, execute(input, ctx) }) → AI SDK tool
+    context.ts            # DramaAgentContext { agentType, dramaId, language, log, jobId? }; AgentContext extends it with { episodeId, target?, scriptRevision? }
+    tool.ts               # defineTool (episode scope) / defineDramaTool (drama scope): { id, description, input: zod, execute(input, ctx) } → AI SDK tool
     logging.ts            # per-step tool call / result logging with redaction
     sdk.ts                # the only file that imports `ai` / `@ai-sdk/*` (pinned majors, see §12)
   agents/
@@ -48,12 +48,17 @@ modules/agents/
     extractor.ts
     storyboard-breaker.ts
     prompt-generator.ts
-    index.ts              # registry: type → { name, tools, defaultInstructions, skillPrefixes, maxSteps }
+    recap-writer.ts  episode-writer.ts  story-writer.ts  episode-planner.ts   (adr-0014, adr-0015)
+    index.ts              # registry: type → { name, scope, tools, defaultInstructions, skillPrefixes, maxSteps }; boot check: a drama-scoped agent carries drama-scoped tools only
   tools/
     script.ts             # read_episode_script, save_script
     extract.ts            # read_script_for_extraction, read_existing_{characters,scenes,props}, save_dedup_{…}
     storyboard.ts         # read_storyboard_context, save_shots, update_shot
     image-prompts.ts      # read_{characters,scenes,props}, save_{character,scene,prop}_final_prompt
+    recap.ts              # read_episode_for_recap, save_recap
+    write.ts              # read_episode_for_writing (beats, series block, the next episode's beats) → save_script, shared with the rewriter
+    story.ts              # read_story, save_outline (drama scope)
+    plan.ts               # read_story_for_planning, save_episodes (drama scope; batches ≤ 8, `final`, state on the job's progress row)
   workspace/
     files.ts              # jailed fs under WORKSPACE_PATH; copy-once template; language variant resolution
     prompts.ts            # parse/serialize prompt files (frontmatter name/model + body)
@@ -64,6 +69,10 @@ modules/agents/
     extraction.ts         # startExtraction(episodeId, target, opts) via runJob
     breakdown.ts          # startBreakdown(episodeId, opts) via runJob (parks shots on the first batch)
     video-prompts.ts      # startVideoPromptBatch(episodeId, shotIds?, opts) via runJob; generateShotVideoPrompt(shotId)
+    recap.ts              # the recap job via runJob (target = script revision)
+    write.ts              # the write job via runJob: episode writer → save_script → the recap chain
+    outline.ts            # startOutline(dramaId, opts) via runJob, drama-scoped
+    plan.ts               # startPlan(dramaId, request) via runJob, drama-scoped; the resolved request is seeded into progress
   routes.ts               # /agents/*, /skills/* (Plan 1 table)
 
 modules/generation/
@@ -87,18 +96,19 @@ modules/generation/
   routes.ts               # /generation-tasks (Plan 1 table)
 
 workspace/  (repo root, template copied to $DATA_DIR/workspace)
-  prompts/script_rewriter.md  extractor.md  storyboard_breaker.md  prompt_generator.md   (+ .zh.md/.ja.md/.ko.md)
-  skills/script-rewriter/SKILL.md
+  prompts/script_rewriter.md  extractor.md  storyboard_breaker.md  prompt_generator.md  recap_writer.md  episode_writer.md  story_writer.md  episode_planner.md   (+ .zh.md/.ja.md/.ko.md)
+  skills/script-rewriter/SKILL.md  skills/script-rewriter/format/SKILL.md   (the layout rules, shared with the episode writer)
   skills/extractor/SKILL.md
   skills/storyboard-breaker/SKILL.md
   skills/prompt-generator/{character-prompt,scene-prompt,prop-prompt,video-prompt}/SKILL.md
+  skills/recap-writer/SKILL.md  skills/episode-writer/SKILL.md  skills/story-writer/SKILL.md  skills/episode-planner/SKILL.md
 ```
 
 ## 4. Agent runtime
 
 **`runAgent(input)`** (command `agents.RunAgent`):
 1. Validate `agentType` against the registry.
-2. Build `AgentContext` from the request (`episodeId`, `dramaId`, content language from `app_settings`, optional overrides) — tools read scope only from this context.
+2. Build the context from the request: a `DramaAgentContext` (`dramaId`, content language from `app_settings`, the job id when a job runs the agent) for a drama-scoped agent, an `AgentContext` extending it with `episodeId` (and the target or script revision) for an episode-scoped one (`adr-0015`). An episode-scoped agent asked to run without an episode is an internal error; the boot check refuses a drama-scoped agent that carries an episode-scoped tool. Tools read scope only from this context.
 3. `instructions = assembleInstructions(agentType, language)`.
 4. `model = resolveModel({ agentType, modelOverride, textServiceId })`.
 5. Call the AI SDK text generation (`sdk.ts`) with `system: instructions`, the user `message`, the agent's tools, and the agent's step limit (`stopWhen: stepCountIs(n)` in the current major; the wrapper hides the SDK's naming). Log each step's tool calls (names + redacted args) and the final text.
@@ -112,7 +122,7 @@ workspace/  (repo root, template copied to $DATA_DIR/workspace)
 
 **Agent user messages**: kept in the API next to each agent as English templates (rewrite, extract-per-target, breakdown with asset lists, single video prompt, final prompt per asset type). The web app never composes agent prompts.
 
-## 5. The five agents
+## 5. The eight agents
 
 | Agent | Tools | Message (summary) | Success check |
 |---|---|---|---|
@@ -121,8 +131,11 @@ workspace/  (repo root, template copied to $DATA_DIR/workspace)
 | `storyboard_breaker` | `read_storyboard_context`, `save_shots`, `update_shot` | "Break the script into shots. The video model is {label}. Characters: …(id) Scenes: …(id) Props: …(id). Save in batches of at most 8; the first batch replaces existing shots." + the series note | live shots exist for the episode after the run (parked shots purged); `videoPrompt` present (else the batch runs) |
 | `prompt_generator` | `read_characters/scenes/props`, `save_*_final_prompt`, `read_storyboard_context`, `update_shot` | (a) "Write the {turnaround \| establishing-shot \| product-shot} final prompt for {asset} (id) and save it." (b) "Write the video prompt for shot #{n} (id) for video model {label}; read the shot context first; save only `videoPrompt`." | the target field is non-empty after the run |
 | `recap_writer` | `read_episode_for_recap`, `save_recap` | "Read the script, write its recap following your skills, save it; the `series` block is context only, recap this episode alone." | `save_recap` succeeded for the job's script revision → `RecapCompleted`; a save refused because the script moved on fails the job at once, without the retry (`adr-0014`) |
+| `episode_writer` (`adr-0015`) | `read_episode_for_writing`, `save_script` | "Expand this episode's beat sheet into the shooting script following your skills and save it." + the length note when a target is set + the context note (the `series` block and, in a serial drama, the next episode's beats) | `save_script` succeeded after the run (one retry); the recap job then starts as after a rewrite |
+| `story_writer` (`adr-0015`, drama-scoped) | `read_story`, `save_outline` | "Read the premise and the existing episodes, write the story outline following your skills, and save it." | `save_outline` succeeded (200–20 000 chars) → `dramas.outline` replaced |
+| `episode_planner` (`adr-0015`, drama-scoped) | `read_story_for_planning`, `save_episodes` | "Plan the next N episodes of this project. Read the premise, the outline and the existing episodes, write each new episode's title, synopsis and beat sheet, add them in story order in batches of at most 8, setting `final: true` on the batch that completes the N." | the job is done only once `save_episodes` accepted `final` with all N episodes live; an early `final` is refused naming the shortfall (a planned episode deleted mid-plan counts as missing); the request and the written ids live on the job's progress row, so a restart leaves the episodes and a readable failure |
 
-**The `series` block** (`adr-0014`): `read_episode_script`, `read_storyboard_context` (no `shotId`) and `read_episode_for_recap` attach `series`, built by one `seriesContext(dramaId, episodeId)` in the production module: `{ title, description?, genre?, serial, earlierEpisodes?: [{ episodeNumber, title, status: ready | stale | missing, recap? }], omittedEpisodes? }`. Earlier episodes appear for serial dramas only, in order; `stale` carries the text with the flag; the oldest recaps are dropped beyond 40k characters and listed as omitted. The builder logs `series context attached {serial, ready, stale, missing, omitted}`. The rewriter's and breaker's user messages end with a sentence pointing at the block, so workspaces whose prompt files predate it still get the instruction.
+**The `series` block** (`adr-0014`, `adr-0015`): `read_episode_script`, `read_storyboard_context` (no `shotId`), `read_episode_for_recap` and `read_episode_for_writing` attach `series`, built by one `seriesContext({ dramaId, beforeEpisodeNumber? })` in the production module: `{ title, description?, genre?, outline?, serial, earlierEpisodes?: [{ episodeNumber, title, status: ready | stale | missing, recap? }], omittedEpisodes? }`. The outline is attached whole whenever it is non-empty, serial or not; earlier episodes (numbered below the bound) appear for serial dramas only, in order; `stale` carries the text with the flag; beyond 60k characters the oldest recaps are dropped and listed as omitted, never the outline. The plan dialog's recap line uses the same builder without a bound. The builder logs `series context attached {serial, ready, stale, missing, omitted}`. The rewriter's and breaker's user messages end with a sentence pointing at the block, so workspaces whose prompt files predate it still get the instruction.
 
 **Skills to author** — English texts in a four-part shape: *what the agent produces* (the artefact and its fields, taken from the aggregate), *how the artefact is judged* (the invariants as acceptance criteria), *worked example*, *tool protocol* (which tool to call, in what order, what a valid call contains). Every text is written from scratch for this repository (`adr-0001`) from the domain glossary and aggregates. Texts use this repository's vocabulary — `[Shot N]` markers, the `@[Name]` mention grammar, `save_shots` / `update_shot` / `shotId` tool names, `durationSeconds` — and follow the invariants stated in the domain model (segment length and sub-shot counts, the dialogue-duration floor, the 0–3 plot-critical prop rule, near-name deduplication, the three reference-image formats, the 3-second line format).
 
@@ -132,15 +145,19 @@ workspace/  (repo root, template copied to $DATA_DIR/workspace)
 - `prompt-generator/character-prompt`, `scene-prompt`, `prop-prompt`: artefacts = the three reference-image prompts (turnaround sheet, establishing shot with nobody in it, product shot), style words forbidden (injected on save).
 - `prompt-generator/video-prompt`: artefact = header line + one line per 3 s segment mapped 1:1 to sub-shots, `@[Name]` mentions only for bound assets, no invented dialogue, saved through `update_shot` with `shotId` + `videoPrompt` only.
 - `recap-writer`: artefact = the episode recap (120–250 words: what changed, where things stand, objects that will matter, open threads); acceptance = nothing invented, names as in the script, only this episode, no camera or style words or quoted dialogue, ≤ 2000 characters.
+- `script-rewriter/format` (`adr-0015`): the layout rules of a script (scene heading line, action paragraphs, dialogue with a state cue), split out of the rewriter's skill so the episode writer shares them.
+- `episode-writer`: artefact = the shooting script expanded from the beat sheet in `content`; acceptance = every beat lands in order, nothing the next episode's beats keep open is resolved early, the format skill's layout, the target length when set.
+- `story-writer`: artefact = the story outline (logline, cast, world and tone, the story in acts, the season shape with a suggested episode count, open threads), 200–20 000 characters; acceptance = consistent with the synopsis and the written episodes' recaps, prose a creator can edit, no camera or style words.
+- `episode-planner`: artefact = one planned episode per entry (title, one-line synopsis, a beat sheet of 200–1500 characters ending on a hook), continuing after the last live episode; acceptance = the outline's order, the target length when set, batches of at most 8, `final` only on the batch that completes the count.
 
 **Stub text model**: `OPEN_DRAMA_STUB_DELAY_MS` (default 0) pauses before every stub reply, so running states and the races the domain guards against (a slow recap finishing after a newer script, a restart during a job) can be exercised by hand.
 
 ## 6. Workspace
 
-- Template in the repo at `workspace/`; copied once into `$WORKSPACE_PATH` at boot (marker `.template-version`; a newer template only adds files it does not find, never overwrites edits).
+- Template in the repo at `workspace/`; copied once into `$WORKSPACE_PATH` at boot (marker `.template-version`, 6 since `adr-0015`; a newer template only adds files it does not find, never overwrites edits).
 - File names: `prompts/<agent>.md`, `prompts/<agent>.<lang>.md`, `skills/<path>/SKILL.md`, `skills/<path>/SKILL.<lang>.md`. `lang ∈ {zh, ja, ko}`; `en` is the base file. `lang` is validated against `ContentLanguage` before any path is built.
 - Prompt file = frontmatter (`name`, `model`) + body; `model` is read from the base file only.
-- Skill discovery scans directories containing `SKILL.md`; each agent has prefixes (`script-rewriter`, `extractor`, `storyboard-breaker`, `prompt-generator/`); new skill directories created from the UI are picked up on the next run (no cache, or cache invalidated on write).
+- Skill discovery scans directories containing `SKILL.md`; each agent has prefixes (`script-rewriter`, `extractor`, `storyboard-breaker`, `prompt-generator/`, `recap-writer`, `episode-writer` plus `script-rewriter/format`, `story-writer`, `episode-planner`; the Settings agents tab files a skill under the first agent whose first prefix matches it); new skill directories created from the UI are picked up on the next run (no cache, or cache invalidated on write).
 - All reads and writes go through `workspace/files.ts`, which resolves paths against `WORKSPACE_PATH`, validates skill ids as `[a-z0-9-]+` segments and rejects anything that escapes the root.
 - Routes (Plan 1 table): catalog, prompt get/put/reset with `?lang`, skills list/get/create/put/delete with `?lang`.
 

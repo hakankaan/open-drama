@@ -1,0 +1,14 @@
+name: OutlineFailed
+description: >-
+  The story writer failed, finished without saving, or was interrupted by a restart; the story tab shows the error and
+  the creator can write it again or edit the outline by hand. The previous outline is untouched.
+fields:
+  - name: dramaId
+    type: ID
+  - name: jobId
+    type: ID
+  - name: error
+    type: string
+raised_by: OutlineJob
+adr_refs:
+  - adr-0015

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TextModelOverride } from './agents';
 import {
   AspectRatio,
   DramaStatus,
@@ -13,6 +14,9 @@ import {
 } from './common';
 
 // Dramas
+
+/** The story outline (adr-0015): Markdown the planner splits into episodes. */
+export const OUTLINE_MAX_CHARS = 20_000;
 
 export const Drama = z.object({
   id: z.number().int(),
@@ -75,6 +79,8 @@ export const UpdateDrama = z.strictObject({
   status: DramaStatus.optional(),
   tags: tags.optional(),
   serial: z.boolean().optional(),
+  /** The creator's edit of the story outline; refused while the story writer is writing it. */
+  outline: z.string().trim().max(OUTLINE_MAX_CHARS).optional(),
 });
 export type UpdateDrama = z.input<typeof UpdateDrama>;
 
@@ -138,6 +144,8 @@ export const EpisodeSummary = Episode.omit({ content: true, scriptContent: true,
 export type EpisodeSummary = z.infer<typeof EpisodeSummary>;
 
 export const DramaDetail = Drama.extend({
+  /** The story outline, empty until written (adr-0015); kept off the list rows for their size. */
+  outline: z.string(),
   episodes: z.array(EpisodeSummary),
   counts: z.object({ characters: z.number().int(), scenes: z.number().int(), props: z.number().int() }),
 });
@@ -154,6 +162,36 @@ export const CreateEpisode = z.object({
 export type CreateEpisode = z.input<typeof CreateEpisode>;
 
 export const RECAP_MAX_CHARS = 2000;
+
+// PlanEpisodes (adr-0015): the episode planner writes `count` planned episodes after the last live one.
+
+export const PLAN_MAX_COUNT = 50;
+/** Bounds of one planned episode's beat sheet; the planner's save tool refuses outside them. */
+export const BEATS_MIN_CHARS = 200;
+export const BEATS_MAX_CHARS = 6000;
+
+export const PlanEpisodes = TextModelOverride.extend({
+  count: z.number().int().min(1).max(PLAN_MAX_COUNT),
+  targetDurationSeconds: EpisodeTarget.optional(),
+  resolution: Resolution.default('720p'),
+  imageServiceId: z.number().int().positive().optional(),
+  videoServiceId: z.number().int().positive().optional(),
+});
+export type PlanEpisodes = z.input<typeof PlanEpisodes>;
+
+/** The plan job's state, kept on its progress row: the request as resolved at start and the episodes added so far. */
+export const PlanProgress = z.object({
+  count: z.number().int(),
+  targetDurationSeconds: z.number().int().nullable(),
+  resolution: Resolution,
+  imageServiceId: z.number().int(),
+  videoServiceId: z.number().int(),
+  /** Ids of the episodes the planner added, in order; a deleted one stays listed but no longer counts. */
+  written: z.array(z.number().int()),
+  /** Set once the planner sent final with every one of `count` episodes live; the job is done only then. */
+  final: z.boolean().optional(),
+});
+export type PlanProgress = z.infer<typeof PlanProgress>;
 
 /**
  * Field-based dispatch: content → UpdateEpisodeContent, scriptContent → SaveScript, recap → SaveRecap (pinned to
@@ -190,6 +228,8 @@ export const SeriesContext = z.object({
   title: z.string(),
   description: z.string().optional(),
   genre: z.string().optional(),
+  /** The story outline, whole, when written (adr-0015); serial or not. */
+  outline: z.string().optional(),
   serial: z.boolean(),
   /** Serial dramas only: the live episodes numbered below this one, in order. */
   earlierEpisodes: z.array(EarlierEpisode).optional(),

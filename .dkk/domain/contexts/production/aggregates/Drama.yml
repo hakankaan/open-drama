@@ -6,11 +6,13 @@ handles:
   commands:
     - CreateDrama
     - UpdateDrama
+    - SaveOutline
     - DeleteDrama
 emits:
   events:
     - DramaCreated
     - DramaUpdated
+    - OutlineSaved
     - DramaDeleted
 invariants:
   - aspectRatio is chosen at creation and never changes afterwards; every video generated for the drama uses it.
@@ -21,5 +23,11 @@ invariants:
   - >-
     serial defaults to true. When false (an anthology, standalone skits), the agents get the premise but no episode
     recaps and no recap is written.
+  - >-
+    outline is Markdown of at most 20000 characters (empty until written), the story the episodes are planned from.
+    The story writer replaces it only through SaveOutline inside an outline job; the creator edits it from the story
+    tab through UpdateDrama, which is refused while an outline job runs. It joins the SeriesContext of every agent,
+    serial or not.
 adr_refs:
   - adr-0014
+  - adr-0015

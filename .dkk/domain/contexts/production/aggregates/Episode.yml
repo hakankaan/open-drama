@@ -5,6 +5,7 @@ description: >-
 handles:
   commands:
     - CreateEpisode
+    - AddPlannedEpisodes
     - UpdateEpisodeContent
     - SaveScript
     - SkipRewrite
@@ -17,6 +18,7 @@ handles:
 emits:
   events:
     - EpisodeCreated
+    - PlannedEpisodesAdded
     - EpisodeContentUpdated
     - ScriptSaved
     - ScriptRewriteSkipped
@@ -27,7 +29,17 @@ emits:
     - EpisodeFilmAttached
     - EpisodeDeleted
 invariants:
-  - episodeNumber is unique among the drama's non-deleted episodes and assigned as max(existing) + 1.
+  - >-
+    episodeNumber is unique among the drama's non-deleted episodes and assigned as max(existing) + 1, inside the
+    transaction that inserts the episode, so a planner batch and a manual Add episode never collide.
+  - >-
+    An episode is planned when the planner created it: its description is the synopsis and its raw content the beat
+    sheet. The planner only appends; an episode the creator added keeps its title, status, resolution, target and
+    locks. Deleting a planned episode is the way to reject it.
+  - >-
+    The script has one agent at a time: a rewrite (RewriteScript) and a write (WriteEpisodeScript) refuse each other
+    while running, and a breakdown, the skip, the creator's content edit and the creator's script edit are refused
+    while either runs.
   - >-
     imageServiceId and videoServiceId are snapshotted at creation from the highest-priority active model service of each
     type; creation is rejected when either type has no active service.
@@ -54,3 +66,4 @@ invariants:
   - An agent save of a recap for an older script revision is refused; the newer revision has its own recap job.
 adr_refs:
   - adr-0014
+  - adr-0015

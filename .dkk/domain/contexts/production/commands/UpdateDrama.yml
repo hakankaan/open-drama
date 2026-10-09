@@ -1,6 +1,7 @@
-# Command — an instruction to change domain state.
 name: UpdateDrama
-description: Update a drama's title, description, genre, style, status, tags or serial flag. The aspect ratio is immutable and is ignored if supplied.
+description: >-
+  Update a drama's title, description, genre, style, status, tags, serial flag or outline (the creator's edit from the
+  story tab). The aspect ratio is immutable and is ignored if supplied.
 fields:
   - name: dramaId
     type: ID
@@ -16,10 +17,16 @@ fields:
     type: string
     description: draft | active | completed (project-level status shown on the launcher)
   - name: tags
-    type: "string[]"
+    type: string[]
   - name: serial
     type: boolean
+  - name: outline
+    type: string
+    description: Markdown, at most 20000 characters; empty clears it
 actor: Creator
 handled_by: Drama
 rejections:
   - Drama not found or deleted
+  - outline while an outline job is running (the agent's save would replace the edit)
+adr_refs:
+  - adr-0015

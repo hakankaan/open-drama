@@ -12,8 +12,9 @@ emits:
     - AgentRunFailed
 invariants:
   - >-
-    The run carries episodeId and dramaId in its request context; every tool reads scope from there and never from model
-    output.
+    Every agent has a fixed scope: drama (story_writer, episode_planner) or episode (the rest). The run carries dramaId,
+    and episodeId for an episode-scoped agent, in its request context; every tool reads scope from there and never from
+    model output. A drama-scoped agent is given drama-scoped tools only, checked at boot.
   - >-
     Instructions = prompt file (language variant, else base, else built-in default) + all matching skills + language
     directive.
@@ -23,3 +24,4 @@ invariants:
     layer.
 adr_refs:
   - adr-0006
+  - adr-0015

@@ -1,0 +1,12 @@
+name: RunEpisodePlanner
+description: >-
+  When an episode plan is requested, run the episode_planner agent scoped to the drama (agents.RunAgent — a
+  cross-context command, see flow StoryDevelopment). The agent reads the outline, the request and every live episode
+  with its state and calls AddPlannedEpisodes in batches; the episodes tab shows the count added of requested until the
+  run completes.
+when:
+  events:
+    - EpisodePlanRequested
+adr_refs:
+  - adr-0006
+  - adr-0015

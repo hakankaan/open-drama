@@ -116,7 +116,7 @@ SQLite, one file `data/open-drama.sqlite3`. Ids are integer autoincrement; times
 
 | Table | Key columns | Domain aggregate / notes |
 |---|---|---|
-| `dramas` | title, description, genre, style, aspectRatio, status, tags(json), thumbnail, serial, createdAt, updatedAt, deletedAt | production.Drama — aspectRatio immutable (enforced in service); status `draft | active | completed`; `serial` (default true) means the episodes continue one story (`adr-0014`) |
+| `dramas` | title, description, genre, style, aspectRatio, status, tags(json), thumbnail, serial, outline, createdAt, updatedAt, deletedAt | production.Drama — aspectRatio immutable (enforced in service); status `draft | active | completed`; `serial` (default true) means the episodes continue one story (`adr-0014`); `outline` (Markdown, ≤ 20 000 chars, empty until written) is the story outline the story writer drafts and the planner cuts into episodes (`adr-0015`), served on `DramaDetail` only and refused for edit while the outline job runs |
 | `episodes` | dramaId, episodeNumber, title, description, content, scriptContent, scriptRevision, recap, recapRevision, status, resolution, targetDurationSeconds, imageServiceId, videoServiceId, filmPath, filmDurationSeconds, durationSeconds, createdAt, updatedAt, deletedAt | production.Episode — unique(dramaId, episodeNumber) among live rows; status `draft | active | completed`; `scriptRevision` moves on every change of `scriptContent`, `recap` (≤ 2000 chars) is pinned to the revision it was written for and reported stale when they differ (`adr-0014`); `targetDurationSeconds` (null or 10–600) is the length the rewrite and the breakdown fit, `durationSeconds` the sum of the live shots |
 | `characters` | dramaId, name, role, description, appearance, styling, finalPrompt, finalPromptStale, imagePath, sortOrder, createdAt, updatedAt, deletedAt | assets.Character |
 | `scenes` | dramaId, location, time, prompt, lighting, finalPrompt, finalPromptStale, imagePath, … | assets.Scene (no status column: readiness is derived from tasks) |
@@ -126,7 +126,7 @@ SQLite, one file `data/open-drama.sqlite3`. Ids are integer autoincrement; times
 | `shot_characters`, `shot_props` | shotId, assetId (pk pair) | shot bindings |
 | `generation_tasks` | type(image/video), dramaId, shotId, characterId, sceneId, propId, serviceId, provider, model, prompt, params(json), providerTaskId, resultUrl, localPath, durationSeconds, status, error, errorClass, createdAt, updatedAt, completedAt | generation.GenerationTask — indexes on (type), (dramaId), (shotId), (status) |
 | `films` | episodeId, dramaId, clipPaths(json), encoder, status, filmPath, durationSeconds, posterPath, error, createdAt, completedAt | compositing.Film |
-| `agent_jobs` | kind(`rewrite | extraction | breakdown | videoPromptBatch | recap`), episodeId, dramaId, target, status(`running | done | failed`), progress(json), error, startedAt, finishedAt | production.ScriptRewriteJob, production.RecapJob (target = script revision), assets.ExtractionJob, storyboard.StoryboardBreakdown, storyboard.VideoPromptBatch — one active job per (kind, episodeId, target) |
+| `agent_jobs` | kind(`rewrite | write | recap | extraction | breakdown | videoPromptBatch | outline | plan`), episodeId (null for the drama-scoped kinds `outline` and `plan`), dramaId, target, status(`running | done | failed`), progress(json), error, startedAt, finishedAt | production.ScriptRewriteJob, production.RecapJob (target = script revision), assets.ExtractionJob, storyboard.StoryboardBreakdown, storyboard.VideoPromptBatch, and the write, outline and plan jobs of `adr-0015` — one active job per (kind, dramaId, episodeId-or-none, target), backed by two partial unique indexes (one for episode-scoped rows, one for drama-scoped rows) plus a drama index; the plan job keeps its request and the ids it wrote in `progress` so a restart leaves the episodes and a readable failure |
 | `model_services` | serviceType, provider, name, baseUrl, apiKey, models(json), priority, isActive, settings(json: temperature), createdAt, updatedAt | configuration.ModelService — hard delete; apiKey never leaves the process |
 | `style_presets` | name, value(unique), prompt, description, sortOrder, isActive, createdAt, updatedAt | configuration.StylePreset — seeded |
 | `app_settings` | key(pk), value, updatedAt | configuration.AppSettings (`contentLanguage`, `toursSeen`) |
@@ -152,16 +152,20 @@ Endpoints, grouped by context (command / read model they implement in parenthese
 | POST | `/dramas` | CreateDrama |
 | GET | `/dramas/:id` | DramaDetail (episodes + counts) |
 | GET | `/dramas/:id/assets` | assets.DramaAssetLibrary (same card shape as EpisodeAssets, with latest image task per asset) |
-| PATCH | `/dramas/:id` | UpdateDrama |
+| PATCH | `/dramas/:id` | UpdateDrama (incl. `outline`; `409` while the outline job runs) |
 | DELETE | `/dramas/:id` | DeleteDrama |
+| GET | `/dramas/:id/jobs` | DramaJobs (`adr-0015`: the latest outline and plan job; the plan's `progress` carries the request and the ids written so far) |
+| POST | `/dramas/:id/outline` `{ model?, textServiceId? }` | the story writer drafts the outline from the synopsis and the existing episodes → `{ jobId, alreadyRunning }` |
+| POST | `/dramas/:id/plan` `{ count, targetDurationSeconds?, resolution?, imageServiceId?, videoServiceId?, model?, textServiceId? }` | PlanEpisodes (the episode planner appends `count` episodes with a title, a synopsis and a beat sheet after the last live one) → `{ jobId, alreadyRunning }`; `412` without an outline or synopsis, or without an active image/video service (the CreateEpisode wording); `409` while the outline job runs |
 | POST | `/episodes` | CreateEpisode (locks services + resolution, optional target length) |
 | GET | `/episodes/:id` | episode row + locked service labels |
 | PATCH | `/episodes/:id` | UpdateEpisodeContent / SetEpisodeResolution / SetEpisodeTargetDuration / SetEpisodeStatus (field-based) |
 | DELETE | `/episodes/:id` | DeleteEpisode |
-| POST | `/episodes/:id/rewrite` | RewriteScript → `{ jobId, alreadyRunning }` |
+| POST | `/episodes/:id/rewrite` | RewriteScript → `{ jobId, alreadyRunning }`; `409` while a write runs |
+| POST | `/episodes/:id/write` `{ model?, textServiceId? }` | the episode writer expands the beat sheet in `content` into the script through `save_script` (`adr-0015`) → `{ jobId, alreadyRunning }`; `412` without content; `409` while a rewrite runs — and a rewrite, a skip, a content edit and a script edit return `409` while the write runs |
 | POST | `/episodes/:id/skip-rewrite` | SkipRewrite (copies content → scriptContent) |
 | GET | `/episodes/:id/pipeline-status` | EpisodePipelineStatus |
-| GET | `/episodes/:id/jobs` | EpisodeJobs (latest rewrite, extraction per target, breakdown, videoPromptBatch — also serves VideoPromptBatchStatus) |
+| GET | `/episodes/:id/jobs` | EpisodeJobs (latest rewrite, write, recap, extraction per target, breakdown, videoPromptBatch — also serves VideoPromptBatchStatus) |
 
 **assets**
 
@@ -238,7 +242,7 @@ Endpoints, grouped by context (command / read model they implement in parenthese
 |---|---|---|
 | GET | `/agents?lang` | AgentCatalog |
 | GET · PUT · DELETE | `/agents/:type/prompt?lang` | prompt read / SaveAgentPrompt / ResetAgentPrompt |
-| POST | `/agents/:type/chat` `{ message, dramaId, episodeId, model?, textServiceId? }` | RunAgent (debug / power-user entry, synchronous) |
+| POST | `/agents/:type/chat` `{ message, dramaId, episodeId?, model?, textServiceId? }` | RunAgent (debug / power-user entry, synchronous; `episodeId` is required by the episode-scoped agents and ignored by the drama-scoped story writer and episode planner) |
 | GET · POST | `/skills?lang` · `/skills` | SkillCatalog / CreateSkill |
 | GET · PUT · DELETE | `/skills/*?lang` | skill read / UpdateSkill / DeleteSkill |
 
@@ -270,11 +274,11 @@ Read model → endpoint map for the implicit ones: `VideoPromptBatchStatus` and 
 | `LOG_LEVEL` | `info` | pino |
 | `OPEN_DRAMA_VERSION` | from package.json | reported by `/health` |
 
-**Startup sequence** (`index.ts`): parse env → ensure directories → open SQLite with pragmas → run migrations → seed style presets → copy workspace template once (marker file `.template-version`; later versions only add missing files) → probe FFmpeg (warn, don't fail) → boot cleanup: `FailInterruptedTasks` on `generation_tasks`, `films` and `agent_jobs` still running, restoring shots parked by a failed breakdown → mount routes → listen on `HOST:PORT`. Log one line per step.
+**Startup sequence** (`index.ts`): parse env → ensure directories → open SQLite with pragmas → run migrations → seed style presets → copy workspace template once (marker file `.template-version`; later versions only add missing files) → check that no drama-scoped agent carries an episode-scoped tool (`checkAgentToolScopes`, fails the boot) → probe FFmpeg (warn, don't fail) → boot cleanup: `FailInterruptedTasks` on `generation_tasks`, `films` and `agent_jobs` still running, restoring shots parked by a failed breakdown → mount routes → listen on `HOST:PORT`. Log one line per step.
 
 **HTTP layer**: Hono app with `cors` limited to the web origin in dev, pino request log (method, path, status, ms; bodies only at debug level, redacted), zod validation middleware, a single error handler mapping `ApiError` and zod errors to the envelope, and static serving of `STORAGE_ROOT` under `/static` with immutable caching and range support (verified in Phase 3; replaced by a small custom handler if the adapter's `serveStatic` falls short). Never serve the workspace or the database.
 
-**Jobs** (`modules/jobs`): `runJob({ kind, episodeId, dramaId, target }, fn)` returns the existing job (`alreadyRunning: true`) when one is running for the key, otherwise inserts an `agent_jobs` row, runs `fn(progress)` detached, records `done`/`failed` with timestamps, and lets `fn` update `progress` (used by the prompt batch: total/completed/failed/currentShotId). The breakdown job parks the episode's shots on its first `replaceExisting` batch (`parkedByJobId = jobId`), purges them on `done`, restores them on `failed`; boot cleanup performs the same restore. `GET /episodes/:id/jobs` returns the latest job per (kind, target). Generation tasks keep their own table because they carry provider state; boot cleanup applies to both.
+**Jobs** (`modules/jobs`): `runJob({ kind, episodeId, dramaId, target }, fn)` returns the existing job (`alreadyRunning: true`) when one is running for the key, otherwise inserts an `agent_jobs` row, runs `fn(progress)` detached, records `done`/`failed` with timestamps, and lets `fn` update `progress` (used by the prompt batch: total/completed/failed/currentShotId). Each kind has a fixed scope (`JOB_SCOPE`, `adr-0015`): the episode-scoped kinds carry an episode id, the drama-scoped `outline` and `plan` carry `null`, and `runJob` asserts the pairing; the duplicate lookup always filters on the drama and the two partial unique indexes back it. A hook can seed `progress` at insert, so a job's request survives a restart (the plan writes its resolved request there and appends the id of every episode it creates). `GET /dramas/:id/jobs` returns the latest drama-scoped job per kind. The breakdown job parks the episode's shots on its first `replaceExisting` batch (`parkedByJobId = jobId`), purges them on `done`, restores them on `failed`; boot cleanup performs the same restore. `GET /episodes/:id/jobs` returns the latest job per (kind, target). Generation tasks keep their own table because they carry provider state; boot cleanup applies to both.
 
 **Media** (`modules/media`): uuid file names with the original extension under `static/{uploads|images|videos|merged|temp}`; `storeRemoteFile(url, kind, serviceBaseUrl)` (through the guarded fetch in `lib/remote.ts`: no loopback, link-local or metadata targets except the service's own host, 200 MB cap), `storeInlineImage(b64, mime)`, `deriveRenditions(path, kind)` (400 px WebP thumbnail via sharp; 640 px JPEG poster at 0.5 s via FFmpeg; never throws), `toAbsolute(rel)` that refuses paths escaping `STORAGE_ROOT`, upload validation (image by extension; video ≤ 50 MB `.mp4/.mov/.webm/.m4v`; audio ≤ 20 MB `.mp3/.wav/.m4a/.aac`; MIME checked when present and not `octet-stream`), and `storageUsage()` walking the data dir by bucket with a 60 s cache.
 

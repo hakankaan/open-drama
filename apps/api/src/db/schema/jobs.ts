@@ -8,9 +8,10 @@ export const agentJobs = sqliteTable(
   {
     id: id(),
     kind: text().$type<JobKind>().notNull(),
-    episodeId: integer().notNull(),
+    // Null for a drama-scoped job (outline, plan): the kind fixes the scope (adr-0015).
+    episodeId: integer(),
     dramaId: integer().notNull(),
-    // '' when the kind has no target (only extraction uses one).
+    // '' when the kind has no target (extraction and recap use one).
     target: text().notNull().default(''),
     status: text().$type<JobStatus>().notNull().default('running'),
     progress: json<Record<string, unknown>>().notNull().default({}),
@@ -20,9 +21,14 @@ export const agentJobs = sqliteTable(
   },
   (t) => [
     index('agent_jobs_episode_idx').on(t.episodeId),
-    // One active job per (kind, episode, target).
-    uniqueIndex('agent_jobs_running_uq')
-      .on(t.kind, t.episodeId, t.target)
-      .where(sql`${t.status} = 'running'`),
+    index('agent_jobs_drama_idx').on(t.dramaId),
+    // One active job per (kind, drama, episode-or-none, target). Two partial indexes, because a NULL episode never
+    // equals another NULL and would let two drama-scoped jobs of one kind run at once.
+    uniqueIndex('agent_jobs_running_episode_uq')
+      .on(t.kind, t.dramaId, t.episodeId, t.target)
+      .where(sql`${t.status} = 'running' AND ${t.episodeId} IS NOT NULL`),
+    uniqueIndex('agent_jobs_running_drama_uq')
+      .on(t.kind, t.dramaId, t.target)
+      .where(sql`${t.status} = 'running' AND ${t.episodeId} IS NULL`),
   ],
 );

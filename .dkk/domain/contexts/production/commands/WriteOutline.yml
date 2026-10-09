@@ -1,0 +1,24 @@
+name: WriteOutline
+description: >-
+  Ask the story writer to write (or rewrite) the drama's story outline from its premise. The agent reads the drama, its
+  current outline as draft notes and the state of every live episode, and persists its result through SaveOutline; the
+  creator may pick a text model or service for this run.
+fields:
+  - name: dramaId
+    type: ID
+  - name: model
+    type: string
+    description: Optional text model override
+  - name: textServiceId
+    type: ID
+    description: Optional text service override
+actor: Creator
+handled_by: OutlineJob
+preconditions:
+  - The drama has a title (always true) — a synopsis is recommended but not required
+  - If an outline job is already running for the drama, the running job is returned (alreadyRunning)
+rejections:
+  - Drama not found or deleted
+  - No text model service configured
+adr_refs:
+  - adr-0015

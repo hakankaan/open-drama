@@ -1,0 +1,14 @@
+name: EpisodeWriteFailed
+description: >-
+  The episode writer failed, finished without saving, or was interrupted by a restart; the script stage shows the error
+  and the creator can expand again or rewrite.
+fields:
+  - name: episodeId
+    type: ID
+  - name: jobId
+    type: ID
+  - name: error
+    type: string
+raised_by: EpisodeWriteJob
+adr_refs:
+  - adr-0015

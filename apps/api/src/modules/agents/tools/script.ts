@@ -17,7 +17,7 @@ export const readEpisodeScript = defineTool({
     return {
       title: ep.title,
       episodeNumber: ep.episodeNumber,
-      series: seriesContext(ctx.dramaId, ctx.episodeId, ctx.log),
+      series: seriesContext({ dramaId: ctx.dramaId, beforeEpisodeNumber: ep.episodeNumber }, ctx.log),
       content: ep.content,
       currentScript: ep.scriptContent ?? '',
     };

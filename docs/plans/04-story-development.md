@@ -148,6 +148,8 @@ Proof: plan 3 episodes of 45 s on a project that already has one hand-made empty
 
 Codex checkpoints (high importance: a new module, a schema change and a job-key change): the plan (done, 2026-10-08) and the finished diff before Phase 5.
 
+**Live run (2026-10-09, with the owner's consent).** On `data/live`, drama 4 "The Last Tram" (serial, a 560-character synopsis) on the ModelRunner text service, model `deepseek/v4.1-flash`: the outline (6 706 characters: logline, six-person cast, world and tone, three acts with two turns, a ten-episode season shape, three threads) in 63 s; the plan of 2 × 45 s in 48 s, both episodes created with beats, a one-line synopsis, 720p and the locked services, `final` on the first try; episode 1 written in 24 s and its recap in 21 s; episode 2 written in 30 s with episode 1's recap attached (`ready: 1` in the series-context log line) and its recap in 27 s. Every agent finished in the minimum two steps, except episode 2's recap writer, whose first `save_recap` was refused and the second accepted (1 940 characters, so the length cap is the likely reason; the tool-call log line did not carry the reason, which it now does). Text cost: pennies. `adr-0015` accepted on the strength of this run.
+
 ## 6. Risks and open points
 
 - **Table recreation for `agent_jobs`.** SQLite rebuilds the table to make a column nullable; the migration is reviewed by hand and tried on a copy first. The table only holds job history.

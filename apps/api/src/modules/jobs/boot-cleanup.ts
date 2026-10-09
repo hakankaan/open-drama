@@ -31,7 +31,7 @@ export function failInterrupted(): BootCleanupResult {
   let restoredShots = 0;
   for (const job of running) {
     db.transaction((tx) => {
-      if (job.kind === 'breakdown') restoredShots += restoreParkedShots(tx, job.id, job.episodeId);
+      if (job.kind === 'breakdown' && job.episodeId !== null) restoredShots += restoreParkedShots(tx, job.id, job.episodeId);
       tx.update(agentJobs).set({ status: 'failed', error: RESTART_MESSAGE, finishedAt: now }).where(eq(agentJobs.id, job.id)).run();
     });
   }

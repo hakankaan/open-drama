@@ -6,16 +6,16 @@
 
 ## Summary
 
-Run one agent with a user message scoped to an episode and drama. Used by the production, assets and storyboard contexts (rewrite, recap, extraction, breakdown, prompts) and by the debugging chat endpoint.
+Run one agent with a user message scoped to a drama and, for an episode-scoped agent, to an episode of it. Used by the production, assets and storyboard contexts (outline, plan, write, rewrite, recap, extraction, breakdown, prompts) and by the debugging chat endpoint.
 
 
 ## Fields
 
 | Name | Type | Description |
 |------|------|-------------|
-| `agentType` | `string` | script_rewriter | extractor | storyboard_breaker | prompt_generator | recap_writer |
+| `agentType` | `string` | script_rewriter | extractor | storyboard_breaker | prompt_generator | recap_writer | story_writer | episode_planner | episode_writer |
 | `message` | `string` | — |
-| `episodeId` | `ID` | — |
+| `episodeId` | `ID` | Required for an episode-scoped agent, absent for a drama-scoped one |
 | `dramaId` | `ID` | — |
 | `model` | `string` | — |
 | `textServiceId` | `ID` | — |
@@ -26,6 +26,7 @@ Run one agent with a user message scoped to an episode and drama. Used by the pr
 
 - A text model service is resolvable
 - Unknown agent type
+- An episode-scoped agent without an episode, or an episode of another drama
 - No text model service configured
 
 
@@ -42,3 +43,4 @@ Run one agent with a user message scoped to an episode and drama. Used by the pr
 |-----|-------|--------|
 | [adr-0006](../../adr/adr-0006.md) | Agents run on the AI SDK tool loop with file-based prompts and skills | accepted |
 | [adr-0014](../../adr/adr-0014.md) | Series continuity through episode recaps | accepted |
+| [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |

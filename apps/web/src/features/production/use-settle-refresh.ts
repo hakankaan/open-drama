@@ -24,6 +24,7 @@ export function useSettleRefresh(episodeId: number, dramaId: number) {
     const j = jobs.data;
     const jobList = [
       ['rewrite', j.rewrite],
+      ['write', j.write],
       ['breakdown', j.breakdown],
       ['videoPromptBatch', j.videoPromptBatch],
       ['recap', j.recap],

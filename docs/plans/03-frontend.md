@@ -38,7 +38,7 @@ Governing decisions: `adr-0002` (Next.js), `adr-0007` (contract), `adr-0010` (to
 |---|---|---|
 | `/` | Project launcher | `(shell)`: header (brand, Projects/Settings pill nav, GitHub, theme, locale), readiness banner, scrollable content |
 | `/settings?tab=ai|general|styles|agents|storage|about` | Settings | `(shell)` |
-| `/drama/[id]` | Project page (episodes + asset library) | `(shell)` |
+| `/drama/[id]?tab=episodes|story|assets` | Project page (episodes, story outline, asset library) | `(shell)` |
 | `/drama/[id]/episode/[episodeNumber]` | Episode studio | `(studio)`: full-viewport, no header |
 
 `episodeNumber` is the drama-relative number; the page resolves it against `GET /dramas/:id`.
@@ -62,13 +62,13 @@ Left nav (220 px) with the six tabs; tab in the URL query so links deep-link.
 - **AI services**: provider select lists the official providers plus `byteplus` and `modelrunner` (`adr-0013`), and a preset may set a base URL per service type (ModelRunner serves text and the queue from different hosts); quick-setup card (platform select when there is more than one template, the recommended one first and marked, API key input + "Apply", read-only list of the recommended services from the shared `quick-setup` templates in `packages/contracts`, link to get a key), "manual templates" chips per type, one card per service type with rows (provider badge, name, `hasKey` tag, disabled tag, model chips with default star — click pins as default via `PATCH`, base URL, Test, active switch, edit, delete with confirm). Service dialog: preset pills, name, provider select, priority, key (password, write-only: the edit form shows "key set" and a "replace key" field that is sent only when filled), base URL, models tag editor (Enter adds, paste splits on commas/newlines, click pins first, × removes), for ModelRunner a collapsed "Browse ModelRunner models" panel (loads the live catalog when opened, search box, name, id and USD price per row, Add or Added), temperature (text only), test result box, Test / Cancel / Save.
 - **General**: content language (four buttons → unified language dialog), appearance (light/dark/system).
 - **Style presets**: list with active count, rows (name, key mono tag, disabled tag, prompt preview, description, switch, edit, delete confirm), dialog (name, key immutable on edit, prompt, description, sort order defaulting to last + 1).
-- **Agents**: agent list (four agents with skill counts) + main area with "System prompt" / "Skills (n)" sub-tabs and the editing-language note; prompt pane (file hint, fallback tag, textarea, Reset / Saved / Save); skills pane (expandable cards with textarea, path hint, Save; "Add skill" dialog with directory name, name, description; delete confirm).
+- **Agents**: agent list (every registered agent with its skill count) + main area with "System prompt" / "Skills (n)" sub-tabs and the editing-language note; prompt pane (file hint, fallback tag, textarea, Reset / Saved / Save); skills pane (expandable cards with textarea, path hint, Save; "Add skill" dialog with directory name, name, description; delete confirm).
 - **Storage**: data directory card (mode tag, paths), usage breakdown by bucket with "counting…" while stale (poll `GET /storage` every 2 s until fresh), disk free, notes; an "Unused files" card (`GET /storage/orphans` on open, no polling) whose delete goes through a confirmation.
 - **About**: version from `GET /health`, links, the exposure note (no authentication; keep the web port private or put an authenticating proxy in front). Update checks are out of scope.
 
 ### 4.4 Project page `/drama/[id]`
 - Header card: back, title, style tag, counts, "Edit project" (dialog: title, synopsis, the serial switch → `PATCH /dramas/:id`; style and frame shape stay as created), "Add episode".
-- Tabs: **Episodes** (cards with EP number, title, duration, "script ready" / "merged" tags, relative time, status menu, resolution menu 480p/720p/1080p, delete, "Open studio"; trailing "Add episode N" card; add dialog with optional title + resolution + target length and the "locks current services" note; delete confirm) and **Asset library** from `GET /dramas/:id/assets` (segmented filter all/character/scene/prop, grouped cards with image/readiness badge/summary/final-prompt line with a "stale" tag/generate/upload, detail dialog with full field editing, final prompt generate/regenerate + textarea, upload, generate image, save; image viewer).
+- Tabs: **Episodes** (cards with EP number, title, the synopsis clamped to two lines, duration, "Beats ready" (a beat sheet without a script yet) / "script ready" / "merged" tags, relative time, status menu, resolution menu 480p/720p/1080p, delete, "Open studio"; trailing "Add episode N" card; add dialog with optional title + resolution + target length and the "locks current services" note; delete confirm; above the grid, the plan job's line — "Planning episodes: n of N" while it runs, "Planned n of N. <error>" after a failure — counting only the written episodes still live), **Story** (`adr-0015`: the outline as a textarea with a character count and explicit Save → `PATCH /dramas/:id {outline}`; "Write the outline" / "Rewrite the outline" (a confirm once one exists) → `POST /dramas/:id/outline`; while the job runs the editor is disabled behind a status line, and a failed job shows its error; "Plan episodes" opens the plan dialog — count 1–50 (default 6), target length, resolution, the locks note, "The plan continues after episode N and leaves the existing episodes as they are; delete them to plan from the beginning", a warning naming the episodes without beats (the plan skips them), and the earlier-recaps line → `POST /dramas/:id/plan`, after which the Episodes tab opens; Write, Rewrite and Plan are disabled while either job runs) and **Asset library** from `GET /dramas/:id/assets` (segmented filter all/character/scene/prop, grouped cards with image/readiness badge/summary/final-prompt line with a "stale" tag/generate/upload, detail dialog with full field editing, final prompt generate/regenerate + textarea, upload, generate image, save; image viewer).
 - Asset generation from the library needs an episode for the prompt agent: when the drama has no episode, the Generate and Generate-prompt buttons are disabled with the tooltip "Create an episode first"; otherwise the first episode's id is used. Readiness comes from the card's latest image task; the library query polls while any card is generating.
 
 ### 4.5 Episode studio `/drama/[id]/episode/[n]`
@@ -76,7 +76,7 @@ Left nav (220 px) with the six tabs; tab in the URL query so links deep-link.
 
 **Sidebar** (collapsible, persisted): three sections (Script: raw / AI rewrite; Production: assets / video production; Export: merge & export) with derived state icons, the progress marquee (4 segments, clickable), collapse toggle, refresh.
 
-**Script stage**: step 0 raw content (char count, Save → `PATCH /episodes/:id {content}` awaited, textarea) and step 1 AI rewrite (empty state with Start / Skip and, in a serial drama with earlier episodes, one line counting their ready, stale and missing recaps from `DramaDetail`; running state while the rewrite job is `running` — polled via `/jobs`; a `failed` job shows its error with Retry / Skip; textarea with explicit Save; "Rewrite again"; "Skip rewrite" → `POST /episodes/:id/skip-rewrite`, after which the rail shows Script done because the script was persisted). The user's step is kept across refreshes; only a data change (script appearing) moves it.
+**Script stage**: step 0 raw content (char count, Save → `PATCH /episodes/:id {content}` awaited, textarea) and step 1 AI rewrite (empty state with Start / Skip and, in a serial drama with earlier episodes, one line counting their ready, stale and missing recaps from `DramaDetail`; running state while the rewrite job is `running` — polled via `/jobs`; a `failed` job shows its error with Retry / Skip; textarea with explicit Save; "Rewrite again"; "Expand the beats into a script" (`adr-0015`: → `POST /episodes/:id/write`, enabled once raw content exists, running state "Expanding the beats into a script…" while the write job runs, "Expand again" with a confirm once a script exists, a failed write shows its error and keeps the script); "Skip rewrite" → `POST /episodes/:id/skip-rewrite`, after which the rail shows Script done because the script was persisted). The user's step is kept across refreshes; only a data change (script appearing) moves it.
 
 **Recap card** (serial dramas, under the script editor, `adr-0014`): the episode's recap as an editable textarea with explicit Save (`PATCH /episodes/:id {recap}`), "Write recap" / "Rewrite recap" → `POST /episodes/:id/recap` with the text-model override; while the recap job runs a spinner replaces the editor, so an edit cannot race the save; a failed job shows its error; a stale recap (`recapStale`, the script changed since) shows a warning. The recap job starts on its own after a rewrite or a skip.
 
@@ -108,7 +108,8 @@ Left nav (220 px) with the six tabs; tab in the URL query so links deep-link.
 
 | Query | Interval | Active while |
 |---|---|---|
-| `/episodes/:id/jobs` | 2.5 s | any job `running` (rewrite, extraction, breakdown, prompt batch, recap) |
+| `/episodes/:id/jobs` | 2.5 s | any job `running` (rewrite, write, extraction, breakdown, prompt batch, recap) |
+| `/dramas/:id/jobs` | 2.5 s | the outline or plan job `running`; a change of their state (or of the plan's written count) refetches `DramaDetail`, so new episodes and the saved outline appear without a reload |
 | `/episodes/:id/assets` | 3 s | any asset generating |
 | `/episodes/:id/shots` | 4 s | any shot generating |
 | `/dramas/:id/assets` (library) | 3 s | any card generating |
@@ -129,12 +130,12 @@ apps/web/
       layout.tsx                      # providers: Query, Theme, Intl, Toaster
       (shell)/layout.tsx  page.tsx  settings/page.tsx  drama/[id]/page.tsx
       (studio)/drama/[id]/episode/[episodeNumber]/page.tsx
-    lib/ api.ts  errors.ts  media.ts  persisted-state.ts  narrator.ts  time.ts  mentions.ts (grammar helpers)
+    lib/ api.ts  errors.ts  media.ts  persisted-state.ts  narrator.ts  time.ts  mentions.ts (grammar helpers)  use-server-draft.ts (a draft that follows the server value until edited)
     components/ui/ button dialog menu select switch tag card textarea input tooltip skeleton confirm-dialog
     components/ app-header.tsx readiness-banner.tsx theme-toggle.tsx locale-switcher.tsx language-dialog.tsx
                 model-select.tsx mention-textarea.tsx image-viewer.tsx video-player.tsx tour.ts
     features/
-      production/ api.ts  launcher/*  project-page/*  studio/{shell,sidebar,topbar,script-stage}/*
+      production/ api.ts  launcher/*  project-page/{project-page,episodes-tab,story-tab,plan-episodes-dialog}.tsx  earlier-recaps.tsx  episode-length.tsx  studio/{shell,sidebar,topbar,script-stage}/*
       assets/     api.ts  asset-card.tsx asset-detail-dialog.tsx asset-create-dialog.tsx assets-stage.tsx use-batch-generate.ts
       storyboard/ api.ts  video-stage/{task-list,editor,references,inspector,batch-confirm,break-again-confirm}.tsx
       generation/ api.ts  task-drawer.tsx

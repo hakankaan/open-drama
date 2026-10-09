@@ -23,7 +23,8 @@ Save the creator's edits to an episode's raw content, formatted script, recap, t
 ## Rules & Invariants
 
 - No updatable field supplied
-- scriptContent while the script is being rewritten (the agent's save would replace the edit)
+- scriptContent while the script is being rewritten or written (the agent's save would replace the edit)
+- content while the script is being rewritten or written (the agent reads it as its source)
 - recap while the recap is being written
 
 
@@ -36,4 +37,6 @@ Save the creator's edits to an episode's raw content, formatted script, recap, t
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |

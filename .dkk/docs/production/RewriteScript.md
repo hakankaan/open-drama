@@ -21,7 +21,9 @@ Ask the script-rewriter agent to turn the episode's raw content into a formatted
 
 - Raw content is not empty
 - If a rewrite job is already running for the episode, the running job is returned (alreadyRunning) instead of starting another
+- No episode write (WriteEpisodeScript) is running for the episode
 - Empty raw content
+- The script is being written by the episode writer
 - No text model service configured
 
 
@@ -37,3 +39,4 @@ Ask the script-rewriter agent to turn the episode's raw content into a formatted
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |
+| [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |

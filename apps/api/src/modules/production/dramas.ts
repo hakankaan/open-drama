@@ -14,13 +14,15 @@ import {
 } from '@open-drama/contracts';
 import { db } from '../../db/client';
 import { characters, dramas, episodes, props, scenes, shots } from '../../db/schema';
-import { assertSomething, invalid, notFound } from '../../http/errors';
+import { assertSomething, conflict, invalid, notFound } from '../../http/errors';
 import { getPresetByValue } from '../configuration/presets';
+import { getDramaJobs } from '../jobs/run-job';
 import { toEpisode } from './episodes';
 
 type Row = typeof dramas.$inferSelect;
 
-const toDrama = ({ deletedAt: _deletedAt, ...row }: Row): Drama => row;
+/** The outline stays off the list rows (up to 20 000 characters each); DramaDetail carries it. */
+const toDrama = ({ deletedAt: _deletedAt, outline: _outline, ...row }: Row): Drama => row;
 
 export function getDramaRow(id: number): Row {
   const row = db
@@ -103,9 +105,13 @@ export function createDrama(input: z.output<typeof CreateDrama>): Drama {
   return toDrama(db.insert(dramas).values(input).returning().get());
 }
 
+/** UpdateDrama, including the creator's outline edit, which is refused while the story writer holds the outline (adr-0015). */
 export function updateDrama(id: number, input: z.output<typeof UpdateDrama>): Drama {
   const current = getDramaRow(id);
   assertSomething(input);
+  if (input.outline !== undefined && getDramaJobs(id).outline?.status === 'running') {
+    throw conflict('The outline is being written; edit it once it is saved');
+  }
   if (input.style !== undefined && input.style !== current.style) {
     const preset = getPresetByValue(input.style);
     if (!preset || !preset.isActive) throw invalid(`Unknown or disabled visual style: ${input.style}`);
@@ -122,7 +128,8 @@ export function deleteDrama(id: number): { id: number } {
 
 /** DramaDetail: the drama with its live episodes (with shot counts) and asset counts. */
 export function getDramaDetail(id: number): DramaDetail {
-  const drama = toDrama(getDramaRow(id));
+  const row = getDramaRow(id);
+  const drama = { ...toDrama(row), outline: row.outline };
   const eps = db
     .select()
     .from(episodes)

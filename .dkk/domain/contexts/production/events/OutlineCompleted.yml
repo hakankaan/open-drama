@@ -1,0 +1,10 @@
+name: OutlineCompleted
+description: The outline run finished and an outline was saved.
+fields:
+  - name: dramaId
+    type: ID
+  - name: jobId
+    type: ID
+raised_by: OutlineJob
+adr_refs:
+  - adr-0015

@@ -28,6 +28,9 @@ logger.info(seedStylePresets(), 'style presets seeded');
 const { ensureWorkspace } = await import('./modules/agents/workspace/copy');
 logger.info(ensureWorkspace(), 'workspace ready');
 
+const { checkAgentToolScopes } = await import('./modules/agents/tools');
+checkAgentToolScopes();
+
 // The probe can take seconds on a cold binary, so it only warns and never delays startup.
 const { ffmpegAvailable, ffmpegBin, killRunning } = await import('./lib/ffmpeg');
 void ffmpegAvailable().then((available) => {

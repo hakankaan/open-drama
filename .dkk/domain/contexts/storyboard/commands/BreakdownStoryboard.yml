@@ -15,5 +15,5 @@ preconditions:
   - Assets have been extracted (bindings need candidates)
 rejections:
   - Episode has no script
-  - The script is being rewritten (a running RewriteScript job)
+  - The script is being rewritten or written (a running RewriteScript or WriteEpisodeScript job)
   - The episode's target length cannot be met by any storyboard of its video model's shot lengths

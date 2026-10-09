@@ -6,7 +6,7 @@ import { characters, episodeCharacters, episodeProps, episodeScenes, films, gene
 import { conflict, precondition } from '../../../http/errors';
 import { logger } from '../../../http/logger';
 import { getEpisodeJobs, runJob } from '../../jobs/run-job';
-import { getEpisodeRow } from '../../production/episodes';
+import { assertScriptFree, getEpisodeRow } from '../../production/episodes';
 import { liveShotRows, purgeParkedShots, restoreParkedShots } from '../../storyboard/service';
 import { runAgentUntilDone } from '../runtime/run-agent';
 import { breakdownFinished, forgetBreakdown, trackBreakdownTarget } from '../tools/storyboard';
@@ -48,7 +48,7 @@ export async function startBreakdown(episodeId: number, opts: z.input<typeof Tex
     // A running breakdown is returned below; otherwise the script must be settled (checked first: while it is being
     // rewritten, nothing else about the episode is worth reporting), present and extracted, and nothing may still be
     // writing to the shots the breakdown will replace.
-    if (jobs.rewrite?.status === 'running') throw conflict('The script is being rewritten; break down once it is saved');
+    assertScriptFree(ep.id, 'break down once it is saved');
     if (!ep.scriptContent?.trim()) throw precondition('Finish the script (rewrite or skip) before breaking it into shots');
     if (!hasAssetCandidates(ep.id)) throw precondition('Extract or add the episode’s assets before breaking it into shots');
     if (jobs.videoPromptBatch?.status === 'running' || promptRunsInFlight(ep.id)) {

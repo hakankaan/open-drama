@@ -1,0 +1,18 @@
+name: SaveOutline
+description: >-
+  Persist the outline produced by the story writer (its save_outline tool). The creator's own edit of the outline goes
+  through UpdateDrama.
+fields:
+  - name: dramaId
+    type: ID
+  - name: outline
+    type: string
+    description: Markdown, 200 to 20000 characters
+actor: AgentRuntime
+handled_by: Drama
+rejections:
+  - Outline shorter than 200 characters
+  - Outline longer than 20000 characters
+  - Called outside an outline job
+adr_refs:
+  - adr-0015

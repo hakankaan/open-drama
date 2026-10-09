@@ -9,25 +9,16 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Textarea } from '@/components/ui/input';
 import { useToastError } from '@/lib/errors';
+import { useServerDraft } from '@/lib/use-server-draft';
 import { textOverride, useModelPicks } from '../../configuration/model-picks';
-import { useEpisodeJobs, useSkipRewrite, useStartRecap, useStartRewrite, useUpdateEpisode } from '../api';
-
-/** An editable copy of a server field that follows server changes but never drops text typed during a save. */
-function useDraft(serverValue: string) {
-  const [draft, setDraft] = useState(serverValue);
-  const [base, setBase] = useState(serverValue);
-  if (base !== serverValue) {
-    setBase(serverValue);
-    if (draft === base) setDraft(serverValue);
-  }
-  return [draft, setDraft, draft !== serverValue] as const;
-}
+import { useEpisodeJobs, useSkipRewrite, useStartRecap, useStartRewrite, useStartWrite, useUpdateEpisode } from '../api';
+import { EarlierRecaps } from '../earlier-recaps';
 
 export function RawContentPanel({ episode, onNext }: { episode: EpisodeView; onNext: () => void }) {
   const t = useTranslations('studio.script');
   const toastError = useToastError();
   const update = useUpdateEpisode();
-  const [draft, setDraft, dirty] = useDraft(episode.content);
+  const [draft, setDraft, dirty] = useServerDraft(episode.content);
 
   const save = async () => {
     try {
@@ -67,41 +58,38 @@ export function RawContentPanel({ episode, onNext }: { episode: EpisodeView; onN
 }
 
 /** How many of the earlier episodes' recaps the agents will get: the studio names the gaps before a rewrite. */
-function EarlierRecaps({ drama, episode }: { drama: DramaDetail; episode: EpisodeView }) {
-  const t = useTranslations('studio.script.recap');
-  const earlier = drama.episodes.filter((e) => e.episodeNumber < episode.episodeNumber);
-  if (!drama.serial || earlier.length === 0) return null;
-  const ready = earlier.filter((e) => e.hasRecap && !e.recapStale).length;
-  const stale = earlier.filter((e) => e.hasRecap && e.recapStale).length;
-  const missing = earlier.length - ready - stale;
-  return (
-    <p className="max-w-lg text-sm text-muted">
-      {ready === earlier.length ? t('allReady', { n: earlier.length }) : t('earlier', { ready, n: earlier.length, stale, missing })}
-    </p>
-  );
-}
+type ScriptAgent = 'rewrite' | 'write';
 
+/**
+ * The script stage: the rewriter turns raw content into the script, the episode writer expands a beat sheet into
+ * one (adr-0015). The script has one agent at a time, so one running state covers both and the API refuses the other.
+ */
 export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; drama: DramaDetail; onRaw: () => void }) {
   const t = useTranslations('studio.script');
   const tc = useTranslations('common');
   const toastError = useToastError();
   const { picks } = useModelPicks();
   const jobs = useEpisodeJobs(episode.id);
-  const start = useStartRewrite(episode.id);
+  const start = { rewrite: useStartRewrite(episode.id), write: useStartWrite(episode.id) };
   const skip = useSkipRewrite();
   const update = useUpdateEpisode();
-  const [draft, setDraft, dirty] = useDraft(episode.scriptContent ?? '');
-  const [confirmAgain, setConfirmAgain] = useState(false);
+  const [draft, setDraft, dirty] = useServerDraft(episode.scriptContent ?? '');
+  const [confirm, setConfirm] = useState<ScriptAgent | null>(null);
 
-  const job = jobs.data?.rewrite ?? null;
-  const running = job?.status === 'running';
+  const agentJobs = { rewrite: jobs.data?.rewrite ?? null, write: jobs.data?.write ?? null };
+  const running = (['rewrite', 'write'] as const).find((k) => agentJobs[k]?.status === 'running') ?? null;
+  // The more recent of the two jobs is the one whose failure is worth showing.
+  const latest = (['rewrite', 'write'] as const)
+    .filter((k) => agentJobs[k])
+    .sort((a, b) => agentJobs[b]!.id - agentJobs[a]!.id)[0];
+  const failedLast = latest !== undefined && agentJobs[latest]?.status === 'failed' && !running ? latest : null;
+  const failedError = failedLast ? (agentJobs[failedLast]?.error ?? '') : '';
   const hasScript = !!episode.scriptContent?.trim();
-  const failedLast = job?.status === 'failed' && !running;
 
-  const rewrite = async () => {
-    setConfirmAgain(false);
+  const run = async (kind: ScriptAgent) => {
+    setConfirm(null);
     try {
-      await start.mutateAsync(textOverride(picks));
+      await start[kind].mutateAsync(textOverride(picks));
     } catch (err) {
       toastError(err);
     }
@@ -131,9 +119,10 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
   }
 
   if (running) {
+    const body = running === 'write' ? t('expanding') : t('running');
     return (
-      <Empty title={t('rewriteTitle')} body={t('running')}>
-        <Loader2 className="h-6 w-6 animate-spin text-accent" aria-label={t('running')} />
+      <Empty title={t('rewriteTitle')} body={body}>
+        <Loader2 className="h-6 w-6 animate-spin text-accent" aria-label={body} />
       </Empty>
     );
   }
@@ -141,17 +130,21 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
   if (!hasScript) {
     return (
       <Empty title={t('rewriteTitle')} body={failedLast ? undefined : t('rewriteBody')}>
-        <EarlierRecaps drama={drama} episode={episode} />
+        <EarlierRecaps drama={drama} before={episode.episodeNumber} />
         {failedLast ? (
           <p className="flex max-w-lg items-start gap-2 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger" role="alert">
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <span>{t('failed', { error: job?.error ?? '' })}</span>
+            <span>{failedLast === 'write' ? t('expandFailed', { error: failedError }) : t('failed', { error: failedError })}</span>
           </p>
         ) : null}
-        <div className="flex gap-2">
-          <Button variant="primary" onClick={rewrite} loading={start.isPending}>
-            {failedLast ? <RotateCcw className="h-4 w-4" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
-            {failedLast ? tc('retry') : t('start')}
+        <div className="flex flex-wrap gap-2">
+          <Button variant="primary" onClick={() => run('rewrite')} loading={start.rewrite.isPending}>
+            {failedLast === 'rewrite' ? <RotateCcw className="h-4 w-4" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
+            {failedLast === 'rewrite' ? tc('retry') : t('start')}
+          </Button>
+          <Button onClick={() => run('write')} loading={start.write.isPending}>
+            {failedLast === 'write' ? <RotateCcw className="h-4 w-4" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
+            {failedLast === 'write' ? tc('retry') : t('expand')}
           </Button>
           <Button onClick={doSkip} loading={skip.isPending}>
             {t('skip')}
@@ -171,16 +164,20 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
           <Button size="sm" onClick={save} loading={update.isPending} disabled={!dirty}>
             {t('save')}
           </Button>
-          <Button size="sm" variant="quiet" onClick={() => setConfirmAgain(true)} loading={start.isPending}>
+          <Button size="sm" variant="quiet" onClick={() => setConfirm('rewrite')} loading={start.rewrite.isPending}>
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
             {t('again')}
+          </Button>
+          <Button size="sm" variant="quiet" onClick={() => setConfirm('write')} loading={start.write.isPending}>
+            <Sparkles className="h-3.5 w-3.5" aria-hidden />
+            {t('expandAgain')}
           </Button>
         </div>
       </div>
       {failedLast ? (
         <p className="flex items-start gap-2 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger" role="alert">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <span>{t('failedKept', { error: job?.error ?? '' })}</span>
+          <span>{failedLast === 'write' ? t('expandFailedKept', { error: failedError }) : t('failedKept', { error: failedError })}</span>
         </p>
       ) : null}
       <Textarea
@@ -191,12 +188,12 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
       />
       {drama.serial ? <RecapCard episode={episode} jobs={jobs.data} /> : null}
       <ConfirmDialog
-        open={confirmAgain}
-        onOpenChange={setConfirmAgain}
-        title={t('againTitle')}
-        description={t('againBody')}
-        confirmLabel={t('again')}
-        onConfirm={rewrite}
+        open={confirm !== null}
+        onOpenChange={(o) => !o && setConfirm(null)}
+        title={confirm === 'write' ? t('expandAgainTitle') : t('againTitle')}
+        description={confirm === 'write' ? t('expandAgainBody') : t('againBody')}
+        confirmLabel={confirm === 'write' ? t('expandAgain') : t('again')}
+        onConfirm={() => confirm && run(confirm)}
         danger={false}
       />
     </section>
@@ -214,7 +211,7 @@ function RecapCard({ episode, jobs }: { episode: EpisodeView; jobs: EpisodeJobs 
   const { picks } = useModelPicks();
   const start = useStartRecap(episode.id);
   const update = useUpdateEpisode();
-  const [draft, setDraft, dirty] = useDraft(episode.recap);
+  const [draft, setDraft, dirty] = useServerDraft(episode.recap);
   const job = jobs?.recap ?? null;
   const running = job?.status === 'running';
   const hasRecap = episode.recap.trim().length > 0;
