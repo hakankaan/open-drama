@@ -100,6 +100,16 @@ export function clampDuration(caps: VideoProviderCaps, seconds: number): number 
   });
 }
 
+/**
+ * How far an episode's shots, as the model renders them, may add up from its target length: a second, or half the
+ * shortest length of a model that renders only fixed lengths (whose sums cannot hit every target).
+ */
+export function targetTolerance(caps: VideoProviderCaps): number {
+  const [min, max] = caps.durationRange;
+  const fixed = caps.durations?.length ? caps.durations : min === max ? [min] : null;
+  return fixed ? Math.max(1, Math.ceil(Math.min(...fixed) / 2)) : 1;
+}
+
 /** The tier a model renders for a requested resolution: the highest it offers up to the request, else its lowest. */
 export function fitResolution(caps: VideoProviderCaps, requested: Resolution): Resolution {
   const tiers = Resolution.options.filter((r) => caps.resolutions.includes(r));

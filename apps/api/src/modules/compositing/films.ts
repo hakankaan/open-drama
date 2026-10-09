@@ -6,7 +6,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { Film, MergeShots, MergeStarted } from '@open-drama/contracts';
 import { db } from '../../db/client';
-import { films } from '../../db/schema';
+import { films, generationTasks } from '../../db/schema';
 import { nowIso } from '../../db/schema/columns';
 import { env } from '../../env';
 import { conflict, invalid, precondition } from '../../http/errors';
@@ -17,7 +17,7 @@ import { deriveRenditions } from '../media/store';
 import { attachEpisodeFilm, getEpisodeRow } from '../production/episodes';
 import { touchDrama } from '../production/dramas';
 import { assertNoBreakdown, liveShotRows } from '../storyboard/service';
-import { ENCODER, renderFilm } from './render';
+import { ENCODER, renderFilm, type FilmClip } from './render';
 
 type FilmRow = typeof films.$inferSelect;
 
@@ -36,6 +36,28 @@ export function latestFilm(episodeId: number): Film | null {
   getEpisodeRow(episodeId);
   const row = db.select().from(films).where(eq(films.episodeId, episodeId)).orderBy(desc(films.id)).get();
   return row ? toFilm(row) : null;
+}
+
+/**
+ * The length a shot's video was generated at. Providers return a few frames more than asked (9.056 s for 9 s), which
+ * would add up across the film; null when the video's task is not found.
+ */
+function requestedSeconds(shotId: number, videoPath: string): number | null {
+  const task = db
+    .select({ params: generationTasks.params })
+    .from(generationTasks)
+    .where(
+      and(
+        eq(generationTasks.shotId, shotId),
+        eq(generationTasks.type, 'video'),
+        eq(generationTasks.status, 'completed'),
+        eq(generationTasks.localPath, videoPath),
+      ),
+    )
+    .orderBy(desc(generationTasks.id))
+    .get();
+  const seconds = task?.params.durationSeconds;
+  return typeof seconds === 'number' && seconds > 0 ? seconds : null;
 }
 
 /**
@@ -86,20 +108,24 @@ export async function mergeShots(episodeId: number, input: z.output<typeof Merge
       .get().id;
   });
   touchDrama(ep.dramaId);
-  void render(filmId, ep.id, clips.map((s) => ({ shotNumber: s.shotNumber, path: s.videoPath! })))
+  const planned = clips.map((s) => ({ shotNumber: s.shotNumber, path: s.videoPath!, requested: requestedSeconds(s.id, s.videoPath!) }));
+  void render(filmId, ep.id, planned)
     .catch((err) => failMerge(filmId, err))
     .catch((err) => logger.error({ filmId, err: (err as Error).message }, 'merge crashed'));
   return { filmId };
 }
 
-/** RunFfmpegConcat → CompleteMerge: probe, render, poster (DerivePosterForFilm), then attach (PublishFilmToEpisode). */
-async function render(filmId: number, episodeId: number, clips: { shotNumber: number; path: string }[]) {
-  const inputs = [];
+/**
+ * RunFfmpegConcat → CompleteMerge: probe, render, poster (DerivePosterForFilm), then attach (PublishFilmToEpisode).
+ * Each clip plays for the length it was generated at, or its own length when shorter.
+ */
+async function render(filmId: number, episodeId: number, clips: { shotNumber: number; path: string; requested: number | null }[]) {
+  const inputs: FilmClip[] = [];
   for (const clip of clips) {
     const absPath = toAbsolute(clip.path);
     const info = await probeClip(absPath);
     if (!info) throw new Error(`The video of shot #${clip.shotNumber} is not a readable video file`);
-    inputs.push({ absPath, info });
+    inputs.push({ absPath, info, seconds: Math.min(info.durationSeconds, clip.requested ?? Infinity) });
   }
   // Rendered under temp/ (cleared at boot) and moved into merged/ only when complete, so an interrupted render never
   // leaves a partial film behind.

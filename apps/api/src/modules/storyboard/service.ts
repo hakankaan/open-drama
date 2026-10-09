@@ -124,13 +124,21 @@ function assertBindable(tx: Tx, dramaId: number, input: BindingInput) {
   check(props, input.propIds ?? [], 'prop');
 }
 
-/** Writes the given bindings of one shot; binding an asset links it to the episode. Omitted kinds are kept. */
-function writeBindings(tx: Tx, shotId: number, episodeId: number, input: BindingInput) {
+const sameIds = (a: number[], b: number[]) => a.length === b.length && a.every((id) => b.includes(id));
+
+/**
+ * Writes the given bindings of one shot; binding an asset links it to the episode. Omitted kinds are kept. Returns
+ * whether the bound characters or props changed (the scene is a shot field).
+ */
+function writeBindings(tx: Tx, shotId: number, episodeId: number, input: BindingInput): boolean {
+  let changed = false;
   if (input.sceneId != null) {
     tx.insert(episodeScenes).values({ episodeId, sceneId: input.sceneId }).onConflictDoNothing().run();
   }
   if (input.characterIds) {
     const list = [...new Set(input.characterIds)];
+    const before = tx.select({ id: shotCharacters.characterId }).from(shotCharacters).where(eq(shotCharacters.shotId, shotId)).all();
+    changed ||= !sameIds(before.map((r) => r.id), list);
     tx.delete(shotCharacters).where(eq(shotCharacters.shotId, shotId)).run();
     list.forEach((characterId, sortOrder) => {
       tx.insert(shotCharacters).values({ shotId, characterId, sortOrder }).run();
@@ -139,12 +147,49 @@ function writeBindings(tx: Tx, shotId: number, episodeId: number, input: Binding
   }
   if (input.propIds) {
     const list = [...new Set(input.propIds)];
+    const before = tx.select({ id: shotProps.propId }).from(shotProps).where(eq(shotProps.shotId, shotId)).all();
+    changed ||= !sameIds(before.map((r) => r.id), list);
     tx.delete(shotProps).where(eq(shotProps.shotId, shotId)).run();
     list.forEach((propId, sortOrder) => {
       tx.insert(shotProps).values({ shotId, propId, sortOrder }).run();
       tx.insert(episodeProps).values({ episodeId, propId }).onConflictDoNothing().run();
     });
   }
+  return changed;
+}
+
+/** The shot fields a video prompt is written from, besides the bound characters and props. */
+const PROMPT_SOURCES = ['durationSeconds', 'description', 'atmosphere', 'shotType', 'angle', 'movement', 'sceneId'] as const;
+
+/** Changes to each shot's prompt sources since the server started; a prompt run compares them (watchPromptSources). */
+const sourceEdits = new Map<number, number>();
+
+/**
+ * The videoPrompt rule (the assets' final-prompt rule): writing the prompt clears the stale flag; otherwise a change
+ * to a field it was written from keeps the prompt and marks it stale, since its per-second timings and mentions may
+ * no longer fit the shot. Every source change is counted for watchPromptSources.
+ */
+function promptStaleness(
+  current: ShotRow,
+  input: Partial<Pick<ShotRow, 'videoPrompt' | (typeof PROMPT_SOURCES)[number]>>,
+  rebound: boolean,
+): { videoPromptStale?: boolean } {
+  const changed = rebound || PROMPT_SOURCES.some((k) => input[k] !== undefined && input[k] !== current[k]);
+  if (changed) sourceEdits.set(current.id, (sourceEdits.get(current.id) ?? 0) + 1);
+  if (input.videoPrompt !== undefined) return { videoPromptStale: false };
+  return changed && current.videoPrompt.trim() ? { videoPromptStale: true } : {};
+}
+
+/**
+ * For a prompt written by an agent run: call before the run, and the returned check once the prompt is saved. A
+ * source the creator changed meanwhile (even back to what it was) marks the new prompt stale, since it may have been
+ * written from the shot as it was.
+ */
+export function watchPromptSources(shotId: number): () => void {
+  const before = sourceEdits.get(shotId) ?? 0;
+  return () => {
+    if ((sourceEdits.get(shotId) ?? 0) !== before) db.update(shots).set({ videoPromptStale: true }).where(eq(shots.id, shotId)).run();
+  };
 }
 
 /** The episode's duration is the sum of its live shot durations. */
@@ -252,9 +297,10 @@ export function writeShotUpdate(id: number, input: z.output<typeof UpdateShot>):
   }
   db.transaction((tx) => {
     assertBindable(tx, ep.dramaId, { sceneId: fields.sceneId, characterIds, propIds });
+    const rebound = writeBindings(tx, id, ep.id, { sceneId: fields.sceneId, characterIds, propIds });
     const video = videoPath !== undefined ? { videoPath, videoDurationSeconds } : {};
-    tx.update(shots).set({ ...fields, ...video, updatedAt: nowIso() }).where(eq(shots.id, id)).run();
-    writeBindings(tx, id, ep.id, { sceneId: fields.sceneId, characterIds, propIds });
+    const stale = promptStaleness(current, fields, rebound);
+    tx.update(shots).set({ ...fields, ...video, ...stale, updatedAt: nowIso() }).where(eq(shots.id, id)).run();
     if (fields.durationSeconds !== undefined) recomputeDuration(tx, ep.id);
   });
   touchDrama(ep.dramaId);
@@ -323,16 +369,19 @@ export function saveShots(
     }
     const numbers: number[] = [];
     for (const { sceneId, characterIds, propIds, shotNumber, ...fields } of batch.shots) {
-      const existing = tx.select({ id: shots.id }).from(shots).where(and(liveOf(episodeId), eq(shots.shotNumber, shotNumber))).get();
+      const existing = tx.select().from(shots).where(and(liveOf(episodeId), eq(shots.shotNumber, shotNumber))).get();
       const values = { ...fields, ...(sceneId !== undefined ? { sceneId } : {}) };
-      const shotId = existing
-        ? (tx.update(shots).set(values).where(eq(shots.id, existing.id)).run(), existing.id)
-        : tx
-            .insert(shots)
-            .values({ ...values, episodeId, shotNumber, createdByJobId: jobId })
-            .returning({ id: shots.id })
-            .get().id;
-      writeBindings(tx, shotId, episodeId, { sceneId, characterIds, propIds });
+      if (existing) {
+        const rebound = writeBindings(tx, existing.id, episodeId, { sceneId, characterIds, propIds });
+        tx.update(shots).set({ ...values, ...promptStaleness(existing, values, rebound) }).where(eq(shots.id, existing.id)).run();
+      } else {
+        const shotId = tx
+          .insert(shots)
+          .values({ ...values, episodeId, shotNumber, createdByJobId: jobId })
+          .returning({ id: shots.id })
+          .get().id;
+        writeBindings(tx, shotId, episodeId, { sceneId, characterIds, propIds });
+      }
       numbers.push(shotNumber);
     }
     recomputeDuration(tx, episodeId);

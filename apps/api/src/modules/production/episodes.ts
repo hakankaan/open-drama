@@ -81,6 +81,7 @@ export function createEpisode(input: z.output<typeof CreateEpisode>): EpisodeVie
         episodeNumber: number,
         title: input.title?.trim() || `Episode ${number}`,
         resolution: input.resolution,
+        targetDurationSeconds: input.targetDurationSeconds ?? null,
         imageServiceId: image!.row.id,
         videoServiceId: video!.row.id,
       })
@@ -127,7 +128,8 @@ export function writeRecap(id: number, text: string, forRevision?: number, tx: D
 }
 
 /**
- * Field-based dispatch of UpdateEpisodeContent, SaveScript, SaveRecap, SetEpisodeResolution and SetEpisodeStatus.
+ * Field-based dispatch of UpdateEpisodeContent, SaveScript, SaveRecap, SetEpisodeResolution, SetEpisodeTargetDuration
+ * and SetEpisodeStatus.
  * A patch carrying both the script and the recap writes the script first, so the recap is pinned to the new revision.
  * The script and the recap are refused while their agent is writing them: the agent's save would silently replace
  * the creator's text (the same rule as creator shot commands during a breakdown).

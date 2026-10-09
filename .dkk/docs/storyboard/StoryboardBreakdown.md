@@ -16,6 +16,8 @@ A running breakdown job for an episode. Wraps the storyboard-breaker agent run s
 - The first SaveShots batch of a breakdown parks the episode's existing shots (they are tagged with the job id, not deleted) and later batches append; when the job completes the parked shots are purged, when it fails or is interrupted they are restored, so a failed re-breakdown never loses generated videos.
 - A restart marks a running breakdown as failed and restores parked shots.
 - The job succeeds only when the agent saved its last batch marked final; a run that stops early fails and restores the parked shots, so a half-saved storyboard never replaces a complete one. Success (purging the parked shots) and failure (removing the shots the job wrote, unparking the old ones) are recorded atomically with the job status.
+- With an episode target length, the agent is told the length and a shot count, and the final batch is refused until the shots' durations, as the episode's video model renders them, add up to the target within a tolerance (a second, or half the model's shortest length when it renders only fixed lengths). The target is fixed when the job starts, and a target no storyboard of the model's lengths can meet is refused before it starts.
+- Once the final batch is accepted, the job writes no more shots, so nothing undoes the checks it passed.
 - While it runs, the creator cannot create, edit, delete or generate for shots of the episode; it cannot start while a video-prompt batch runs or while any shot video of the episode is still generating.
 
 

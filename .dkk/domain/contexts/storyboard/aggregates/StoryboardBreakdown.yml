@@ -19,6 +19,13 @@ invariants:
     the parked shots, so a half-saved storyboard never replaces a complete one. Success (purging the parked shots) and
     failure (removing the shots the job wrote, unparking the old ones) are recorded atomically with the job status.
   - >-
+    With an episode target length, the agent is told the length and a shot count, and the final batch is refused until
+    the shots' durations, as the episode's video model renders them, add up to the target within a tolerance (a second,
+    or half the model's shortest length when it renders only fixed lengths). The target is fixed when the job starts,
+    and a target no storyboard of the model's lengths can meet is refused before it starts.
+  - >-
+    Once the final batch is accepted, the job writes no more shots, so nothing undoes the checks it passed.
+  - >-
     While it runs, the creator cannot create, edit, delete or generate for shots of the episode; it cannot start while
     a video-prompt batch runs or while any shot video of the episode is still generating.
 adr_refs:

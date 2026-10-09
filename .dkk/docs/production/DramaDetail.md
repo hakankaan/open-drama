@@ -32,6 +32,7 @@ The project page — the drama (with its serial flag) with its episodes (number,
 | Subscribes to | `ScriptRewriteSkipped` |
 | Subscribes to | `RecapSaved` |
 | Subscribes to | `EpisodeResolutionChanged` |
+| Subscribes to | `EpisodeTargetDurationChanged` |
 | Subscribes to | `EpisodeStatusChanged` |
 | Subscribes to | `EpisodeFilmAttached` |
 | Subscribes to | `EpisodeDeleted` |

@@ -1,6 +1,6 @@
 # Aggregate — a consistency boundary that handles commands and emits events.
 name: Shot
-description: One storyboard segment of an episode. Owns its description, atmosphere, duration, bindings, prompts (image and video), reference media and the current video plus its generation history.
+description: One storyboard segment of an episode. Owns its description, atmosphere, duration, bindings, prompts (image and video) with the video prompt's staleness, reference media and the current video plus its generation history.
 handles:
   commands:
     - SaveShots
@@ -22,7 +22,13 @@ emits:
 invariants:
   - shotNumber is unique within the episode; batch saves upsert by shotNumber so retries never duplicate.
   - sceneId, characterIds and propIds must belong to the drama; binding an asset not yet linked to the episode links it.
-  - durationSeconds is between 2 and 30 (agents target 8-15); the episode's derived duration is the sum of live shot durations.
+  - durationSeconds is between 2 and 30 (agents target 8-15, within what the video model renders); the episode's derived duration is the sum of live shot durations.
   - A video request needs at least one reference asset or a non-empty video prompt.
+  - >-
+    videoPromptStale is set when a field the video prompt was written from changes after it was written (duration,
+    description, atmosphere, framing, scene or bound characters and props), since the prompt carries per-second
+    timings; any write of the video prompt clears it, except a generated prompt whose sources changed while it was
+    being written, which stays stale. A stale prompt is not blocked from generation; the video-prompt batch picks it up
+    by default.
   - The current video is the most recent successful generation unless the creator picks another from history; the task behind the current video cannot be deleted from history.
   - Reference images beyond the video provider's limit are left out (bound assets first) and reported to the creator.

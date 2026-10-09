@@ -30,6 +30,10 @@ function toolResults(options: CallOptions): Map<string, unknown> {
   return results;
 }
 
+/** How many results the run has had from one tool. */
+const resultCount = (options: CallOptions, tool: string) =>
+  options.prompt.flatMap((m) => (m.role === 'tool' ? m.content : [])).filter((p) => p.type === 'tool-result' && p.toolName === tool).length;
+
 function userText(options: CallOptions): string {
   return options.prompt
     .filter((m) => m.role === 'user')
@@ -112,22 +116,33 @@ interface ContextAsset {
   location?: string;
 }
 
-/** Splits a script into story paragraphs (headings dropped) and groups them into shots of up to three sub-shots. */
-function stubShots(script: string, chars: ContextAsset[], scenesList: ContextAsset[], propsList: ContextAsset[]): Json[] {
+/** One timed line per sub-shot, spreading the shot's length over them ("0-4s: …"). */
+function timedLines(blocks: string[], seconds: number): string[] {
+  const span = seconds / blocks.length;
+  return blocks.map((b, i) => `${Math.round(i * span)}-${Math.round((i + 1) * span)}s: ${b.slice(0, 160)}`);
+}
+
+/**
+ * Splits a script into story paragraphs (headings dropped) and groups them into shots. Without a target length a shot
+ * holds up to three paragraphs; with one, the paragraphs are spread over as many 8-15 s shots as fit it.
+ */
+function stubShots(script: string, target: number | null, chars: ContextAsset[], scenesList: ContextAsset[], propsList: ContextAsset[]): Json[] {
   const paragraphs = script
     .split(/\n\s*\n/)
     .map((p) => p.replace(/\s+/g, ' ').trim())
     .filter((p) => p && !p.startsWith('#'));
-  const groups: string[][] = [];
-  for (let i = 0; i < paragraphs.length && groups.length < 8; i += 3) groups.push(paragraphs.slice(i, i + 3));
+  const natural = Math.max(1, Math.ceil(paragraphs.length / 3));
+  const count = target ? Math.max(Math.ceil(target / 15), Math.min(natural, Math.floor(target / 8)), 1) : natural;
+  const groups = Array.from({ length: count }, (_, i) =>
+    paragraphs.slice(Math.floor((i * paragraphs.length) / count), Math.floor(((i + 1) * paragraphs.length) / count)),
+  ).map((g) => (g.length > 0 ? g : ['The moment holds.']));
   const scene = scenesList[0];
   return groups.map((group, index) => {
     const text = group.join(' ');
     const seen = chars.filter((c) => c.name && text.includes(c.name));
     const shown = propsList.filter((p) => p.name && text.toLowerCase().includes(p.name.toLowerCase()));
-    const seconds = Math.min(15, Math.max(8, group.length * 4));
+    const seconds = target ? Math.floor(target / count) + (index < target % count ? 1 : 0) : Math.min(15, Math.max(8, group.length * 4));
     const header = [...seen.map((c) => `@[${c.name}]`), ...shown.map((p) => `@[${p.name}]`)].join(' and ');
-    const lines = group.map((p, i) => `${i * 3}-${i * 3 + 3}s: ${p.slice(0, 160)}`);
     return {
       shotNumber: index + 1,
       title: text.split(' ').slice(0, 6).join(' '),
@@ -140,12 +155,12 @@ function stubShots(script: string, chars: ContextAsset[], scenesList: ContextAss
       propIds: shown.map((p) => p.id),
       description: group.map((p, i) => `[Shot ${i + 1}] ${p}`).join('\n'),
       atmosphere: 'natural light, quiet ambience',
-      videoPrompt: [`${header || 'The scene'}${scene?.location ? ` at @[${scene.location}]` : ''}.`, ...lines].join('\n'),
+      videoPrompt: [`${header || 'The scene'}${scene?.location ? ` at @[${scene.location}]` : ''}.`, ...timedLines(group, seconds)].join('\n'),
     };
   });
 }
 
-/** A video prompt from a shot's context: header of mentionable names, then one 3-second line per sub-shot. */
+/** A video prompt from a shot's context: header of mentionable names, then one timed line per sub-shot. */
 function stubVideoPrompt(read: { shot?: Json; mentionable?: { scene?: string | null; characters?: string[]; props?: string[] } } | null): string {
   const shot = read?.shot ?? {};
   const m = read?.mentionable ?? {};
@@ -155,8 +170,8 @@ function stubVideoPrompt(read: { shot?: Json; mentionable?: { scene?: string | n
     .split(/\[Shot \d+\]/)
     .map((b) => b.trim())
     .filter(Boolean);
-  const lines = (blocks.length ? blocks : [String(shot.title ?? 'The shot plays out.')]).map((b, i) => `${i * 3}-${i * 3 + 3}s: ${b.slice(0, 160)}`);
-  return [header, ...lines].join('\n');
+  const seconds = Number(shot.durationSeconds) || 3 * Math.max(1, blocks.length);
+  return [header, ...timedLines(blocks.length ? blocks : [String(shot.title ?? 'The shot plays out.')], seconds)].join('\n');
 }
 
 const firstId = (text: string) => Number(/\(id (\d+)\)/.exec(text)?.[1] ?? /\bid[:= ]+(\d+)/i.exec(text)?.[1] ?? 0);
@@ -202,11 +217,19 @@ function plan(options: CallOptions): Step {
 
   if (tools.has('save_shots')) {
     if (!done.has('read_storyboard_context')) return next('read_storyboard_context');
-    if (!done.has('save_shots')) {
-      const ctx = (done.get('read_storyboard_context') ?? {}) as { script?: string; characters?: ContextAsset[]; scenes?: ContextAsset[]; props?: ContextAsset[] };
-      const shots = stubShots(ctx.script ?? '', ctx.characters ?? [], ctx.scenes ?? [], ctx.props ?? []);
+    const ctx = (done.get('read_storyboard_context') ?? {}) as {
+      script?: string;
+      targetDurationSeconds?: number | null;
+      characters?: ContextAsset[];
+      scenes?: ContextAsset[];
+      props?: ContextAsset[];
+    };
+    const shots = stubShots(ctx.script ?? '', ctx.targetDurationSeconds ?? null, ctx.characters ?? [], ctx.scenes ?? [], ctx.props ?? []);
+    const batch = resultCount(options, 'save_shots');
+    if (batch * 8 < shots.length) {
       // A script containing #partial never marks its last batch, to exercise the unfinished-breakdown path.
-      return next('save_shots', { replaceExisting: true, final: !(ctx.script ?? '').includes('#partial'), shots });
+      const last = (batch + 1) * 8 >= shots.length && !(ctx.script ?? '').includes('#partial');
+      return next('save_shots', { replaceExisting: batch === 0, final: last, shots: shots.slice(batch * 8, batch * 8 + 8) });
     }
     return { text: 'Saved the storyboard.' };
   }

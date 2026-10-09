@@ -68,7 +68,7 @@ Left nav (220 px) with the six tabs; tab in the URL query so links deep-link.
 
 ### 4.4 Project page `/drama/[id]`
 - Header card: back, title, style tag, counts, "Edit project" (dialog: title, synopsis, the serial switch → `PATCH /dramas/:id`; style and frame shape stay as created), "Add episode".
-- Tabs: **Episodes** (cards with EP number, title, duration, "script ready" / "merged" tags, relative time, status menu, resolution menu 480p/720p/1080p, delete, "Open studio"; trailing "Add episode N" card; add dialog with optional title + resolution and the "locks current services" note; delete confirm) and **Asset library** from `GET /dramas/:id/assets` (segmented filter all/character/scene/prop, grouped cards with image/readiness badge/summary/final-prompt line with a "stale" tag/generate/upload, detail dialog with full field editing, final prompt generate/regenerate + textarea, upload, generate image, save; image viewer).
+- Tabs: **Episodes** (cards with EP number, title, duration, "script ready" / "merged" tags, relative time, status menu, resolution menu 480p/720p/1080p, delete, "Open studio"; trailing "Add episode N" card; add dialog with optional title + resolution + target length and the "locks current services" note; delete confirm) and **Asset library** from `GET /dramas/:id/assets` (segmented filter all/character/scene/prop, grouped cards with image/readiness badge/summary/final-prompt line with a "stale" tag/generate/upload, detail dialog with full field editing, final prompt generate/regenerate + textarea, upload, generate image, save; image viewer).
 - Asset generation from the library needs an episode for the prompt agent: when the drama has no episode, the Generate and Generate-prompt buttons are disabled with the tooltip "Create an episode first"; otherwise the first episode's id is used. Readiness comes from the card's latest image task; the library query polls while any card is generating.
 
 ### 4.5 Episode studio `/drama/[id]/episode/[n]`
@@ -170,7 +170,7 @@ apps/web/
 - Done when: an episode can be created and opened; uploading an image to a character flips its card to ready; with the stub image adapter (Plan 2 Phase E) generating an image shows generating then ready without a reload.
 
 ### Phase 4 — Studio shell + script stage (1–2 days)
-- Studio layout, top bar with model/resolution pickers, sidebar with derived states and marquee, panel persistence, script stage with rewrite job polling (running / failed / done) and skip.
+- Studio layout, top bar with model/resolution pickers and the target-length dialog, sidebar with derived states and marquee, panel persistence, script stage with rewrite job polling (running / failed / done) and skip.
 - Done when: pasting text and running the rewrite shows the running state and then the script; skipping persists and the rail shows Script done after a reload; a failed rewrite shows its error with Retry.
 
 ### Phase 5 — Assets stage (1–2 days)

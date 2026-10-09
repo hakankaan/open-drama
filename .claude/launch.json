@@ -1,0 +1,32 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "stub-preview",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "OPEN_DRAMA_DATA_DIR=data/preview OPEN_DRAMA_STUB_PROVIDERS=1 PORT=4300 WEB_PORT=3200 API_ORIGIN=http://localhost:4300 WEB_ORIGIN=http://localhost:3200 pnpm dev"
+      ],
+      "port": 3200
+    },
+    {
+      "name": "live",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "OPEN_DRAMA_DATA_DIR=data/live PORT=4400 WEB_PORT=3300 API_ORIGIN=http://localhost:4400 WEB_ORIGIN=http://localhost:3300 pnpm dev"
+      ],
+      "port": 3300
+    },
+    {
+      "name": "stub-api",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "OPEN_DRAMA_DATA_DIR=data/preview OPEN_DRAMA_STUB_PROVIDERS=1 PORT=4300 pnpm --filter @open-drama/api dev"
+      ],
+      "port": 4300
+    }
+  ]
+}

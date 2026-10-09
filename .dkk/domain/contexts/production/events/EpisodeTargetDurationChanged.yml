@@ -1,0 +1,10 @@
+# Domain event — something that happened in the domain.
+name: EpisodeTargetDurationChanged
+description: The episode's target length was set or cleared; later rewrites and breakdowns fit the new length.
+fields:
+  - name: episodeId
+    type: ID
+  - name: targetDurationSeconds
+    type: number
+    description: null when cleared
+raised_by: Episode

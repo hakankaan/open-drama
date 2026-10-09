@@ -24,6 +24,7 @@ import { VideoStage } from '../../storyboard/video-stage/video-stage';
 import { useVideoTarget } from '../../storyboard/use-video-target';
 import { useModelPicks } from '../../configuration/model-picks';
 import { useDramaDetail, useEpisode, usePipelineStatus, useUpdateEpisode } from '../api';
+import { EpisodeLengthButton } from '../episode-length';
 import { useSettleRefresh } from '../use-settle-refresh';
 import { RawContentPanel, RewritePanel } from './script-stage';
 import { StudioSidebar, deriveStages, type Panel } from './sidebar';
@@ -101,6 +102,7 @@ function TopBar({
             ))}
           </MenuContent>
         </Menu>
+        <EpisodeLengthButton episode={episode} />
         <TaskDrawer episodeId={episode.id} />
         <Tooltip content={t('help')}>
           <Button size="icon" variant="ghost" onClick={onHelp} aria-label={t('help')}>

@@ -16,6 +16,7 @@ Add the next episode to a drama. Assigns the next episode number, defaults the t
 | `dramaId` | `ID` | — |
 | `title` | `string` | Optional; defaults to "Episode N" |
 | `resolution` | `string` | 480p | 720p | 1080p (default 720p) |
+| `targetDurationSeconds` | `number` | Optional; how long the episode should run, 10-600 s (SetEpisodeTargetDuration) |
 | `imageServiceId` | `ID` | Optional explicit lock; defaults to the active image service |
 | `videoServiceId` | `ID` | Optional explicit lock; defaults to the active video service |
 

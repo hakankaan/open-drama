@@ -10,6 +10,9 @@ fields:
   - name: resolution
     type: string
     description: 480p | 720p | 1080p (default 720p)
+  - name: targetDurationSeconds
+    type: number
+    description: Optional; how long the episode should run, 10-600 s (SetEpisodeTargetDuration)
   - name: imageServiceId
     type: ID
     description: Optional explicit lock; defaults to the active image service

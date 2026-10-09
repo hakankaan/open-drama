@@ -9,6 +9,18 @@
     "retry": "Retry",
     "loading": "Loading…"
   },
+  "episodeLength": {
+    "field": "Target length (seconds)",
+    "hint": "Optional. The script rewrite and the shot breakdown fit the episode to it. Leave it empty to follow the script.",
+    "invalid": "Enter whole seconds from {min} to {max}, or leave it empty.",
+    "placeholder": "Follow the script",
+    "button": "Target length {seconds} s. Change it",
+    "buttonNone": "No target length. Set one",
+    "chip": "{seconds} s",
+    "chipNone": "Length",
+    "title": "Episode length",
+    "body": "A new length applies to the next rewrite or breakdown; the current script and shots stay as they are."
+  },
   "nav": {
     "label": "Main",
     "projects": "Projects",
@@ -574,6 +586,8 @@
       "breakdownFailedKept": "The last breakdown failed, so these shots were kept: {error}",
       "promptsFailed": "The last prompt batch failed: {error}",
       "summary": "{count, plural, one {# shot} other {# shots}} · {seconds} s",
+      "onTarget": "On target · {target} s",
+      "offTarget": "Runs {seconds} s · target {target} s",
       "generated": "{done} of {total} generated",
       "breakAgain": "Break again",
       "breakAgainTitle": "Break the script again?",
@@ -651,6 +665,7 @@
       "prompt": {
         "generate": "AI write",
         "regenerate": "AI rewrite",
+        "stale": "The shot changed after this prompt was written (length, description or references), so its timings may be off. AI rewrite it or edit it.",
         "placeholder": "Type @ to mention a bound character, scene or prop.",
         "picker": "Bound assets",
         "pickerEmpty": "Nothing bound matches.",

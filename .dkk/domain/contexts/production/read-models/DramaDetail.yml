@@ -23,6 +23,7 @@ subscribes_to:
   - ScriptRewriteSkipped
   - RecapSaved
   - EpisodeResolutionChanged
+  - EpisodeTargetDurationChanged
   - EpisodeStatusChanged
   - EpisodeFilmAttached
   - EpisodeDeleted

@@ -1,7 +1,7 @@
 name: Episode
 description: >-
   One episode of a drama. Holds the raw content and the formatted script with its revision, the recap for the writers of
-  later episodes, the locked image/video services and resolution, the production status and, once merged, the film.
+  later episodes, the locked image/video services and resolution, the target length, the production status and, once merged, the film.
 handles:
   commands:
     - CreateEpisode
@@ -10,6 +10,7 @@ handles:
     - SkipRewrite
     - SaveRecap
     - SetEpisodeResolution
+    - SetEpisodeTargetDuration
     - SetEpisodeStatus
     - AttachEpisodeFilm
     - DeleteEpisode
@@ -21,6 +22,7 @@ emits:
     - ScriptRewriteSkipped
     - RecapSaved
     - EpisodeResolutionChanged
+    - EpisodeTargetDurationChanged
     - EpisodeStatusChanged
     - EpisodeFilmAttached
     - EpisodeDeleted
@@ -32,6 +34,10 @@ invariants:
   - >-
     resolution is one of 480p, 720p or 1080p and applies to every video generated for the episode; adapters map it to
     the provider's nearest tier.
+  - >-
+    targetDurationSeconds is null (the storyboard follows the script) or a whole number of seconds from 10 to 600. The
+    script rewrite is told to write what fits it, and a breakdown is held to it (StoryboardBreakdown). durationSeconds
+    stays the sum of the live shots' durations.
   - >-
     status is one of draft, active or completed (the same vocabulary as Drama); completed is a manual mark set from the
     export stage and can be undone.

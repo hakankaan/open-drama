@@ -9,6 +9,18 @@
     "retry": "重试",
     "loading": "加载中…"
   },
+  "episodeLength": {
+    "field": "目标时长（秒）",
+    "hint": "选填。剧本改写和分镜拆分会按这个时长来安排。留空则按剧本内容决定时长。",
+    "invalid": "请输入 {min} 到 {max} 之间的整数秒，或留空。",
+    "placeholder": "按剧本决定",
+    "button": "目标时长 {seconds} 秒。更改",
+    "buttonNone": "未设目标时长。设置",
+    "chip": "{seconds} 秒",
+    "chipNone": "时长",
+    "title": "剧集时长",
+    "body": "新的时长从下一次改写或拆分开始生效，当前的剧本和分镜保持不变。"
+  },
   "nav": {
     "label": "主导航",
     "projects": "项目",
@@ -574,6 +586,8 @@
       "breakdownFailedKept": "上次拆分镜失败，已保留这些分镜：{error}",
       "promptsFailed": "上一批提示词生成失败：{error}",
       "summary": "{count, plural, other {# 个分镜}} · {seconds} 秒",
+      "onTarget": "符合目标 · {target} 秒",
+      "offTarget": "实际 {seconds} 秒 · 目标 {target} 秒",
       "generated": "已生成 {done}/{total}",
       "breakAgain": "重新拆分",
       "breakAgainTitle": "重新拆分剧本？",
@@ -651,6 +665,7 @@
       "prompt": {
         "generate": "AI 编写",
         "regenerate": "AI 重写",
+        "stale": "写完这条提示词后分镜又改过了（时长、描述或绑定素材），里面的时间点可能对不上。请用 AI 重写，或手动修改。",
         "placeholder": "输入 @ 可提及已绑定的角色、场景或道具。",
         "picker": "已绑定素材",
         "pickerEmpty": "没有匹配的已绑定素材。",

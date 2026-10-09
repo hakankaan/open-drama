@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, FileAudio, FileVideo, ImagePlus, Sparkles, Upload, X } from 'lucide-react';
+import { ArrowRight, FileAudio, FileVideo, ImagePlus, Sparkles, TriangleAlert, Upload, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import {
@@ -292,6 +292,12 @@ export function ShotEditor({
           placeholder={t('prompt.placeholder')}
           labels={{ picker: t('prompt.picker'), empty: t('prompt.pickerEmpty'), unbound: t('prompt.unbound') }}
         />
+        {shot.videoPromptStale ? (
+          <p className="flex items-start gap-2 rounded-md bg-warning-soft px-3 py-2 text-xs text-warning" role="status">
+            <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+            {t('prompt.stale')}
+          </p>
+        ) : null}
         <p className="text-xs text-muted">{t('prompt.hint')}</p>
         {mentionOptions.length === 0 ? <Tag tone="warning">{t('prompt.noBindings')}</Tag> : null}
       </Section>

@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { createdAt, id, json, updatedAt } from './columns';
+import { bool, createdAt, id, json, updatedAt } from './columns';
 import { characters, props, scenes } from './assets';
 import { episodes } from './production';
 
@@ -29,6 +29,8 @@ export const shots = sqliteTable(
     atmosphere: text().notNull().default(''),
     imagePrompt: text().notNull().default(''),
     videoPrompt: text().notNull().default(''),
+    // A field the video prompt was written from changed since (duration, description, bindings…).
+    videoPromptStale: bool().notNull().default(false),
     bgmPrompt: text().notNull().default(''),
     soundEffect: text().notNull().default(''),
     durationSeconds: real().notNull().default(10),

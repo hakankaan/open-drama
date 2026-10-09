@@ -8,7 +8,7 @@ import { ApiError, invalid, precondition } from '../../../http/errors';
 import { logger } from '../../../http/logger';
 import { getEpisodeJobs, runJob } from '../../jobs/run-job';
 import { getEpisodeRow } from '../../production/episodes';
-import { assertNoBreakdown, getShotRow, liveShotRows } from '../../storyboard/service';
+import { assertNoBreakdown, getShotRow, liveShotRows, watchPromptSources } from '../../storyboard/service';
 import { runAgentUntilSaved } from '../runtime/run-agent';
 import { videoModelLabel } from './video-model';
 
@@ -18,7 +18,8 @@ export const promptRunsInFlight = (episodeId: number) => (promptRuns.get(episode
 
 /**
  * GenerateShotVideoPrompt: the prompt generator writes one shot's video prompt and saves it through update_shot
- * (videoPrompt only). Succeeds only when a non-empty prompt was persisted.
+ * (videoPrompt only). Succeeds only when a non-empty prompt was persisted; one written while the creator changed the
+ * shot stays stale.
  */
 export async function generateShotVideoPrompt(
   shotId: number,
@@ -28,6 +29,7 @@ export async function generateShotVideoPrompt(
   const ep = getEpisodeRow(shot.episodeId);
   assertNoBreakdown(ep.id);
   const videoModel = videoModelLabel(ep.videoServiceId);
+  const checkSources = watchPromptSources(shotId);
   promptRuns.set(ep.id, (promptRuns.get(ep.id) ?? 0) + 1);
   try {
     await runAgentUntilSaved(
@@ -41,6 +43,7 @@ export async function generateShotVideoPrompt(
       },
       'update_shot',
     );
+    checkSources();
   } finally {
     promptRuns.set(ep.id, (promptRuns.get(ep.id) ?? 1) - 1);
   }
@@ -54,8 +57,8 @@ export async function generateShotVideoPrompt(
 }
 
 /**
- * StartVideoPromptBatch → VideoPromptBatch job: the given shots, or every live shot without a prompt, one agent run
- * each, with progress (total, completed, failed, currentShotId). Fails only when no prompt was saved.
+ * StartVideoPromptBatch → VideoPromptBatch job: the given shots, or every live shot whose prompt is missing or stale,
+ * one agent run each, with progress (total, completed, failed, currentShotId). Fails only when no prompt was saved.
  */
 export function startVideoPromptBatch(
   episodeId: number,
@@ -65,7 +68,7 @@ export function startVideoPromptBatch(
   assertNoBreakdown(ep.id);
   const { shotIds, ...opts } = body;
   const live = liveShotRows(ep.id);
-  let targets = live.filter((s) => !s.videoPrompt.trim());
+  let targets = live.filter((s) => !s.videoPrompt.trim() || s.videoPromptStale);
   if (shotIds) {
     const known = new Set(live.map((s) => s.id));
     const unknown = shotIds.filter((id) => !known.has(id));
@@ -75,7 +78,7 @@ export function startVideoPromptBatch(
   }
   const running = getEpisodeJobs(ep.id).videoPromptBatch;
   if (targets.length === 0 && running?.status !== 'running')
-    throw precondition('Every shot already has a video prompt');
+    throw precondition('Every shot already has an up-to-date video prompt');
 
   const total = targets.length;
   const started = runJob(

@@ -4,7 +4,7 @@ import { CheckSquare, Clapperboard, Loader2, Play, RotateCcw, Scissors, Sparkles
 import { useTranslations } from 'next-intl';
 import { useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { toast } from 'sonner';
-import type { EpisodeView, ShotCard, UpdateShot } from '@open-drama/contracts';
+import { targetTolerance, type EpisodeView, type ShotCard, type UpdateShot } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
@@ -146,7 +146,11 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
   const breaking = job?.status === 'running';
   const prompting = promptJob?.status === 'running';
   const selected = shots.find((s) => s.id === selectedId) ?? shots[0] ?? null;
-  const withoutPrompt = shots.filter((s) => !s.videoPrompt.trim()).length;
+  const withoutPrompt = shots.filter((s) => !s.videoPrompt.trim() || s.videoPromptStale).length;
+  // The episode's length as the model renders it, against the creator's target (the breakdown is held to it).
+  const rendered = shots.reduce((n, s) => n + target.clamp(s.durationSeconds), 0);
+  const goal = episode.targetDurationSeconds;
+  const offTarget = goal !== null && Math.abs(rendered - goal) > targetTolerance(target.caps);
   const failed = shots.filter((s) => shotStateOf(s) === 'failed');
   const missing = shots.filter((s) => !s.videoPath && shotStateOf(s) !== 'generating');
   const batchTargets = selectMode ? shots.filter((s) => checked.has(s.id) && shotStateOf(s) !== 'generating') : missing;
@@ -237,6 +241,11 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
         <h2 className="font-display text-2xl font-semibold tracking-wide">{t('title')}</h2>
         <Tag>{t('summary', { count: shots.length, seconds: Math.round(list.data.totalDurationSeconds) })}</Tag>
+        {goal !== null ? (
+          <Tag tone={offTarget ? 'warning' : 'success'}>
+            {offTarget ? t('offTarget', { seconds: rendered, target: goal }) : t('onTarget', { target: goal })}
+          </Tag>
+        ) : null}
         {drama.data ? <Tag mono>{drama.data.aspectRatio}</Tag> : null}
         <Tag tone={list.data.generatedCount === shots.length ? 'success' : 'neutral'}>
           {t('generated', { done: list.data.generatedCount, total: shots.length })}

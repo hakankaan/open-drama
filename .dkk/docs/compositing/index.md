@@ -32,7 +32,7 @@ Turning an episode's shot videos into a film. The creator selects shots, the ren
 |--------|-------------|----------|-------|
 | [DerivePosterForFilm](DerivePosterForFilm.md) | When a film is rendered, extract a poster frame (media.DeriveRenditions — cross-context) so the film list shows a cover without buffering the video. | FilmRendered | — |
 | [PublishFilmToEpisode](PublishFilmToEpisode.md) | When a film is rendered, attach it to the episode as its current video (production.AttachEpisodeFilm — cross-context, see flow MergeAndExport). | FilmRendered | — |
-| [RunFfmpegConcat](RunFfmpegConcat.md) | When a merge starts, probe every clip, run FFmpeg's concat filter into the merged media directory (each clip fitted into the first clip's frame and frame rate, letterboxed, with a stereo track trimmed to its length or silence when it has none; re-encoded to H.264/AAC with faststart), probe the film's duration, then complete or fail the merge. | MergeStarted | CompleteMerge, FailMerge |
+| [RunFfmpegConcat](RunFfmpegConcat.md) | When a merge starts, probe every clip, run FFmpeg's concat filter into the merged media directory (each clip fitted into the first clip's frame and frame rate, letterboxed, cut to the length it was generated at when the provider returned a few frames more, with a stereo track trimmed to that length or silence when it has none; re-encoded to H.264/AAC with faststart), probe the film's duration, then complete or fail the merge. | MergeStarted | CompleteMerge, FailMerge |
 
 ## Aggregates
 

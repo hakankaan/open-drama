@@ -9,9 +9,9 @@ import { getEpisodeJobs, runJob } from '../../jobs/run-job';
 import { getEpisodeRow } from '../../production/episodes';
 import { liveShotRows, purgeParkedShots, restoreParkedShots } from '../../storyboard/service';
 import { runAgentUntilDone } from '../runtime/run-agent';
-import { breakdownFinished, forgetBreakdown } from '../tools/storyboard';
+import { breakdownFinished, forgetBreakdown, trackBreakdownTarget } from '../tools/storyboard';
 import { SERIES_NOTE } from './recap';
-import { describeVideoModel } from './video-model';
+import { describeVideoModel, targetFit } from './video-model';
 import { promptRunsInFlight } from './video-prompts';
 
 const shotsWrittenBy = (jobId: number) =>
@@ -35,12 +35,15 @@ function hasAssetCandidates(episodeId: number): boolean {
  * BreakdownStoryboard → StoryboardBreakdown job (adr-0008). The agent saves in batches (the first parks the current
  * shots) and marks the last one final. Only then is the job done, and the parked shots are purged in the same
  * transaction; on failure or restart they come back. Missing video prompts are filled by the separate prompt batch.
+ * With a target length, the final batch is accepted only when the shots add up to it as the video model renders them.
  */
 export async function startBreakdown(episodeId: number, opts: z.input<typeof TextModelOverride> = {}) {
   // Reading the video model's limits can take seconds: everything checked below is read after it.
   const video = await describeVideoModel(getEpisodeRow(episodeId).videoServiceId);
   const ep = getEpisodeRow(episodeId);
   const jobs = getEpisodeJobs(ep.id);
+  // The length is fixed for the job: the final batch is checked against what the agent was told.
+  const target = ep.targetDurationSeconds ? targetFit(ep.targetDurationSeconds, video) : null;
   if (jobs.breakdown?.status !== 'running') {
     // A running breakdown is returned below; otherwise the script must be settled (checked first: while it is being
     // rewritten, nothing else about the episode is worth reporting), present and extracted, and nothing may still be
@@ -66,21 +69,30 @@ export async function startBreakdown(episodeId: number, opts: z.input<typeof Tex
       .where(and(eq(films.episodeId, ep.id), eq(films.status, 'processing')))
       .get();
     if (merging) throw conflict('The episode film is being merged; break down once it has finished', { filmId: merging.id });
+    if (target && !target.reachable) {
+      throw precondition(
+        `${video.label} renders shots ${target.lengths}, so no storyboard runs ${target.seconds} s; change the episode's length or its video model`,
+      );
+    }
   }
 
   const message = [
-    `Break this episode's script into shots. The video model is ${video.label}; keep every shot ${video.lengths}.`,
+    `Break this episode's script into shots. The video model is ${video.label}; keep every shot ${(target ?? video).lengths}.`,
+    target?.brief,
     "Read the script and the project's characters, scenes and props with read_storyboard_context, then save every shot with save_shots in batches of at most 8, in story order. The first batch sets replaceExisting: true and the batch holding the last shot sets final: true. Bind assets only by the ids the context gives, and write each shot's videoPrompt.",
     SERIES_NOTE,
-  ].join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
   return runJob(
     { kind: 'breakdown', episodeId: ep.id, dramaId: ep.dramaId },
     async ({ jobId, progress }) => {
+      trackBreakdownTarget(jobId, target);
       try {
         const run = await runAgentUntilDone(
           { agentType: 'storyboard_breaker', message, episodeId: ep.id, dramaId: ep.dramaId, jobId, ...opts },
           () => breakdownFinished(jobId),
-          'saving the final batch of shots (final: true)',
+          `saving the final batch of shots (final: true)${target ? ` with the shots adding up to ${target.seconds} s` : ''}`,
         );
         progress({ steps: run.steps, model: run.model });
       } catch (err) {

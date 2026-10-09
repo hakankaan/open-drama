@@ -9,6 +9,18 @@
     "retry": "다시 시도",
     "loading": "불러오는 중…"
   },
+  "episodeLength": {
+    "field": "목표 길이(초)",
+    "hint": "선택 사항이에요. 대본 리라이팅과 샷 분할이 이 길이에 맞춰 진행돼요. 비워 두면 대본 내용에 맞춰요.",
+    "invalid": "{min}~{max} 사이의 정수(초)를 입력하거나 비워 두세요.",
+    "placeholder": "대본에 맞춤",
+    "button": "목표 길이 {seconds}초. 변경",
+    "buttonNone": "목표 길이 없음. 설정",
+    "chip": "{seconds}초",
+    "chipNone": "길이",
+    "title": "에피소드 길이",
+    "body": "새 길이는 다음 리라이팅이나 샷 분할부터 적용돼요. 현재 대본과 샷은 그대로예요."
+  },
   "nav": {
     "label": "메인",
     "projects": "프로젝트",
@@ -574,6 +586,8 @@
       "breakdownFailedKept": "마지막 샷 분할에 실패해서 기존 샷을 그대로 두었어요: {error}",
       "promptsFailed": "마지막 프롬프트 일괄 작성에 실패했어요: {error}",
       "summary": "{count, plural, other {샷 #개}} · {seconds}초",
+      "onTarget": "목표 길이 맞음 · {target}초",
+      "offTarget": "{seconds}초 · 목표 {target}초",
       "generated": "{total}개 중 {done}개 생성됨",
       "breakAgain": "다시 나누기",
       "breakAgainTitle": "대본을 다시 나누시겠어요?",
@@ -651,6 +665,7 @@
       "prompt": {
         "generate": "AI 작성",
         "regenerate": "AI 다시 쓰기",
+        "stale": "이 프롬프트를 쓴 뒤 샷이 바뀌어서(길이, 설명, 연결된 에셋) 타이밍이 맞지 않을 수 있어요. AI로 다시 쓰거나 직접 고치세요.",
         "placeholder": "@를 입력하면 연결된 캐릭터, 씬, 소품을 멘션할 수 있어요.",
         "picker": "연결된 에셋",
         "pickerEmpty": "일치하는 연결 에셋이 없어요.",

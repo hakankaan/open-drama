@@ -1,6 +1,6 @@
 # Command — an instruction to change domain state.
 name: StartVideoPromptBatch
-description: Start filling video prompts for every shot that lacks one, or regenerate the given shot ids. Runs shot by shot in the background; the UI polls progress. Returns the running job (alreadyRunning) if one exists.
+description: Start filling video prompts for every shot whose prompt is missing or stale, or regenerate the given shot ids. Runs shot by shot in the background; the UI polls progress. Returns the running job (alreadyRunning) if one exists.
 fields:
   - name: episodeId
     type: ID

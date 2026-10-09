@@ -40,6 +40,8 @@ export const Shot = z.object({
   atmosphere: z.string(),
   imagePrompt: z.string(),
   videoPrompt: z.string(),
+  /** A field the video prompt was written from (duration, description, bindings…) changed since it was written. */
+  videoPromptStale: z.boolean(),
   bgmPrompt: z.string(),
   soundEffect: z.string(),
   durationSeconds: z.number(),
@@ -125,7 +127,7 @@ export type UpdateShot = z.input<typeof UpdateShot>;
 // Agent- and generation-backed storyboard commands
 
 export const StartVideoPromptBatch = TextModelOverride.extend({
-  /** When given, exactly these shots are regenerated; otherwise every shot without a prompt is filled. */
+  /** When given, exactly these shots are regenerated; otherwise every shot whose prompt is missing or stale. */
   shotIds: z.array(z.number().int().positive()).min(1).max(500).optional(),
 });
 export type StartVideoPromptBatch = z.input<typeof StartVideoPromptBatch>;

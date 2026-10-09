@@ -9,6 +9,18 @@
     "retry": "再試行",
     "loading": "読み込み中…"
   },
+  "episodeLength": {
+    "field": "目標の尺（秒）",
+    "hint": "任意。脚本のリライトとショット分割がこの尺に合わせて行われます。空欄なら脚本の内容に合わせます。",
+    "invalid": "{min}〜{max}の整数（秒）を入力するか、空欄にしてください。",
+    "placeholder": "脚本に合わせる",
+    "button": "目標の尺 {seconds}秒。変更",
+    "buttonNone": "目標の尺なし。設定",
+    "chip": "{seconds}秒",
+    "chipNone": "尺",
+    "title": "エピソードの尺",
+    "body": "新しい尺は次回のリライトまたは分割から反映されます。現在の脚本とショットはそのままです。"
+  },
   "nav": {
     "label": "メイン",
     "projects": "プロジェクト",
@@ -574,6 +586,8 @@
       "breakdownFailedKept": "前回のショット分割に失敗したため、これらのショットを残しています：{error}",
       "promptsFailed": "前回のプロンプト一括作成に失敗しました：{error}",
       "summary": "{count, plural, other {#ショット}} · {seconds}秒",
+      "onTarget": "目標どおり · {target}秒",
+      "offTarget": "{seconds}秒 · 目標 {target}秒",
       "generated": "生成済み {done}/{total}",
       "breakAgain": "再分割",
       "breakAgainTitle": "脚本を再分割しますか？",
@@ -651,6 +665,7 @@
       "prompt": {
         "generate": "AIで作成",
         "regenerate": "AIでリライト",
+        "stale": "このプロンプトを書いた後にショットが変更されたため（尺、説明、紐づけたアセット）、タイミングがずれている可能性があります。AIでリライトするか、手動で編集してください。",
         "placeholder": "@を入力すると、紐づけたキャラクター・シーン・小道具をメンションできます。",
         "picker": "紐づけたアセット",
         "pickerEmpty": "一致するアセットはありません。",

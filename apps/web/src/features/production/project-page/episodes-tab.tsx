@@ -16,6 +16,7 @@ import { Tag } from '@/components/ui/tag';
 import { useToastError } from '@/lib/errors';
 import { relativeTime } from '@/lib/time';
 import { useCreateEpisode, useDeleteEpisode, useUpdateEpisode } from '../api';
+import { parseTarget, TargetLengthField } from '../episode-length';
 
 export function AddEpisodeDialog({ drama, onClose }: { drama: DramaDetail; onClose: () => void }) {
   const t = useTranslations('project.newEpisode');
@@ -25,14 +26,18 @@ export function AddEpisodeDialog({ drama, onClose }: { drama: DramaDetail; onClo
   const nextNumber = (drama.episodes.at(-1)?.episodeNumber ?? 0) + 1;
   const [title, setTitle] = useState('');
   const [resolution, setResolution] = useState<string>('720p');
+  const [length, setLength] = useState('');
+  const target = parseTarget(length);
 
   const submit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (target === undefined) return;
     try {
       await create.mutateAsync({
         dramaId: drama.id,
         title: title.trim() || undefined,
         resolution: resolution as (typeof ResolutionEnum.options)[number],
+        targetDurationSeconds: target ?? undefined,
       });
       onClose();
     } catch (err) {
@@ -55,11 +60,12 @@ export function AddEpisodeDialog({ drama, onClose }: { drama: DramaDetail; onClo
               options={ResolutionEnum.options.map((r) => ({ value: r, label: r }))}
             />
           </Field>
+          <TargetLengthField id="ep-length" value={length} onChange={setLength} />
           <DialogFooter>
             <Button variant="ghost" onClick={onClose} disabled={create.isPending}>
               {tc('cancel')}
             </Button>
-            <Button type="submit" variant="primary" loading={create.isPending}>
+            <Button type="submit" variant="primary" loading={create.isPending} disabled={target === undefined}>
               {t('submit')}
             </Button>
           </DialogFooter>

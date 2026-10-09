@@ -80,6 +80,11 @@ export type UpdateDrama = z.input<typeof UpdateDrama>;
 
 // Episodes
 
+/** Bounds of an episode's target length (the rewrite and the breakdown fit it). */
+export const EPISODE_TARGET_MIN = 10;
+export const EPISODE_TARGET_MAX = 600;
+export const EpisodeTarget = z.number().int().min(EPISODE_TARGET_MIN).max(EPISODE_TARGET_MAX);
+
 export const Episode = z.object({
   id: z.number().int(),
   dramaId: z.number().int(),
@@ -98,7 +103,10 @@ export const Episode = z.object({
   videoServiceId: z.number().int().nullable(),
   filmPath: MediaPath.nullable(),
   filmDurationSeconds: z.number().nullable(),
+  /** The sum of the live shots' durations. */
   durationSeconds: z.number(),
+  /** How long the creator wants the episode to run; null lets the storyboard follow the script. */
+  targetDurationSeconds: z.number().int().nullable(),
   createdAt: Timestamp,
   updatedAt: Timestamp,
 });
@@ -139,6 +147,7 @@ export const CreateEpisode = z.object({
   dramaId: z.number().int().positive(),
   title: z.string().trim().max(120).optional(),
   resolution: Resolution.default('720p'),
+  targetDurationSeconds: EpisodeTarget.optional(),
   imageServiceId: z.number().int().positive().optional(),
   videoServiceId: z.number().int().positive().optional(),
 });
@@ -157,6 +166,8 @@ export const UpdateEpisode = z.strictObject({
   scriptContent: z.string().max(400_000).optional(),
   recap: z.string().trim().max(RECAP_MAX_CHARS).optional(),
   resolution: Resolution.optional(),
+  /** null clears the target. */
+  targetDurationSeconds: EpisodeTarget.nullable().optional(),
   status: EpisodeStatus.optional(),
 });
 export type UpdateEpisode = z.input<typeof UpdateEpisode>;

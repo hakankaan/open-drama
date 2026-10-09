@@ -6,7 +6,7 @@
 
 ## Summary
 
-One episode of a drama. Holds the raw content and the formatted script with its revision, the recap for the writers of later episodes, the locked image/video services and resolution, the production status and, once merged, the film.
+One episode of a drama. Holds the raw content and the formatted script with its revision, the recap for the writers of later episodes, the locked image/video services and resolution, the target length, the production status and, once merged, the film.
 
 
 
@@ -15,6 +15,7 @@ One episode of a drama. Holds the raw content and the formatted script with its 
 - episodeNumber is unique among the drama's non-deleted episodes and assigned as max(existing) + 1.
 - imageServiceId and videoServiceId are snapshotted at creation from the highest-priority active model service of each type; creation is rejected when either type has no active service.
 - resolution is one of 480p, 720p or 1080p and applies to every video generated for the episode; adapters map it to the provider's nearest tier.
+- targetDurationSeconds is null (the storyboard follows the script) or a whole number of seconds from 10 to 600. The script rewrite is told to write what fits it, and a breakdown is held to it (StoryboardBreakdown). durationSeconds stays the sum of the live shots' durations.
 - status is one of draft, active or completed (the same vocabulary as Drama); completed is a manual mark set from the export stage and can be undone.
 - scriptContent is the single script used downstream. RewriteScript fills it through SaveScript; SkipRewrite copies the raw content into it, so a skip is persisted and survives reloads.
 - scriptRevision increments on every change of scriptContent, whoever writes it; a save of identical text does not move it.
@@ -32,6 +33,7 @@ One episode of a drama. Holds the raw content and the formatted script with its 
 | Handles | `SkipRewrite` |
 | Handles | `SaveRecap` |
 | Handles | `SetEpisodeResolution` |
+| Handles | `SetEpisodeTargetDuration` |
 | Handles | `SetEpisodeStatus` |
 | Handles | `AttachEpisodeFilm` |
 | Handles | `DeleteEpisode` |
@@ -41,6 +43,7 @@ One episode of a drama. Holds the raw content and the formatted script with its 
 | Emits | `ScriptRewriteSkipped` |
 | Emits | `RecapSaved` |
 | Emits | `EpisodeResolutionChanged` |
+| Emits | `EpisodeTargetDurationChanged` |
 | Emits | `EpisodeStatusChanged` |
 | Emits | `EpisodeFilmAttached` |
 | Emits | `EpisodeDeleted` |

@@ -6,7 +6,7 @@
 
 ## Summary
 
-Start filling video prompts for every shot that lacks one, or regenerate the given shot ids. Runs shot by shot in the background; the UI polls progress. Returns the running job (alreadyRunning) if one exists.
+Start filling video prompts for every shot whose prompt is missing or stale, or regenerate the given shot ids. Runs shot by shot in the background; the UI polls progress. Returns the running job (alreadyRunning) if one exists.
 
 
 ## Fields

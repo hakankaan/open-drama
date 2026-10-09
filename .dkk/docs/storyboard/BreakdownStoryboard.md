@@ -6,7 +6,7 @@
 
 ## Summary
 
-Ask the storyboard-breaker agent to split the episode's script into shots with descriptions, atmosphere, durations, bindings and video prompts, replacing the current shots (which are parked until the job succeeds). Runs asynchronously; the UI polls. Returns the running job if one exists.
+Ask the storyboard-breaker agent to split the episode's script into shots with descriptions, atmosphere, durations, bindings and video prompts, replacing the current shots (which are parked until the job succeeds). With a target length on the episode, the shots must add up to it. Runs asynchronously; the UI polls. Returns the running job if one exists.
 
 
 ## Fields
@@ -23,6 +23,7 @@ Ask the storyboard-breaker agent to split the episode's script into shots with d
 - Assets have been extracted (bindings need candidates)
 - Episode has no script
 - The script is being rewritten (a running RewriteScript job)
+- The episode's target length cannot be met by any storyboard of its video model's shot lengths
 
 
 ## Relationships

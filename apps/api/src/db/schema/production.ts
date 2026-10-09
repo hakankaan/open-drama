@@ -44,6 +44,8 @@ export const episodes = sqliteTable(
     filmPath: text(),
     filmDurationSeconds: real(),
     durationSeconds: real().notNull().default(0),
+    // The length the creator wants the episode to run; the rewrite and the breakdown fit it. Null: follow the script.
+    targetDurationSeconds: integer(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     deletedAt: deletedAt(),

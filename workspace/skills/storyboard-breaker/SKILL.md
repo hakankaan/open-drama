@@ -9,7 +9,7 @@ An ordered list of shots covering the whole script. Each shot has:
 
 - `shotNumber`: 1, 2, 3… in story order.
 - `title`: a few words naming what happens.
-- `durationSeconds`: 8 to 15.
+- `durationSeconds`: 8 to 15, or the lengths the job message gives for the video model.
 - `sceneId`: the one scene it happens in.
 - `characterIds`, `propIds`: only the assets that are visible in this shot.
 - `shotType`, `angle`, `movement`: the dominant framing (for example "medium", "eye level", "slow push in").
@@ -25,6 +25,7 @@ An ordered list of shots covering the whole script. Each shot has:
 - Dialogue needs time: allow at least 1 second per 3 words spoken (1 second per 5 characters for Chinese, Japanese or Korean), plus a second of reaction. If the lines do not fit in 15 seconds, split the shot.
 - Every character named in a sub-shot is in `characterIds`; nobody else is.
 - The whole script is covered, in order, with nothing added.
+- With a target length, the shots' durations add up to it. When the script holds more than fits, condense: merge sub-shots, shorten the action, and drop only minor moments, never a beat.
 
 ## Example description
 
