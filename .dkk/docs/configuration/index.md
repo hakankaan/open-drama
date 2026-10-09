@@ -75,6 +75,7 @@ _No policies._
 | [adr-0002](../../adr/adr-0002.md) | Monorepo with a Next.js web app and a Node.js API | accepted |
 | [adr-0003](../../adr/adr-0003.md) | Hono on the Node adapter as the HTTP framework | accepted |
 | [adr-0004](../../adr/adr-0004.md) | SQLite through Drizzle ORM with migrations applied at startup | accepted |
+| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |
 | [adr-0007](../../adr/adr-0007.md) | API contract: camelCase JSON validated by shared zod schemas | accepted |
 | [adr-0010](../../adr/adr-0010.md) | Next.js serves the UI as its own process and proxies the API | accepted |
 | [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | accepted |

@@ -21,9 +21,11 @@ Ask the episode writer to expand a planned episode's beat sheet into a formatted
 
 - Raw content (the beats) is not empty
 - No rewrite is running for the episode
+- No breakdown or extraction is reading the script
 - If a write job is already running for the episode, the running job is returned (alreadyRunning)
 - Empty raw content
 - The script is being rewritten
+- A breakdown or an extraction is reading the script
 - No text model service configured
 
 

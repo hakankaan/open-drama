@@ -25,7 +25,8 @@ export type FilmStatus = TaskStatus;
 export const TaskErrorClass = z.enum(['moderation', 'auth', 'quota', 'timeout', 'provider', 'config']);
 export type TaskErrorClass = z.infer<typeof TaskErrorClass>;
 
-export const JobStatus = z.enum(['running', 'done', 'failed']);
+/** `cancelled`: stopped by the creator; nothing it had not saved yet is kept. */
+export const JobStatus = z.enum(['running', 'done', 'failed', 'cancelled']);
 export type JobStatus = z.infer<typeof JobStatus>;
 
 export const JobKind = z.enum(['rewrite', 'extraction', 'breakdown', 'videoPromptBatch', 'recap', 'write', 'outline', 'plan']);
@@ -72,6 +73,7 @@ export const ErrorCode = z.enum([
   'VALIDATION_FAILED',
   'NOT_FOUND',
   'CONFLICT',
+  'FORBIDDEN',
   'PRECONDITION_FAILED',
   'PROVIDER_ERROR',
   'INTERNAL',

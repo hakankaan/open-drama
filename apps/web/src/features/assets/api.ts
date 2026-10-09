@@ -74,20 +74,23 @@ export type UpdateAssetInput =
   | { kind: 'scene'; id: number; body: UpdateScene }
   | { kind: 'prop'; id: number; body: UpdateProp };
 
-function useAssetMutation<TVars, TData>(dramaId: number, fn: (vars: TVars) => Promise<TData>) {
+/** What an asset change can show up in. */
+export function useInvalidateAssets(dramaId: number) {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: fn,
-    onSettled: () => {
-      void qc.invalidateQueries({ queryKey: assetKeys.library(dramaId) });
-      void qc.invalidateQueries({ queryKey: ['assets', 'episode'] });
-      void qc.invalidateQueries({ queryKey: productionKeys.drama(dramaId) });
-      void qc.invalidateQueries({ queryKey: productionKeys.dramas });
-      void qc.invalidateQueries({ queryKey: ['production', 'pipeline'] });
-      // The task drawer's badge only polls while it knows of running work.
-      void qc.invalidateQueries({ queryKey: ['generation'] });
-    },
-  });
+  return () => {
+    void qc.invalidateQueries({ queryKey: assetKeys.library(dramaId) });
+    void qc.invalidateQueries({ queryKey: ['assets', 'episode'] });
+    void qc.invalidateQueries({ queryKey: productionKeys.drama(dramaId) });
+    void qc.invalidateQueries({ queryKey: productionKeys.dramas });
+    void qc.invalidateQueries({ queryKey: ['production', 'pipeline'] });
+    // The task drawer's badge only polls while it knows of running work.
+    void qc.invalidateQueries({ queryKey: ['generation', 'episode-tasks'] });
+  };
+}
+
+function useAssetMutation<TVars, TData>(dramaId: number, fn: (vars: TVars) => Promise<TData>) {
+  const invalidate = useInvalidateAssets(dramaId);
+  return useMutation({ mutationFn: fn, onSettled: invalidate });
 }
 
 export const useCreateAsset = (dramaId: number) =>
@@ -109,8 +112,9 @@ export const useGenerateFinalPrompt = (dramaId: number) =>
     request(FinalPromptResult, 'POST', `${PATH[kind]}/${id}/final-prompt`, body),
   );
 
+/** Request*Image without the refresh, for a batch that refreshes once at the end. */
+export const requestAssetImage = ({ kind, id, body }: { kind: AssetKind; id: number; body: RequestAssetImage }) =>
+  request(TaskStarted, 'POST', `${PATH[kind]}/${id}/image`, body);
+
 /** Request*Image: returns the task id; the card follows the task through the polled asset lists. */
-export const useRequestAssetImage = (dramaId: number) =>
-  useAssetMutation(dramaId, ({ kind, id, body }: { kind: AssetKind; id: number; body: RequestAssetImage }) =>
-    request(TaskStarted, 'POST', `${PATH[kind]}/${id}/image`, body),
-  );
+export const useRequestAssetImage = (dramaId: number) => useAssetMutation(dramaId, requestAssetImage);

@@ -3,6 +3,7 @@ import { and, asc, eq, inArray, isNull, max, ne, or, sum } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   isNarrator,
+  type AssetKind,
   type CreateShot,
   type EpisodeShotList,
   type ReferenceMedia,
@@ -190,6 +191,22 @@ export function watchPromptSources(shotId: number): () => void {
   return () => {
     if ((sourceEdits.get(shotId) ?? 0) !== before) db.update(shots).set({ videoPromptStale: true }).where(eq(shots.id, shotId)).run();
   };
+}
+
+/**
+ * A bound asset was deleted or renamed: the prompts of the shots it is bound to name it (or rely on its binding), so
+ * they go stale like any other source change. Called inside the asset's transaction, before its bindings go.
+ */
+export function markAssetPromptsStale(tx: Tx, asset: { kind: AssetKind; id: number }) {
+  const ids =
+    asset.kind === 'scene'
+      ? tx.select({ id: shots.id }).from(shots).where(eq(shots.sceneId, asset.id)).all().map((r) => r.id)
+      : asset.kind === 'character'
+        ? tx.select({ id: shotCharacters.shotId }).from(shotCharacters).where(eq(shotCharacters.characterId, asset.id)).all().map((r) => r.id)
+        : tx.select({ id: shotProps.shotId }).from(shotProps).where(eq(shotProps.propId, asset.id)).all().map((r) => r.id);
+  if (ids.length === 0) return;
+  for (const id of ids) sourceEdits.set(id, (sourceEdits.get(id) ?? 0) + 1);
+  tx.update(shots).set({ videoPromptStale: true }).where(and(inArray(shots.id, ids), ne(shots.videoPrompt, ''))).run();
 }
 
 /** The episode's duration is the sum of its live shot durations. */

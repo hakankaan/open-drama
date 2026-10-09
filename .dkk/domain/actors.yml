@@ -65,12 +65,14 @@ actors:
   - name: Bootstrap
     type: system
     description: >-
-      The API process at startup. Applies database migrations, seeds style presets, copies the agent workspace template
-      once into the data directory and marks interrupted generation tasks as failed.
+      The API process at startup. Backs the database up and applies pending migrations, seeds style presets, copies the
+      agent workspace template once into the data directory, fails the generation tasks no provider had accepted and
+      resumes the ones a provider had.
     capabilities:
-      - Apply pending schema migrations idempotently
+      - Back the database up before pending migrations and apply them in one transaction, refusing to start if they leave dangling references
       - Seed or upgrade built-in style presets without overwriting user edits
-      - Fail tasks that were still processing when the previous process died
+      - Fail tasks that were still processing when the previous process died before a provider accepted them
+      - Resume polling the tasks a provider had accepted
     failure_modes:
       - Data directory not writable
     adr_refs:

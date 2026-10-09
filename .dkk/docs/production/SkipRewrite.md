@@ -19,8 +19,10 @@ Skip the AI rewrite by copying the raw content into scriptContent, so extraction
 
 - Raw content is not empty
 - No rewrite or write job is running for the episode
+- No breakdown or extraction is reading the script
 - Empty raw content
 - The script is being rewritten or written
+- A breakdown or an extraction is reading the script
 
 
 ## Relationships

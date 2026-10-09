@@ -24,7 +24,9 @@ handled_by: Episode
 rejections:
   - No updatable field supplied
   - scriptContent while the script is being rewritten or written (the agent's save would replace the edit)
+  - scriptContent while a breakdown or an extraction reads the script (its shots or assets would no longer match)
   - content while the script is being rewritten or written (the agent reads it as its source)
   - recap while the recap is being written
 adr_refs:
+  - adr-0008
   - adr-0015

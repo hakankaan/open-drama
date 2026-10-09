@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { z } from 'zod';
 import {
+  AgentJob,
   Drama,
   DramaDetail,
   DramaJobs,
@@ -241,5 +242,20 @@ export function useStartRecap(episodeId: number) {
   return useMutation({
     mutationFn: (body: TextModelOverride) => request(JobStarted, 'POST', `/episodes/${episodeId}/recap`, body),
     onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.jobs(episodeId) }),
+  });
+}
+
+/**
+ * CancelJob: answers with the job as it is (usually still running); it settles as cancelled a moment later, which the
+ * polled jobs query of its episode or drama shows.
+ */
+export function useCancelJob(owner: { episodeId: number } | { dramaId: number }) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (jobId: number) => request(AgentJob, 'POST', `/agent-jobs/${jobId}/cancel`),
+    onSettled: () =>
+      void qc.invalidateQueries({
+        queryKey: 'episodeId' in owner ? productionKeys.jobs(owner.episodeId) : productionKeys.dramaJobs(owner.dramaId),
+      }),
   });
 }

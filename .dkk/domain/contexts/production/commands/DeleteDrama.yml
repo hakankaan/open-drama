@@ -1,8 +1,15 @@
-# Command — an instruction to change domain state.
 name: DeleteDrama
-description: Soft-delete a drama. Its episodes, assets, shots and generation records remain stored but are hidden everywhere.
+description: >-
+  Soft-delete a drama together with its live episodes, characters, scenes and props, all with the drama's deletion
+  timestamp. Shots and generation records remain stored but are hidden with their episode or asset.
 fields:
   - name: dramaId
     type: ID
 actor: Creator
 handled_by: Drama
+rejections:
+  - >-
+    A job of the drama is running (drama-scoped or on one of its episodes): it would go on adding episodes or assets
+    under the deleted drama, so it is cancelled or finishes first
+adr_refs:
+  - adr-0008

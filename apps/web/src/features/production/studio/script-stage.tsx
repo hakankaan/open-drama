@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, RotateCcw, Sparkles, TriangleAlert } from 'lucide-react';
+import { Loader2, Lock, RotateCcw, Sparkles, TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -12,13 +12,16 @@ import { useToastError } from '@/lib/errors';
 import { useServerDraft } from '@/lib/use-server-draft';
 import { textOverride, useModelPicks } from '../../configuration/model-picks';
 import { useEpisodeJobs, useSkipRewrite, useStartRecap, useStartRewrite, useStartWrite, useUpdateEpisode } from '../api';
+import { CancelJobButton } from '../cancel-job-button';
 import { EarlierRecaps } from '../earlier-recaps';
+import { useReportUnsaved } from './unsaved';
 
 export function RawContentPanel({ episode, onNext }: { episode: EpisodeView; onNext: () => void }) {
   const t = useTranslations('studio.script');
   const toastError = useToastError();
   const update = useUpdateEpisode();
   const [draft, setDraft, dirty] = useServerDraft(episode.content);
+  useReportUnsaved(dirty);
 
   const save = async () => {
     try {
@@ -75,6 +78,7 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
   const update = useUpdateEpisode();
   const [draft, setDraft, dirty] = useServerDraft(episode.scriptContent ?? '');
   const [confirm, setConfirm] = useState<ScriptAgent | null>(null);
+  useReportUnsaved(dirty);
 
   const agentJobs = { rewrite: jobs.data?.rewrite ?? null, write: jobs.data?.write ?? null };
   const running = (['rewrite', 'write'] as const).find((k) => agentJobs[k]?.status === 'running') ?? null;
@@ -85,11 +89,28 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
   const failedLast = latest !== undefined && agentJobs[latest]?.status === 'failed' && !running ? latest : null;
   const failedError = failedLast ? (agentJobs[failedLast]?.error ?? '') : '';
   const hasScript = !!episode.scriptContent?.trim();
+  const starting = start.rewrite.isPending || start.write.isPending;
+  // The breakdown and the extractions read the script, so the API refuses script changes while one runs.
+  const lockedBy =
+    jobs.data?.breakdown?.status === 'running'
+      ? 'lockedBreakdown'
+      : Object.values(jobs.data?.extraction ?? {}).some((j) => j?.status === 'running')
+        ? 'lockedExtraction'
+        : null;
+  const locked = lockedBy !== null;
+  const lockNote = lockedBy ? (
+    <p className="flex items-center gap-2 text-sm text-muted" role="status">
+      <Lock className="h-4 w-4 shrink-0" aria-hidden />
+      {t(lockedBy)}
+    </p>
+  ) : null;
 
   const run = async (kind: ScriptAgent) => {
     setConfirm(null);
     try {
       await start[kind].mutateAsync(textOverride(picks));
+      // The new script replaces the draft too; a stale unsaved draft on top of it would be saved over the result.
+      setDraft(episode.scriptContent ?? '');
     } catch (err) {
       toastError(err);
     }
@@ -122,7 +143,10 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
     const body = running === 'write' ? t('expanding') : t('running');
     return (
       <Empty title={t('rewriteTitle')} body={body}>
-        <Loader2 className="h-6 w-6 animate-spin text-accent" aria-label={body} />
+        <div className="flex items-center gap-3">
+          <Loader2 className="h-6 w-6 animate-spin text-accent" aria-label={body} />
+          <CancelJobButton job={agentJobs[running]!} owner={{ episodeId: episode.id }} />
+        </div>
       </Empty>
     );
   }
@@ -137,16 +161,17 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
             <span>{failedLast === 'write' ? t('expandFailed', { error: failedError }) : t('failed', { error: failedError })}</span>
           </p>
         ) : null}
+        {lockNote}
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" onClick={() => run('rewrite')} loading={start.rewrite.isPending}>
+          <Button variant="primary" onClick={() => run('rewrite')} loading={start.rewrite.isPending} disabled={locked}>
             {failedLast === 'rewrite' ? <RotateCcw className="h-4 w-4" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
             {failedLast === 'rewrite' ? tc('retry') : t('start')}
           </Button>
-          <Button onClick={() => run('write')} loading={start.write.isPending}>
+          <Button onClick={() => run('write')} loading={start.write.isPending} disabled={locked}>
             {failedLast === 'write' ? <RotateCcw className="h-4 w-4" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
             {failedLast === 'write' ? tc('retry') : t('expand')}
           </Button>
-          <Button onClick={doSkip} loading={skip.isPending}>
+          <Button onClick={doSkip} loading={skip.isPending} disabled={locked}>
             {t('skip')}
           </Button>
         </div>
@@ -161,14 +186,14 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
           {t('script')}
         </h2>
         <div className="ml-auto flex gap-2">
-          <Button size="sm" onClick={save} loading={update.isPending} disabled={!dirty}>
+          <Button size="sm" onClick={save} loading={update.isPending} disabled={!dirty || starting || locked}>
             {t('save')}
           </Button>
-          <Button size="sm" variant="quiet" onClick={() => setConfirm('rewrite')} loading={start.rewrite.isPending}>
+          <Button size="sm" variant="quiet" onClick={() => setConfirm('rewrite')} loading={start.rewrite.isPending} disabled={locked}>
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
             {t('again')}
           </Button>
-          <Button size="sm" variant="quiet" onClick={() => setConfirm('write')} loading={start.write.isPending}>
+          <Button size="sm" variant="quiet" onClick={() => setConfirm('write')} loading={start.write.isPending} disabled={locked}>
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
             {t('expandAgain')}
           </Button>
@@ -180,9 +205,11 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
           <span>{failedLast === 'write' ? t('expandFailedKept', { error: failedError }) : t('failedKept', { error: failedError })}</span>
         </p>
       ) : null}
+      {lockNote}
       <Textarea
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
+        disabled={locked}
         className="min-h-[60dvh] flex-1 font-mono text-[14px] leading-relaxed"
         aria-labelledby="script-title"
       />
@@ -216,10 +243,15 @@ function RecapCard({ episode, jobs }: { episode: EpisodeView; jobs: EpisodeJobs 
   const running = job?.status === 'running';
   const hasRecap = episode.recap.trim().length > 0;
   const failed = job?.status === 'failed' && (!hasRecap || episode.recapStale);
+  // A recap job replaces the draft too, also one the API starts after a script save: a stale unsaved draft on top of
+  // the result would be saved over it.
+  if (running && dirty) setDraft(episode.recap);
+  useReportUnsaved(dirty);
 
   const write = async () => {
     try {
       await start.mutateAsync(textOverride(picks));
+      setDraft(episode.recap);
     } catch (err) {
       toastError(err);
     }
@@ -265,10 +297,13 @@ function RecapCard({ episode, jobs }: { episode: EpisodeView; jobs: EpisodeJobs 
         </p>
       ) : null}
       {running ? (
-        <p className="flex items-center gap-2 py-6 text-sm text-ink-2">
-          <Loader2 className="h-5 w-5 animate-spin text-accent" aria-hidden />
-          {t('running')}
-        </p>
+        <div className="flex items-center gap-2 py-6">
+          <p className="flex items-center gap-2 text-sm text-ink-2">
+            <Loader2 className="h-5 w-5 animate-spin text-accent" aria-hidden />
+            {t('running')}
+          </p>
+          <CancelJobButton job={job} owner={{ episodeId: episode.id }} />
+        </div>
       ) : (
         <Textarea
           value={draft}

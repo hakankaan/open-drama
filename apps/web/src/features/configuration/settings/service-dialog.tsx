@@ -22,6 +22,15 @@ import { useAddModelService, useTestModelService, useUpdateModelService } from '
 import { ModelCatalog } from './model-catalog';
 import { ProbeResult } from './probe-result';
 
+/** As the API compares addresses: by origin, or the bare string when it does not parse. */
+const originOf = (url: string) => {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return url.replace(/\/+$/, '');
+  }
+};
+
 export type ServiceDialogState =
   | { mode: 'create'; serviceType: ServiceType; provider: ProviderName }
   | { mode: 'edit'; service: ModelService };
@@ -90,11 +99,16 @@ export function ServiceDialog({ state, onClose }: { state: ServiceDialogState; o
   };
 
   const temperature = form.temperature.trim() === '' ? null : Number(form.temperature);
+  // A saved key never follows the service to a new address or provider (the API refuses it): it must be typed again.
+  const keyMoved =
+    !!editing?.hasKey &&
+    !form.apiKey.trim() &&
+    (originOf(form.baseUrl.trim()) !== originOf(editing.baseUrl) || form.provider !== editing.provider);
   const errors = {
     name: !form.name.trim() ? t('required') : undefined,
     baseUrl: !/^https?:\/\/\S+$/.test(form.baseUrl.trim()) ? t('invalidUrl') : undefined,
     temperature: temperature !== null && !(temperature >= 0 && temperature <= 2) ? t('invalidTemperature') : undefined,
-    apiKey: !editing && !form.apiKey.trim() ? t('keyRequired') : undefined,
+    apiKey: !editing && !form.apiKey.trim() ? t('keyRequired') : keyMoved ? t('keyAgain') : undefined,
   };
   const valid = !Object.values(errors).some(Boolean);
 
@@ -197,7 +211,7 @@ export function ServiceDialog({ state, onClose }: { state: ServiceDialogState; o
           <Field
             label={t('apiKey')}
             htmlFor="svc-key"
-            hint={editing ? (editing.hasKey ? t('keyStored') : t('keyMissing')) : t('keyHint')}
+            hint={keyMoved ? t('keyAgain') : editing ? (editing.hasKey ? t('keyStored') : t('keyMissing')) : t('keyHint')}
             error={touched ? errors.apiKey : undefined}
           >
             <Input
@@ -260,7 +274,7 @@ export function ServiceDialog({ state, onClose }: { state: ServiceDialogState; o
               variant="secondary"
               onClick={runTest}
               loading={test.isPending}
-              disabled={!form.baseUrl.trim() || (!editing?.hasKey && !form.apiKey.trim())}
+              disabled={!form.baseUrl.trim() || (!editing?.hasKey && !form.apiKey.trim()) || keyMoved}
               className="mr-auto"
             >
               {t('test')}

@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ChevronDown, CircleHelp, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 import { Resolution as ResolutionEnum, type DramaDetail, type EpisodePipelineStatus, type EpisodeView } from '@open-drama/contracts';
 import { LocaleSwitcher } from '@/components/locale-switcher';
@@ -28,6 +29,7 @@ import { EpisodeLengthButton } from '../episode-length';
 import { useSettleRefresh } from '../use-settle-refresh';
 import { RawContentPanel, RewritePanel } from './script-stage';
 import { StudioSidebar, deriveStages, type Panel } from './sidebar';
+import { UnsavedDrafts, useLeaveGuard } from './unsaved';
 
 /** The first step that still needs work, used when the episode has no remembered panel. */
 function firstOpenPanel(p: EpisodePipelineStatus | undefined): Panel {
@@ -52,6 +54,8 @@ function TopBar({
 }) {
   const t = useTranslations('studio');
   const qc = useQueryClient();
+  const router = useRouter();
+  const leave = useLeaveGuard();
   const toastError = useToastError();
   const update = useUpdateEpisode();
   const { picks, setPick } = useModelPicks();
@@ -62,6 +66,11 @@ function TopBar({
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3">
       <Link
         href={`/drama/${dramaId}`}
+        onNavigate={(e) => {
+          // An unsaved draft asks first; the navigation is replayed once confirmed.
+          e.preventDefault();
+          leave(() => router.push(`/drama/${dramaId}`));
+        }}
         className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-2 hover:bg-surface-2 hover:text-ink"
         aria-label={t('backToProject')}
       >
@@ -131,6 +140,10 @@ function StudioBody({ drama, episode }: { drama: DramaDetail; episode: EpisodeVi
   const [collapsed, setCollapsed] = usePersistedState('studio-sidebar-collapsed', false);
   // The creator's step is kept across refreshes; an episode without a remembered step opens on the first open one.
   const panel: Panel = stored ?? firstOpenPanel(pipeline.data);
+  const leave = useLeaveGuard();
+  const go = (next: Panel) => {
+    if (next !== panel) leave(() => setPanel(next));
+  };
   // Runs once the sidebar has rendered, since the first step points at it.
   const tourSteps = useMemo(
     () => [
@@ -154,15 +167,15 @@ function StudioBody({ drama, episode }: { drama: DramaDetail; episode: EpisodeVi
         <Skeleton className="m-6 h-[70dvh]" />
       ) : (
         <div className="flex min-h-0 flex-1">
-          <StudioSidebar panel={panel} onPanel={setPanel} pipeline={pipeline.data} collapsed={collapsed} onCollapse={setCollapsed} />
+          <StudioSidebar panel={panel} onPanel={go} pipeline={pipeline.data} collapsed={collapsed} onCollapse={setCollapsed} />
           <main className="min-w-0 flex-1 overflow-y-auto p-6">
-            {panel === 'raw' ? <RawContentPanel episode={episode} onNext={() => setPanel('rewrite')} /> : null}
-            {panel === 'rewrite' ? <RewritePanel episode={episode} drama={drama} onRaw={() => setPanel('raw')} /> : null}
-            {panel === 'assets' ? <AssetsStage episode={episode} onScript={() => setPanel('rewrite')} /> : null}
+            {panel === 'raw' ? <RawContentPanel episode={episode} onNext={() => go('rewrite')} /> : null}
+            {panel === 'rewrite' ? <RewritePanel episode={episode} drama={drama} onRaw={() => go('raw')} /> : null}
+            {panel === 'assets' ? <AssetsStage episode={episode} onScript={() => go('rewrite')} /> : null}
             {panel === 'video' ? (
-              <VideoStage episode={episode} onScript={() => setPanel('rewrite')} onAssets={() => setPanel('assets')} />
+              <VideoStage episode={episode} onScript={() => go('rewrite')} onAssets={() => go('assets')} />
             ) : null}
-            {panel === 'export' ? <ExportStage episode={episode} onVideo={() => setPanel('video')} /> : null}
+            {panel === 'export' ? <ExportStage episode={episode} onVideo={() => go('video')} /> : null}
           </main>
         </div>
       )}
@@ -187,5 +200,9 @@ export function EpisodeStudio({ dramaId, episodeNumber }: { dramaId: number; epi
       </div>
     );
   }
-  return <StudioBody drama={drama.data} episode={episode.data} />;
+  return (
+    <UnsavedDrafts>
+      <StudioBody drama={drama.data} episode={episode.data} />
+    </UnsavedDrafts>
+  );
 }

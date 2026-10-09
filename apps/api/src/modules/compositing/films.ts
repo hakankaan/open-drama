@@ -15,6 +15,7 @@ import { ffmpegAvailable, probeClip } from '../../lib/ffmpeg';
 import { toAbsolute, toMediaPath } from '../../lib/paths';
 import { deriveRenditions } from '../media/store';
 import { attachEpisodeFilm, getEpisodeRow } from '../production/episodes';
+import { isShuttingDown } from '../../lib/shutdown';
 import { touchDrama } from '../production/dramas';
 import { assertNoBreakdown, liveShotRows } from '../storyboard/service';
 import { ENCODER, renderFilm, type FilmClip } from './render';
@@ -156,8 +157,9 @@ async function render(filmId: number, episodeId: number, clips: { shotNumber: nu
   }
 }
 
-/** FailMerge: the error is shown on the export stage; the creator can merge again. */
+/** FailMerge: the error is shown on the export stage; the creator can merge again. A render cut short by shutdown is left to boot cleanup. */
 function failMerge(filmId: number, err: unknown) {
+  if (isShuttingDown()) return;
   const message = (err instanceof Error ? err.message : String(err)).slice(0, 1000);
   logger.warn({ filmId, err: message }, 'merge failed');
   db.update(films).set({ status: 'failed', error: message, completedAt: nowIso() }).where(eq(films.id, filmId)).run();

@@ -1,6 +1,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { env } from '../env';
+import { isShuttingDown } from './shutdown';
 
 const require = createRequire(import.meta.url);
 
@@ -29,17 +30,24 @@ export interface RunResult {
   stderr: string;
 }
 
-const children = new Set<ChildProcess>();
+/** Long-running encoders: killed on shutdown. Short probes and posters are left to finish within the grace period. */
+const encoders = new Set<ChildProcess>();
 
-/** Kills every binary still running (on shutdown), so no encoder outlives the process that owns its result. */
+/** Kills every encoder still running (on shutdown), so none outlives the process that owns its result. */
 export function killRunning(): void {
-  for (const child of children) child.kill('SIGKILL');
+  for (const child of encoders) child.kill('SIGKILL');
 }
 
-/** Spawns a binary with a timeout, capturing output. Never rejects on a non-zero exit; rejects on spawn failure. */
-export function run(bin: string, args: string[], timeoutMs = 60_000): Promise<RunResult> {
+/**
+ * Spawns a binary with a timeout, capturing output. Never rejects on a non-zero exit; rejects on spawn failure.
+ * `killOnShutdown` marks a long-running encoder (a film render): once shutdown has begun none is started, since
+ * killRunning has already made its pass.
+ */
+export function run(bin: string, args: string[], timeoutMs = 60_000, opts: { killOnShutdown?: boolean } = {}): Promise<RunResult> {
   return new Promise((resolve, reject) => {
+    if (opts.killOnShutdown && isShuttingDown()) return reject(new Error('The server is shutting down'));
     const child = spawn(bin, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const children = opts.killOnShutdown ? encoders : new Set<ChildProcess>();
     children.add(child);
     let stdout = '';
     let stderr = '';

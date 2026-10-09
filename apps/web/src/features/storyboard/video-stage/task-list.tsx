@@ -82,13 +82,8 @@ export function TaskList({
           return (
             <li key={shot.id}>
               <div
-                role="button"
-                tabIndex={0}
-                onClick={() => onSelect(shot.id)}
-                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onSelect(shot.id))}
-                aria-current={selected ? 'true' : undefined}
                 className={cn(
-                  'group flex cursor-pointer gap-2.5 rounded-md p-2 text-[13px] transition-colors',
+                  'group relative flex gap-2.5 rounded-md p-2 text-[13px] transition-colors',
                   selected ? 'bg-accent-soft' : 'hover:bg-surface-2',
                 )}
               >
@@ -96,55 +91,59 @@ export function TaskList({
                   <input
                     type="checkbox"
                     checked={checked.has(shot.id)}
-                    onClick={(e) => e.stopPropagation()}
                     onChange={(e) => onCheck([shot.id], e.target.checked)}
                     aria-label={t('selectShot', { number: shot.shotNumber })}
-                    className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]"
+                    className="relative z-10 mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]"
                   />
                 ) : null}
-                <div className="relative flex h-12 w-20 shrink-0 items-center justify-center overflow-hidden rounded bg-frame">
-                  {shot.videoPath ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- media is served by the API through the proxy
-                    <img src={posterOf(shot.videoPath)} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <Clapperboard className="h-4 w-4 text-white/40" aria-hidden />
-                  )}
-                  {state === 'generating' ? (
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/50">
-                      <Loader2 className="h-4 w-4 animate-spin text-white" aria-hidden />
-                    </span>
-                  ) : null}
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-xs text-muted">#{shot.shotNumber}</span>
-                    <span className="truncate font-medium">{shotTitle(shot, t('shotN', { number: shot.shotNumber }))}</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
-                    <Tag tone={STATE_TONE[state]} className="h-5 px-2">
-                      {t(`state.${state}`)}
-                    </Tag>
-                    <span className="tabular-nums">{t('seconds', { seconds: shot.durationSeconds })}</span>
-                    {shot.bindings.scene ? <span className="truncate">{shot.bindings.scene.name}</span> : null}
-                  </div>
-                  {state === 'failed' && task?.error ? (
-                    <p className="flex items-start gap-1 text-xs text-danger">
-                      <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
-                      <span className="line-clamp-2">
-                        {task.errorClass === 'moderation' ? `${t('moderationHint')} ` : ''}
-                        {task.error}
+                {/* Selecting is a button of its own whose overlay covers the row; the checkbox and Play sit above it. */}
+                <button
+                  type="button"
+                  onClick={() => onSelect(shot.id)}
+                  aria-current={selected ? 'true' : undefined}
+                  className="flex min-w-0 flex-1 cursor-pointer gap-2.5 text-left after:absolute after:inset-0 after:rounded-md"
+                >
+                  <span className="relative flex h-12 w-20 shrink-0 items-center justify-center overflow-hidden rounded bg-frame">
+                    {shot.videoPath ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- media is served by the API through the proxy
+                      <img src={posterOf(shot.videoPath)} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <Clapperboard className="h-4 w-4 text-white/40" aria-hidden />
+                    )}
+                    {state === 'generating' ? (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+                        <Loader2 className="h-4 w-4 animate-spin text-white" aria-hidden />
                       </span>
-                    </p>
-                  ) : null}
-                </div>
+                    ) : null}
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="font-mono text-xs text-muted">#{shot.shotNumber}</span>
+                      <span className="truncate font-medium">{shotTitle(shot, t('shotN', { number: shot.shotNumber }))}</span>
+                    </span>
+                    <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                      <Tag tone={STATE_TONE[state]} className="h-5 px-2">
+                        {t(`state.${state}`)}
+                      </Tag>
+                      <span className="tabular-nums">{t('seconds', { seconds: shot.durationSeconds })}</span>
+                      {shot.bindings.scene ? <span className="truncate">{shot.bindings.scene.name}</span> : null}
+                    </span>
+                    {state === 'failed' && task?.error ? (
+                      <span className="flex items-start gap-1 text-xs text-danger">
+                        <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                        <span className="line-clamp-2">
+                          {task.errorClass === 'moderation' ? `${t('moderationHint')} ` : ''}
+                          {task.error}
+                        </span>
+                      </span>
+                    ) : null}
+                  </span>
+                </button>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-7 w-7 shrink-0 self-center opacity-0 group-hover:opacity-100 focus:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onGenerate(shot);
-                  }}
+                  className="relative z-10 h-7 w-7 shrink-0 self-center opacity-0 group-hover:opacity-100 focus:opacity-100"
+                  onClick={() => onGenerate(shot)}
                   disabled={state === 'generating' || requesting.has(shot.id)}
                   aria-label={t('generateShot', { number: shot.shotNumber })}
                 >

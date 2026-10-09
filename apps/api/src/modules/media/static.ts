@@ -30,6 +30,8 @@ export function serveStatic(c: Context): Response {
     'Content-Type': mimeOf(abs),
     'Cache-Control': 'public, max-age=31536000, immutable',
     'Accept-Ranges': 'bytes',
+    // The type is the one the name says; a browser never second-guesses it into something it would run.
+    'X-Content-Type-Options': 'nosniff',
   });
 
   const range = c.req.header('range');

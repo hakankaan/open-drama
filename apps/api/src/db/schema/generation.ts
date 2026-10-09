@@ -33,5 +33,9 @@ export const generationTasks = sqliteTable(
     index('generation_tasks_drama_idx').on(t.dramaId),
     index('generation_tasks_shot_idx').on(t.shotId),
     index('generation_tasks_status_idx').on(t.status),
+    // The latest image task per asset (asset cards, episode assets).
+    index('generation_tasks_character_idx').on(t.characterId),
+    index('generation_tasks_scene_idx').on(t.sceneId),
+    index('generation_tasks_prop_idx').on(t.propId),
   ],
 );

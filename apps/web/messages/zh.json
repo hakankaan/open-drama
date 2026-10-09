@@ -74,6 +74,15 @@
     "unknown": "出错了，请重试。",
     "config": "服务配置有误，请到设置中检查。"
   },
+  "jobs": {
+    "cancel": "取消",
+    "cancelling": "正在取消…",
+    "confirmTitle": "取消这个任务？",
+    "confirmBody": "AI 会立即停止，尚未保存的内容会被丢弃，之后可以重新开始。",
+    "confirm": "取消任务",
+    "keep": "继续运行",
+    "notRunning": "该任务已经结束。"
+  },
   "tour": {
     "progress": "{current}/{total}",
     "next": "下一步",
@@ -196,6 +205,7 @@
         "keyMissing": "尚未保存 API Key。",
         "replaceKey": "输入新的 API Key 以替换",
         "keyRequired": "请填写 API Key。",
+        "keyAgain": "地址或服务商已更改，请重新填写 API Key。",
         "baseUrl": "Base URL",
         "models": "模型",
         "modelsHint": "第一个模型为默认模型。点击模型即可设为默认。",
@@ -497,12 +507,18 @@
     },
     "planning": {
       "running": "正在规划剧集：{written} / {count}",
-      "failed": "已规划 {written} / {count} 集。{error}"
+      "failed": "已规划 {written} / {count} 集。{error}",
+      "cancelled": "已取消规划，完成 {written} / {count} 集。"
     }
   },
   "studio": {
     "notFound": "这一集不存在或已被删除。",
     "backToProject": "返回项目",
+    "unsaved": {
+      "title": "放弃未保存的修改？",
+      "body": "当前步骤有尚未保存的修改，离开后这些修改会丢失。",
+      "leave": "放弃并离开"
+    },
     "episodeChip": "第 {number} 集",
     "scriptDone": "剧本已完成",
     "script": {
@@ -533,6 +549,8 @@
       "expandAgain": "重新扩写",
       "expandAgainTitle": "重新扩写节拍表？",
       "expandAgainBody": "AI 会根据节拍表写一份新剧本，替换当前剧本（包括你的修改）。",
+      "lockedBreakdown": "正在拆分镜，剧本暂时锁定。",
+      "lockedExtraction": "正在提取素材，剧本暂时锁定。",
       "recap": {
         "title": "剧情回顾",
         "hint": "会交给后续各集的智能体。",

@@ -3,6 +3,7 @@ import { JOB_SCOPE, type AgentJob, type DramaJobs, type EpisodeJobs, type JobKin
 import { db } from '../../db/client';
 import { agentJobs } from '../../db/schema';
 import { nowIso } from '../../db/schema/columns';
+import { conflict, notFound } from '../../http/errors';
 import { logger } from '../../http/logger';
 import { scrubSecrets } from '../../lib/secrets';
 
@@ -19,6 +20,30 @@ export interface JobKey {
 }
 
 export type ProgressFn = (progress: Record<string, unknown>) => void;
+
+export interface JobContext {
+  jobId: number;
+  progress: ProgressFn;
+  /** Aborted when the creator cancels the job; passed on to every agent run of the job. */
+  signal: AbortSignal;
+}
+
+/** The jobs running in this process: cancelJob aborts through them, and each entry goes when its job settles. */
+const running = new Map<number, AbortController>();
+/** Per-job state kept in memory by the job's tools, dropped when the job settles (see jobState). */
+const settledHandlers: ((jobId: number) => void)[] = [];
+
+/**
+ * In-memory state a tool keeps per job (a breakdown's accepted final batch, a recap's refused save). It lives as long
+ * as the job: runJob drops the job's entry once the job settles, so no caller has to remember to.
+ */
+export function jobState<T>(): Map<number, T> {
+  const state = new Map<number, T>();
+  settledHandlers.push((jobId) => state.delete(jobId));
+  return state;
+}
+
+const CANCELLED = 'Cancelled';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -39,7 +64,7 @@ export interface JobHooks {
  */
 export function runJob(
   key: JobKey,
-  work: (ctx: { jobId: number; progress: ProgressFn }) => Promise<void>,
+  work: (ctx: JobContext) => Promise<void>,
   hooks: JobHooks = {},
 ): JobStarted {
   const target = key.target ?? '';
@@ -74,35 +99,83 @@ export function runJob(
   const progress: ProgressFn = (value) =>
     db.update(agentJobs).set({ progress: value }).where(eq(agentJobs.id, jobId)).run();
 
-  const settle = (status: 'done' | 'failed', error: string | null, hook?: (jobId: number, tx: Tx) => void) =>
+  const settle = (status: 'done' | 'failed' | 'cancelled', error: string | null, hook?: (jobId: number, tx: Tx) => void) =>
     db.transaction((tx) => {
-      hook?.(jobId, tx);
-      tx.update(agentJobs).set({ status, error, finishedAt: nowIso() }).where(eq(agentJobs.id, jobId)).run();
+      // Settled once: a row no longer running is left as it is, hook included.
+      const { changes } = tx
+        .update(agentJobs)
+        .set({ status, error, finishedAt: nowIso() })
+        .where(and(eq(agentJobs.id, jobId), eq(agentJobs.status, 'running')))
+        .run();
+      if (changes > 0) hook?.(jobId, tx);
     });
+  const controller = new AbortController();
+  running.set(jobId, controller);
   // Nothing here may reject: an unhandled rejection exits Node.
   void (async () => {
     let failure: string | null = null;
     try {
-      await work({ jobId, progress });
+      await work({ jobId, progress, signal: controller.signal });
     } catch (err) {
       failure = scrubSecrets(err instanceof Error ? err.message : String(err));
     }
-    if (failure === null) {
-      try {
-        settle('done', null, hooks.onDone);
-        return;
-      } catch (err) {
-        failure = `Finishing the job failed: ${(err as Error).message}`;
-      }
-    }
-    logger.warn({ jobId, kind: key.kind, err: failure }, 'job failed');
     try {
-      settle('failed', failure, hooks.onFailure);
-    } catch (err) {
-      logger.error({ jobId, kind: key.kind, err: (err as Error).message }, 'job bookkeeping failed');
+      if (failure === null) {
+        try {
+          settle('done', null, hooks.onDone);
+          return;
+        } catch (err) {
+          failure = `Finishing the job failed: ${(err as Error).message}`;
+        }
+      }
+      // A cancelled job unwinds like a failed one (the same hook restores what it parked), recorded as cancelled.
+      const cancelled = controller.signal.aborted;
+      if (cancelled) logger.info({ jobId, kind: key.kind }, 'job cancelled');
+      else logger.warn({ jobId, kind: key.kind, err: failure }, 'job failed');
+      try {
+        settle(cancelled ? 'cancelled' : 'failed', cancelled ? CANCELLED : failure, hooks.onFailure);
+      } catch (err) {
+        logger.error({ jobId, kind: key.kind, err: (err as Error).message }, 'job bookkeeping failed');
+      }
+    } finally {
+      running.delete(jobId);
+      for (const forget of settledHandlers) forget(jobId);
     }
   })();
   return inserted;
+}
+
+/**
+ * CancelAgentJob: aborts a running job of this process. Its agent run stops at the next provider call or tool call
+ * (a tool already started finishes first), then the job settles as cancelled through its failure hook, so what the
+ * job saved stays saved and what it parked is restored. Returns the job as it is now, still running for a moment.
+ */
+export function cancelJob(jobId: number): AgentJob {
+  const row = db.select().from(agentJobs).where(eq(agentJobs.id, jobId)).get();
+  if (!row) throw notFound('Job');
+  const controller = running.get(jobId);
+  if (row.status !== 'running' || !controller) throw conflict('The job is no longer running');
+  controller.abort(new Error(CANCELLED));
+  return toAgentJob(row);
+}
+
+/** The kinds of the episode's running jobs, in one query (the guards between jobs read this). */
+export function runningJobKinds(episodeId: number): Set<JobKind> {
+  const rows = db
+    .selectDistinct({ kind: agentJobs.kind })
+    .from(agentJobs)
+    .where(and(eq(agentJobs.episodeId, episodeId), eq(agentJobs.status, 'running')))
+    .all();
+  return new Set(rows.map((r) => r.kind));
+}
+
+/** Whether any job of the drama runs, drama-scoped or on one of its episodes. */
+export function dramaHasRunningJob(dramaId: number): boolean {
+  return !!db
+    .select({ id: agentJobs.id })
+    .from(agentJobs)
+    .where(and(eq(agentJobs.dramaId, dramaId), eq(agentJobs.status, 'running')))
+    .get();
 }
 
 const latest = (episodeId: number, kind: JobKind, target = '') =>

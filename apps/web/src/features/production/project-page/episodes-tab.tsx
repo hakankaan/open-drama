@@ -16,6 +16,7 @@ import { Tag } from '@/components/ui/tag';
 import { useToastError } from '@/lib/errors';
 import { relativeTime } from '@/lib/time';
 import { useCreateEpisode, useDeleteEpisode, useUpdateEpisode } from '../api';
+import { CancelJobButton } from '../cancel-job-button';
 import { parseTarget, TargetLengthField } from '../episode-length';
 
 export function AddEpisodeDialog({ drama, onClose }: { drama: DramaDetail; onClose: () => void }) {
@@ -152,22 +153,29 @@ function EpisodeCard({ drama, episode, onDelete }: { drama: DramaDetail; episode
   );
 }
 
-/** The plan job's line (adr-0015): how many of the requested episodes are live, while it runs and after a failure. */
+/**
+ * The plan job's line (adr-0015): how many of the requested episodes are live, while it runs and after a failure or
+ * a cancel (the episodes added so far stay).
+ */
 function PlanningLine({ drama, plan }: { drama: DramaDetail; plan: DramaJobs['plan'] }) {
   const t = useTranslations('project.planning');
-  if (!plan || (plan.status !== 'running' && plan.status !== 'failed')) return null;
+  if (!plan || (plan.status !== 'running' && plan.status !== 'failed' && plan.status !== 'cancelled')) return null;
   const progress = PlanProgress.safeParse(plan.progress);
   if (!progress.success) return null;
   const written = progress.data.written.filter((id) => drama.episodes.some((e) => e.id === id)).length;
   const count = progress.data.count;
   if (plan.status === 'running') {
     return (
-      <p className="flex items-center gap-2 text-sm text-ink-2" role="status">
-        <Loader2 className="h-4 w-4 animate-spin text-accent" aria-hidden />
-        {t('running', { written, count })}
-      </p>
+      <div className="flex items-center gap-2">
+        <p className="flex items-center gap-2 text-sm text-ink-2" role="status">
+          <Loader2 className="h-4 w-4 animate-spin text-accent" aria-hidden />
+          {t('running', { written, count })}
+        </p>
+        <CancelJobButton job={plan} owner={{ dramaId: drama.id }} />
+      </div>
     );
   }
+  if (plan.status === 'cancelled') return <p className="text-sm text-muted">{t('cancelled', { written, count })}</p>;
   return (
     <p className="flex max-w-2xl items-start gap-2 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger" role="alert">
       <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />

@@ -30,6 +30,7 @@ One image or video generation request and its full lifecycle. Tagged with its ow
 | Handles | `FailGenerationTask` |
 | Handles | `DeleteGenerationTask` |
 | Handles | `FailInterruptedTasks` |
+| Handles | `ResumeInterruptedTasks` |
 | Emits | `GenerationTaskSubmitted` |
 | Emits | `GenerationTaskDispatched` |
 | Emits | `ProviderResultReceived` |

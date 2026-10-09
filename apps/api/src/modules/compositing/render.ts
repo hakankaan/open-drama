@@ -57,7 +57,7 @@ export async function renderFilm(inputs: FilmClip[], outAbs: string): Promise<vo
     '-movflags', '+faststart',
     outAbs,
   ];
-  const result = await run(ffmpegBin(), args, Math.max(10 * 60_000, total * 10_000));
+  const result = await run(ffmpegBin(), args, Math.max(10 * 60_000, total * 10_000), { killOnShutdown: true });
   if (result.code !== 0) {
     const tail = result.stderr.trim().split('\n').slice(-6).join('\n');
     throw new Error(result.code === null ? 'FFmpeg timed out while rendering the film' : `FFmpeg failed: ${tail}`);

@@ -18,6 +18,8 @@ Open http://localhost:3000. The API listens on `127.0.0.1:4000` and the web serv
 Requires Node.js 22+ and pnpm 12. No database server is needed, and no FFmpeg install on macOS, Windows or Linux x64. On Linux arm64 the bundled package has no ffprobe: install FFmpeg and set `FFPROBE_BIN=/usr/bin/ffprobe` (the Docker image already does this).
 
 > Open Drama has no user accounts. Anyone who can reach the web port can use the whole tool, including your API keys. Keep it on a private network, or put a reverse proxy with authentication in front.
+>
+> It answers only to `localhost` and IP addresses (so pages on other sites cannot reach it through DNS tricks), and it refuses changes requested by another site. To open it by a name, such as `studio.lan` or the domain of your reverse proxy, list that name in `OPEN_DRAMA_ALLOWED_HOSTS` (`PUBLIC_BASE_URL`'s name is allowed already).
 
 ### Run with Docker
 
@@ -41,6 +43,7 @@ The API runs on `127.0.0.1:4000` and the web server on `0.0.0.0:${WEB_PORT:-3000
 |---|---|
 | `OPEN_DRAMA_DATA_DIR` | keep data somewhere other than `./data` |
 | `PUBLIC_BASE_URL` | a video provider must fetch one of your uploaded reference videos or audio files; it needs a public https address |
+| `OPEN_DRAMA_ALLOWED_HOSTS` | you open Open Drama by a name other than `localhost` or an IP address, such as `studio.lan` or your reverse proxy's domain (comma-separated) |
 | `HOST` | only if the API must listen beyond localhost, which it normally should not |
 | `OPEN_DRAMA_VIDEO_CONCURRENCY` | how many shot videos one episode generates at once (default 4); the rest wait their turn |
 | `OPEN_DRAMA_STUB_PROVIDERS=1` | try the whole flow offline: image and video generation use local placeholders, text uses a scripted model |

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { OUTLINE_MAX_CHARS } from '@open-drama/contracts';
 import { db } from '../../../db/client';
 import { dramas } from '../../../db/schema';
+import { getDramaJobs } from '../../jobs/run-job';
 import { getDramaRow } from '../../production/dramas';
 import { episodeStates, type EpisodeState } from '../../production/episodes';
 import { fitRecaps } from '../../production/series';
@@ -66,6 +67,10 @@ export const saveOutline = defineDramaTool({
       return { error: `The outline is ${text.length} characters; shorten it to at most ${OUTLINE_MAX_CHARS} and save again.` };
     }
     getDramaRow(ctx.dramaId);
+    // A chat run's save is a creator edit: a running outline job owns the outline.
+    if (ctx.chat && getDramaJobs(ctx.dramaId).outline?.status === 'running') {
+      return { error: 'The outline is being written by its job; save once it has finished' };
+    }
     db.update(dramas).set({ outline: text, updatedAt: new Date().toISOString() }).where(eq(dramas.id, ctx.dramaId)).run();
     return { saved: true, characters: text.length };
   },

@@ -31,6 +31,10 @@ const EnvSchema = z.object({
   OPEN_DRAMA_AI_MAX_TOKENS: z.coerce.number().int().min(256).max(1_000_000).default(16384),
   OPEN_DRAMA_AI_THINKING_OFF_PATCH: z.string().optional(),
   WEB_ORIGIN: z.string().default('http://localhost:3000'),
+  // Where the web server forwards /api; its name reaches this server as the Host.
+  API_ORIGIN: z.string().optional(),
+  // Names besides localhost and IP literals the servers answer to (adr-0010), comma-separated.
+  OPEN_DRAMA_ALLOWED_HOSTS: z.string().optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   OPEN_DRAMA_VERSION: z.string().default(API_VERSION),
 });

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { RECAP_MAX_CHARS } from '@open-drama/contracts';
 import { db } from '../../../db/client';
 import { episodes } from '../../../db/schema';
+import { jobState } from '../../jobs/run-job';
 import { writeRecap } from '../../production/episodes';
 import { seriesContext } from '../../production/series';
 import { defineTool } from '../runtime/tool';
@@ -24,9 +25,8 @@ export const readEpisodeForRecap = defineTool({
 });
 
 /** Recap jobs whose save was refused because the script moved on; the job fails at once instead of retrying. */
-const refused = new Set<number>();
+const refused = jobState<true>();
 export const recapRefused = (jobId: number) => refused.has(jobId);
-export const forgetRecap = (jobId: number) => refused.delete(jobId);
 
 /** SaveRecap: pinned to the script revision the job started from (adr-0014). */
 export const saveRecap = defineTool({
@@ -42,7 +42,7 @@ export const saveRecap = defineTool({
     // Outside a recap job there is no revision to pin to, so a save could claim a script it was not written for.
     if (ctx.scriptRevision === undefined || ctx.jobId === undefined) return { error: 'save_recap only runs inside a recap job' };
     if (!writeRecap(ctx.episodeId, text, ctx.scriptRevision)) {
-      refused.add(ctx.jobId);
+      refused.set(ctx.jobId, true);
       return { error: 'The script changed while this recap was being written; this run is abandoned' };
     }
     return { saved: true, characters: text.length };

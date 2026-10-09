@@ -8,6 +8,7 @@ import { env } from '../../../env';
 import { conflict, precondition } from '../../../http/errors';
 import { logger } from '../../../http/logger';
 import { rememberSecret } from '../../../lib/secrets';
+import { isShuttingDown } from '../../../lib/shutdown';
 import { resolveService } from '../../configuration/services';
 import { ProviderError, type Dialect, type ProviderRequest, type ResultMedia, type ServiceConfig } from '../adapters/types';
 import { classify, messageOf } from './errors';
@@ -122,7 +123,7 @@ export async function send(req: ProviderRequest, timeoutMs: number): Promise<unk
   return body;
 }
 
-async function poll<R>(
+export async function poll<R>(
   adapter: Dialect<R>,
   config: ServiceConfig,
   taskId: number,
@@ -191,10 +192,37 @@ export async function generate<R>(
 }
 
 /**
+ * The provider's result URL is kept on the task before it is downloaded: the work is paid for, so a download that
+ * fails for good still leaves on the task where the result was.
+ */
+export function recordResultUrl(taskId: number, url: string | undefined) {
+  if (url) db.update(generationTasks).set({ resultUrl: url }).where(eq(generationTasks.id, taskId)).run();
+}
+
+/**
+ * CompleteGenerationTask: the stored result lands on the task and, through `writeBack`, on its owner in one
+ * transaction, only while the task is still processing (a task failed meanwhile stays failed, and its owner keeps
+ * what it has). False when nothing was written.
+ */
+export function completeTask(taskId: number, values: { localPath: string; durationSeconds?: number }, writeBack: (tx: Tx) => void): boolean {
+  return db.transaction((tx) => {
+    const { changes } = tx
+      .update(generationTasks)
+      .set({ status: 'completed', completedAt: nowIso(), ...values })
+      .where(and(eq(generationTasks.id, taskId), eq(generationTasks.status, 'processing')))
+      .run();
+    if (changes > 0) writeBack(tx);
+    return changes > 0;
+  });
+}
+
+/**
  * FailGenerationTask: the message and TaskErrorClass are stored; the owner row is left unchanged. Only a task still
- * processing can fail, so a completed task never flips back (the status only moves forward).
+ * processing can fail, so a completed task never flips back (the status only moves forward). Work cut short by
+ * shutdown is not a failure: the task stays processing for boot cleanup or resume.
  */
 export function failTask(taskId: number, err: unknown, what: string) {
+  if (isShuttingDown()) return;
   const errorClass = classify(err);
   const error = messageOf(err);
   db.update(generationTasks)

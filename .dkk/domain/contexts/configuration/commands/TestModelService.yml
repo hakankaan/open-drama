@@ -16,3 +16,4 @@ actor: Creator
 handled_by: ModelService
 rejections:
   - Missing service type, provider or base URL
+  - Testing a saved service's key against a new origin or provider without entering the key again

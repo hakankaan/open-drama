@@ -1,0 +1,13 @@
+name: AgentJobCancelled
+description: >-
+  A running agent job was stopped by the creator and settled with status cancelled. Whatever its agent had not saved
+  is discarded; what it saved stays, as after a failure.
+fields:
+  - name: jobId
+    type: ID
+  - name: kind
+    type: string
+invariants:
+  - A job settles once; whichever of finishing, failing or cancelling settles it first wins
+adr_refs:
+  - adr-0008

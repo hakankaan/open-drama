@@ -1,6 +1,7 @@
-# Command — an instruction to change domain state.
 name: UpdateModelService
-description: Edit a service (name, base URL, key, models and their order, priority, active flag, temperature). Reordering models so another is first changes the default model; raising priority makes the service the type's active choice.
+description: >-
+  Edit a service (name, base URL, key, models and their order, priority, active flag, temperature). Reordering models so
+  another is first changes the default model; raising priority makes the service the type's active choice.
 fields:
   - name: serviceId
     type: ID
@@ -11,7 +12,7 @@ fields:
   - name: apiKey
     type: string
   - name: models
-    type: "string[]"
+    type: string[]
   - name: priority
     type: number
   - name: isActive
@@ -23,3 +24,11 @@ handled_by: ModelService
 rejections:
   - Unsupported provider for the service type
   - Temperature outside 0-2
+  - >-
+    A new origin or provider for a service with a saved key, without the key entered again (a saved key never follows a
+    service to another host or provider)
+  - >-
+    A new provider, base URL or key while a generation is running on the service (a restart resumes it with the
+    service's address and key)
+adr_refs:
+  - adr-0005

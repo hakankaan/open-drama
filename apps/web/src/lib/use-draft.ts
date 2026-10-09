@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 /**
  * A text field saved on blur (Plan 3 §9): the draft follows the server value while the field is not being edited,
- * the save is awaited, and a failed save rolls the draft back to the server value.
+ * the save is awaited, and a failed save keeps the typed text in editing, so the next blur retries it.
  */
 export function useDraft(server: string, save: (value: string) => Promise<unknown>) {
   const [draft, setDraft] = useState(server);
@@ -20,7 +20,7 @@ export function useDraft(server: string, save: (value: string) => Promise<unknow
     try {
       await save(draft);
     } catch (err) {
-      setDraft(server);
+      setEditing(true);
       throw err;
     }
   };

@@ -16,15 +16,22 @@ interface MiniMaxTask {
 // MiniMax reports errors in base_resp with HTTP 200; these codes need a specific class.
 const AUTH_CODES = new Set([1004, 2049]);
 const MODERATION_CODES = new Set([1026, 1027]);
+/** Unknown error, timeout and internal error: passing conditions, so a poll keeps asking (5xx is retried). */
+const TRANSIENT_CODES = new Set([1000, 1001, 1013]);
 
-/** Throws on a non-zero base_resp, carrying a status the engine classifies (auth, quota, moderation). */
+/**
+ * Throws on a non-zero base_resp, carrying a status the engine classifies and the poll loop acts on: transient codes
+ * are retried, a rate limit (1002) is retried, an empty balance (1008) is final (402, classed as quota).
+ */
 function checkBaseResp(body: unknown) {
   const resp = (body as { base_resp?: BaseResp }).base_resp;
   if (!resp?.status_code) return;
   const code = resp.status_code;
   const message = resp.status_msg || `MiniMax error ${code}`;
   if (AUTH_CODES.has(code)) throw new ProviderError(message, 401, String(code));
-  if (code === 1002 || code === 1008) throw new ProviderError(message, 429, String(code));
+  if (TRANSIENT_CODES.has(code)) throw new ProviderError(message, 503, String(code));
+  if (code === 1002) throw new ProviderError(message, 429, String(code));
+  if (code === 1008) throw new ProviderError(`${message} (insufficient balance)`, 402, String(code));
   if (MODERATION_CODES.has(code)) throw new ProviderError(`${message} (sensitive content)`, 400, String(code));
   throw new ProviderError(message, 400, String(code));
 }

@@ -49,10 +49,14 @@ export function updateStylePreset(id: number, input: z.output<typeof UpdateStyle
   return toPreset(row);
 }
 
-/** A preset used by a live drama cannot be deleted (its prompt fragment is still prepended); disable it instead. */
+/**
+ * A built-in cannot be deleted (the seed would put it back on the next start), nor can a preset used by a live
+ * drama (its prompt fragment is still prepended); both are disabled instead.
+ */
 export function deleteStylePreset(id: number): { id: number } {
   const row = db.select().from(stylePresets).where(eq(stylePresets.id, id)).get();
   if (!row) throw notFound('Style preset');
+  if (row.seedPrompt !== null) throw conflict('Built-in styles cannot be deleted. Disable it instead.');
   const used =
     db
       .select({ n: count() })

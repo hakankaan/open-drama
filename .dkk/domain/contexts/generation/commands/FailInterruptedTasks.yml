@@ -1,7 +1,9 @@
 name: FailInterruptedTasks
 description: >-
-  At API startup, mark every task still in processing as failed with a restart message, because the in-memory polling
-  loops died with the previous process.
+  At API startup, mark as failed every processing task the provider never confirmed (no provider task id), because its
+  submission died with the previous process, and with stub providers every processing task. A task without a provider
+  task id may already have been sent, so its error says the provider may still have run and billed it. Accepted
+  tasks are resumed instead (ResumeInterruptedTasks).
 actor: Bootstrap
 handled_by: GenerationTask
 adr_refs:

@@ -5,10 +5,8 @@ import { db } from '../../db/client';
 import { generationTasks } from '../../db/schema';
 import { conflict } from '../../http/errors';
 import { episodeForAsset, ensureFinalPrompt, loadAssetForPrompt } from '../agents/services/final-prompt';
-import { submitAssetImage } from '../generation/engine/images';
+import { ASSET_TASK_OWNER, submitAssetImage } from '../generation/engine/images';
 import { getDramaRow, touchDrama } from '../production/dramas';
-
-const OWNER = { character: generationTasks.characterId, scene: generationTasks.sceneId, prop: generationTasks.propId } as const;
 
 /** Reference-image shape per kind: turnaround sheets are wide, scenes follow the drama's frame, props are square. */
 const shapeFor = (kind: AssetKind, dramaAspect: AspectRatio): AspectRatio =>
@@ -39,7 +37,7 @@ async function requestClaimed(kind: AssetKind, id: number, body: z.output<typeof
   const running = db
     .select({ id: generationTasks.id })
     .from(generationTasks)
-    .where(and(eq(generationTasks.type, 'image'), eq(OWNER[kind], id), eq(generationTasks.status, 'processing')))
+    .where(and(eq(generationTasks.type, 'image'), eq(ASSET_TASK_OWNER[kind].column, id), eq(generationTasks.status, 'processing')))
     .get();
   if (running) throw conflict('An image is already being generated for this asset', { taskId: running.id });
   const prompt = await ensureFinalPrompt(kind, id, { episodeId: ep.id, model: body.textModel, textServiceId: body.textServiceId });

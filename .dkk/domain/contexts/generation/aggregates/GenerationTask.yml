@@ -12,6 +12,7 @@ handles:
     - FailGenerationTask
     - DeleteGenerationTask
     - FailInterruptedTasks
+    - ResumeInterruptedTasks
 emits:
   events:
     - GenerationTaskSubmitted

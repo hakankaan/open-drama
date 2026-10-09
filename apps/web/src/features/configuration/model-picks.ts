@@ -9,7 +9,7 @@ export type ModelPicks = Record<ServiceType, ModelPick>;
 
 const EMPTY: ModelPicks = { text: null, image: null, video: null };
 
-/** The creator's model picks per type, kept in the browser (Plan 3 §2 UI state). */
+/** The creator's model picks per type, kept in the browser (Plan 3 §2 UI state); one store for the whole tab. */
 export function useModelPicks() {
   const [picks, setPicks] = usePersistedState<ModelPicks>('model-picks', EMPTY);
   const setPick = (type: ServiceType, pick: ModelPick) => setPicks((p) => ({ ...p, [type]: pick }));

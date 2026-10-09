@@ -74,6 +74,15 @@
     "unknown": "エラーが発生しました。もう一度お試しください。",
     "config": "サービスが正しく設定されていません。設定を確認してください。"
   },
+  "jobs": {
+    "cancel": "キャンセル",
+    "cancelling": "キャンセル中…",
+    "confirmTitle": "このジョブをキャンセルしますか？",
+    "confirmBody": "AIはすぐに停止し、まだ保存されていない内容は破棄されます。あとで再度開始できます。",
+    "confirm": "ジョブをキャンセル",
+    "keep": "実行を続ける",
+    "notRunning": "ジョブはすでに終了しています。"
+  },
   "tour": {
     "progress": "{current} / {total}",
     "next": "次へ",
@@ -196,6 +205,7 @@
         "keyMissing": "キーはまだ保存されていません。",
         "replaceKey": "置き換える場合は新しいキーを入力",
         "keyRequired": "APIキーは必須です。",
+        "keyAgain": "新しいアドレスまたはプロバイダーで使うには、APIキーを再入力してください。",
         "baseUrl": "Base URL",
         "models": "モデル",
         "modelsHint": "最初のモデルがデフォルトになります。モデルをクリックするとデフォルトに設定できます。",
@@ -497,12 +507,18 @@
     },
     "planning": {
       "running": "エピソードを計画中: {written} / {count}",
-      "failed": "{count}話中{written}話を計画しました。{error}"
+      "failed": "{count}話中{written}話を計画しました。{error}",
+      "cancelled": "計画をキャンセルしました（{count}話中{written}話）。"
     }
   },
   "studio": {
     "notFound": "このエピソードは存在しないか、削除されています。",
     "backToProject": "プロジェクトに戻る",
+    "unsaved": {
+      "title": "保存していない変更を破棄しますか？",
+      "body": "このステップには保存していない編集があります。移動すると編集内容は失われます。",
+      "leave": "破棄して移動"
+    },
     "episodeChip": "第{number}話",
     "scriptDone": "脚本完成",
     "script": {
@@ -533,6 +549,8 @@
       "expandAgain": "もう一度展開",
       "expandAgainTitle": "ビートシートをもう一度展開しますか？",
       "expandAgainBody": "AIがビートシートから新しい脚本を書き、あなたの編集も含めて現在の脚本を置き換えます。",
+      "lockedBreakdown": "脚本をショットに分割している間はロックされます。",
+      "lockedExtraction": "アセットを抽出している間はロックされます。",
       "recap": {
         "title": "この話のまとめ",
         "hint": "次の話以降のエージェントに渡されます。",

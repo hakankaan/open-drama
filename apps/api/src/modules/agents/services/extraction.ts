@@ -2,7 +2,7 @@ import type { ExtractionTarget, TextModelOverride } from '@open-drama/contracts'
 import type { z } from 'zod';
 import { precondition } from '../../../http/errors';
 import { runJob } from '../../jobs/run-job';
-import { getEpisodeRow } from '../../production/episodes';
+import { assertScriptSettled, getEpisodeRow } from '../../production/episodes';
 import { runAgentUntilSaved } from '../runtime/run-agent';
 
 const WHAT: Record<ExtractionTarget, string> = {
@@ -17,10 +17,11 @@ const message = (target: ExtractionTarget) =>
 /** StartExtraction → ExtractionJob per target; the three targets run in parallel, a duplicate start returns the running job. */
 export function startExtraction(episodeId: number, target: ExtractionTarget, opts: z.input<typeof TextModelOverride> = {}) {
   const ep = getEpisodeRow(episodeId);
+  assertScriptSettled(ep.id, 'extract assets');
   if (!ep.scriptContent?.trim()) throw precondition('Finish the script (rewrite or skip) before extracting assets');
-  return runJob({ kind: 'extraction', episodeId: ep.id, dramaId: ep.dramaId, target }, async ({ progress }) => {
+  return runJob({ kind: 'extraction', episodeId: ep.id, dramaId: ep.dramaId, target }, async ({ progress, signal }) => {
     const run = await runAgentUntilSaved(
-      { agentType: 'extractor', message: message(target), episodeId: ep.id, dramaId: ep.dramaId, ...opts },
+      { agentType: 'extractor', message: message(target), episodeId: ep.id, dramaId: ep.dramaId, signal, ...opts },
       `save_dedup_${target}`,
     );
     progress({ steps: run.steps, model: run.model });

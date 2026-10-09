@@ -13,8 +13,8 @@ const MESSAGE =
  */
 export function startOutline(dramaId: number, opts: z.input<typeof TextModelOverride> = {}) {
   getDramaRow(dramaId);
-  return runJob({ kind: 'outline', dramaId, episodeId: null }, async ({ jobId, progress }) => {
-    const run = await runAgentUntilSaved({ agentType: 'story_writer', message: MESSAGE, dramaId, jobId, ...opts }, 'save_outline');
+  return runJob({ kind: 'outline', dramaId, episodeId: null }, async ({ jobId, progress, signal }) => {
+    const run = await runAgentUntilSaved({ agentType: 'story_writer', message: MESSAGE, dramaId, jobId, signal, ...opts }, 'save_outline');
     progress({ steps: run.steps, model: run.model });
   });
 }

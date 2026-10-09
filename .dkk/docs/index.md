@@ -23,7 +23,7 @@
 | AgentRuntime | system | The in-process agent runtime inside the API. Runs the five production agents (script rewriter, extractor, storyboard breaker, prompt generator, recap writer) as tool-calling loops against a text model, and executes their tools as commands on the domain. |
 | GenerationWorker | system | The background worker inside the API that drives image and video generation tasks — builds provider requests, submits them, polls for completion, persists results locally and writes them back to the owning asset or shot. |
 | RenderWorker | system | The background worker that concatenates shot videos into an episode film by driving the bundled FFmpeg binaries. |
-| Bootstrap | system | The API process at startup. Applies database migrations, seeds style presets, copies the agent workspace template once into the data directory and marks interrupted generation tasks as failed. |
+| Bootstrap | system | The API process at startup. Backs the database up and applies pending migrations, seeds style presets, copies the agent workspace template once into the data directory, fails the generation tasks no provider had accepted and resumes the ones a provider had. |
 | FFmpeg | system | The FFmpeg and FFprobe binaries bundled with the API (overridable by environment variables). Used for concatenation, duration probing and poster-frame extraction. |
 | TextModelProvider | external | An OpenAI-compatible or Gemini chat-completion endpoint (official or relay) configured as a text model service. Powers every agent run. |
 | ImageModelProvider | external | An image generation endpoint (OpenAI images, Gemini image, Volcengine and similar) behind an image provider adapter. Returns a URL or inline base64, synchronously or through an async task. |

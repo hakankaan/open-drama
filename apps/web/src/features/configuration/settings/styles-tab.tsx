@@ -165,11 +165,14 @@ export function StylesTab() {
                       <Pencil className="h-4 w-4" />
                     </Button>
                   </Tooltip>
-                  <Tooltip content={t('delete')}>
-                    <Button size="icon" variant="ghost" onClick={() => setDeleting(p)} aria-label={t('delete')}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </Tooltip>
+                  {/* A built-in would come back with the next start: it is disabled instead. */}
+                  {p.isBuiltIn ? null : (
+                    <Tooltip content={t('delete')}>
+                      <Button size="icon" variant="ghost" onClick={() => setDeleting(p)} aria-label={t('delete')}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </Tooltip>
+                  )}
                 </div>
               </div>
               <p className="line-clamp-2 font-mono text-xs text-ink-2">{p.prompt}</p>

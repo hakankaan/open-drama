@@ -82,7 +82,8 @@ export const episodeCharacters = sqliteTable(
       .references(() => characters.id),
     createdAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.episodeId, t.characterId] })],
+  // The second index serves the reverse lookup (deleting a character).
+  (t) => [primaryKey({ columns: [t.episodeId, t.characterId] }), index('episode_characters_character_idx').on(t.characterId)],
 );
 
 export const episodeScenes = sqliteTable(
@@ -94,7 +95,7 @@ export const episodeScenes = sqliteTable(
       .references(() => scenes.id),
     createdAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.episodeId, t.sceneId] })],
+  (t) => [primaryKey({ columns: [t.episodeId, t.sceneId] }), index('episode_scenes_scene_idx').on(t.sceneId)],
 );
 
 export const episodeProps = sqliteTable(
@@ -106,5 +107,5 @@ export const episodeProps = sqliteTable(
       .references(() => props.id),
     createdAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.episodeId, t.propId] })],
+  (t) => [primaryKey({ columns: [t.episodeId, t.propId] }), index('episode_props_prop_idx').on(t.propId)],
 );

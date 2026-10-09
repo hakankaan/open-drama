@@ -1,0 +1,17 @@
+name: CancelAgentJob
+description: >-
+  Stop a running agent job of any kind (rewrite, write, recap, outline, plan, extraction, breakdown, video-prompt
+  batch). The job's abort signal reaches the model call in flight and stops tool execution; the job then settles as
+  cancelled through its failure path, so a breakdown restores its parked shots and a plan keeps the episodes it
+  created. Answers with the job as it is; it settles a moment later.
+fields:
+  - name: jobId
+    type: ID
+actor: Creator
+preconditions:
+  - The job is running in this process
+rejections:
+  - Unknown job
+  - The job is no longer running (already done, failed or cancelled)
+adr_refs:
+  - adr-0008

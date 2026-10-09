@@ -2,6 +2,7 @@
 
 import { Dialog as D } from 'radix-ui';
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 
 export const Dialog = D.Root;
@@ -21,6 +22,7 @@ export function DialogContent({
   className?: string;
   wide?: boolean;
 }) {
+  const t = useTranslations('common');
   return (
     <D.Portal>
       <D.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] data-[state=open]:animate-[fade-in_150ms_ease-out]" />
@@ -42,7 +44,7 @@ export function DialogContent({
           </div>
           <D.Close
             className="-mr-2 rounded-md p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-ink"
-            aria-label="Close"
+            aria-label={t('close')}
           >
             <X className="h-4 w-4" />
           </D.Close>

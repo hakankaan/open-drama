@@ -26,6 +26,8 @@ Edit a service (name, base URL, key, models and their order, priority, active fl
 
 - Unsupported provider for the service type
 - Temperature outside 0-2
+- A new origin or provider for a service with a saved key, without the key entered again (a saved key never follows a service to another host or provider)
+- A new provider, base URL or key while a generation is running on the service (a restart resumes it with the service's address and key)
 
 
 ## Relationships
@@ -37,4 +39,6 @@ Edit a service (name, base URL, key, models and their order, priority, active fl
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |

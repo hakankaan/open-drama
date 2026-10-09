@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../../db/client';
 import { episodes } from '../../../db/schema';
-import { writeScript } from '../../production/episodes';
+import { assertScriptFree, writeScript } from '../../production/episodes';
 import { seriesContext } from '../../production/series';
 import { defineTool } from '../runtime/tool';
 
@@ -32,6 +32,8 @@ export const saveScript = defineTool({
   execute: ({ content }, ctx) => {
     const text = content.trim();
     if (text.length < 20) return { error: 'The script is too short; send the complete script.' };
+    // A chat run's save is a creator edit: the jobs that lock the script refuse it.
+    if (ctx.chat) assertScriptFree(ctx.episodeId, 'save the script');
     writeScript(ctx.episodeId, text);
     return { saved: true, characters: text.length };
   },

@@ -33,6 +33,7 @@ checkAgentToolScopes();
 
 // The probe can take seconds on a cold binary, so it only warns and never delays startup.
 const { ffmpegAvailable, ffmpegBin, killRunning } = await import('./lib/ffmpeg');
+const { beginShutdown } = await import('./lib/shutdown');
 void ffmpegAvailable().then((available) => {
   if (available) logger.info({ bin: ffmpegBin() }, 'ffmpeg available');
   else logger.warn({ bin: ffmpegBin() }, 'ffmpeg not available: merges will fail until FFMPEG_BIN is set');
@@ -41,6 +42,9 @@ void ffmpegAvailable().then((available) => {
 const { failInterrupted } = await import('./modules/jobs/boot-cleanup');
 logger.info(failInterrupted(), 'interrupted work failed');
 
+const { resumeInterrupted } = await import('./modules/generation/engine/resume');
+logger.info(resumeInterrupted(), 'accepted generations resumed');
+
 const { createApp } = await import('./app');
 const server = serve({ fetch: createApp().fetch, hostname: env.HOST, port: env.PORT }, (info) =>
   logger.info({ url: `http://${info.address}:${info.port}` }, 'listening'),
@@ -48,7 +52,9 @@ const server = serve({ fetch: createApp().fetch, hostname: env.HOST, port: env.P
 
 const shutdown = (signal: string) => {
   logger.info({ signal }, 'shutting down');
-  // A render cut short is failed by boot cleanup on the next start; its encoder must not keep running meanwhile.
+  // Work cut short from here on is left for the next start (boot cleanup, or resume for a paid generation), and a
+  // render's encoder must not keep running meanwhile.
+  beginShutdown();
   killRunning();
   server.close(() => {
     sqlite.close();

@@ -15,6 +15,9 @@ Remove a service permanently.
 |------|------|-------------|
 | `serviceId` | `ID` | — |
 
+## Rules & Invariants
+
+- A generation is running on the service (a restart resumes it with the service's address and key)
 
 
 ## Relationships
@@ -26,4 +29,6 @@ Remove a service permanently.
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |

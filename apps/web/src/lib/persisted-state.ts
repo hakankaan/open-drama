@@ -1,46 +1,74 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 const PREFIX = 'open-drama:';
 
-const read = <T,>(key: string): T | undefined => {
-  try {
-    const raw = window.localStorage.getItem(PREFIX + key);
-    return raw === null ? undefined : (JSON.parse(raw) as T);
-  } catch {
-    return undefined;
+/** The values of this tab by key, read from localStorage once; `undefined` = nothing stored. */
+const cache = new Map<string, unknown>();
+const listeners = new Set<() => void>();
+
+const read = (key: string): unknown => {
+  if (!cache.has(key)) {
+    let value: unknown;
+    try {
+      const raw = window.localStorage.getItem(PREFIX + key);
+      value = raw === null ? undefined : JSON.parse(raw);
+    } catch {
+      value = undefined;
+    }
+    cache.set(key, value);
   }
+  return cache.get(key);
 };
 
+const notify = () => listeners.forEach((listener) => listener());
+
+const write = (key: string, value: unknown) => {
+  cache.set(key, value);
+  try {
+    window.localStorage.setItem(PREFIX + key, JSON.stringify(value));
+  } catch {
+    // Storage unavailable (private mode): the preference lives for this session only.
+  }
+  notify();
+};
+
+// Another tab changed a preference: its cached value is read again.
+const onStorage = (e: StorageEvent) => {
+  if (e.key === null) cache.clear();
+  else if (e.key.startsWith(PREFIX)) cache.delete(e.key.slice(PREFIX.length));
+  else return;
+  notify();
+};
+
+const subscribe = (listener: () => void) => {
+  if (listeners.size === 0) window.addEventListener('storage', onStorage);
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0) window.removeEventListener('storage', onStorage);
+  };
+};
+
+const noSubscribe = () => () => {};
+
 /**
- * A UI preference kept in localStorage under `open-drama:<key>`. The first render uses the initial value
- * (so server and client markup match) and the stored value is applied right after mount.
+ * A UI preference kept in localStorage under `open-drama:<key>`, one store shared by every caller in the tab (and
+ * followed across tabs). The server render and hydration use the initial value (so server and client markup match);
+ * `loaded` turns true once the stored value applies.
  */
 export function usePersistedState<T>(key: string, initial: T) {
-  const [value, setValue] = useState<T>(initial);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    const stored = read<T>(key);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrating from storage after mount is the point
-    if (stored !== undefined) setValue(stored);
-    setLoaded(true);
-  }, [key]);
+  const stored = useSyncExternalStore(subscribe, () => read(key), () => undefined);
+  const loaded = useSyncExternalStore(noSubscribe, () => true, () => false);
+  const value = stored === undefined ? initial : (stored as T);
 
   const update = useCallback(
     (next: T | ((prev: T) => T)) => {
-      setValue((prev) => {
-        const resolved = typeof next === 'function' ? (next as (p: T) => T)(prev) : next;
-        try {
-          window.localStorage.setItem(PREFIX + key, JSON.stringify(resolved));
-        } catch {
-          // Storage unavailable (private mode): the preference lives for this session only.
-        }
-        return resolved;
-      });
+      const prev = read(key);
+      write(key, typeof next === 'function' ? (next as (p: T) => T)(prev === undefined ? initial : (prev as T)) : next);
     },
-    [key],
+    [key, initial],
   );
 
   return [value, update, loaded] as const;

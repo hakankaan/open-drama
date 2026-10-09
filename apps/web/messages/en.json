@@ -74,6 +74,15 @@
     "unknown": "Something went wrong. Try again.",
     "config": "The service is not set up correctly. Check it in Settings."
   },
+  "jobs": {
+    "cancel": "Cancel",
+    "cancelling": "Cancelling…",
+    "confirmTitle": "Cancel this job?",
+    "confirmBody": "The AI stops now. Whatever it has not saved yet is discarded; you can start it again later.",
+    "confirm": "Cancel job",
+    "keep": "Keep running",
+    "notRunning": "The job had already finished."
+  },
   "tour": {
     "progress": "{current} of {total}",
     "next": "Next",
@@ -196,6 +205,7 @@
         "keyMissing": "No key stored yet.",
         "replaceKey": "Enter a new key to replace it",
         "keyRequired": "An API key is required.",
+        "keyAgain": "Enter the API key again to use it with the new address or provider.",
         "baseUrl": "Base URL",
         "models": "Models",
         "modelsHint": "The first model is the default. Click a model to make it the default.",
@@ -497,12 +507,18 @@
     },
     "planning": {
       "running": "Planning episodes: {written} of {count}",
-      "failed": "Planned {written} of {count}. {error}"
+      "failed": "Planned {written} of {count}. {error}",
+      "cancelled": "Planning cancelled after {written} of {count}."
     }
   },
   "studio": {
     "notFound": "This episode does not exist or was deleted.",
     "backToProject": "Back to the project",
+    "unsaved": {
+      "title": "Discard unsaved changes?",
+      "body": "This step has edits you have not saved. Leaving it discards them.",
+      "leave": "Discard and leave"
+    },
     "episodeChip": "Episode {number}",
     "scriptDone": "Script done",
     "script": {
@@ -533,6 +549,8 @@
       "expandAgain": "Expand again",
       "expandAgainTitle": "Expand the beats again?",
       "expandAgainBody": "The AI writes a new script from the beat sheet and replaces the current one, including your edits.",
+      "lockedBreakdown": "Locked while the storyboard is being broken down.",
+      "lockedExtraction": "Locked while assets are being extracted.",
       "recap": {
         "title": "Recap",
         "hint": "Given to the agents of the next episodes.",

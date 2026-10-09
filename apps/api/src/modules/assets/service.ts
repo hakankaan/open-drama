@@ -22,7 +22,6 @@ import {
   episodeCharacters,
   episodeProps,
   episodeScenes,
-  generationTasks,
   props,
   scenes,
   shotCharacters,
@@ -31,10 +30,12 @@ import {
 } from '../../db/schema';
 import { assertSomething, conflict, invalid, notFound } from '../../http/errors';
 import { toAbsolute } from '../../lib/paths';
+import { ASSET_TASK_OWNER } from '../generation/engine/images';
 import { latestTasks } from '../generation/tasks';
 import { latestExtractionJobs } from '../jobs/run-job';
 import { getDramaRow, touchDrama } from '../production/dramas';
 import { getEpisodeRow } from '../production/episodes';
+import { markAssetPromptsStale } from '../storyboard/service';
 import { normaliseName, sceneKey } from './names';
 
 type CharacterRow = typeof characters.$inferSelect;
@@ -45,13 +46,7 @@ const now = () => new Date().toISOString();
 
 // Latest image task per asset (readiness is derived from it plus imagePath, never stored)
 
-const OWNER_COLUMN = {
-  character: generationTasks.characterId,
-  scene: generationTasks.sceneId,
-  prop: generationTasks.propId,
-} as const;
-
-const latestImageTasks = (kind: AssetKind, ids: number[]) => latestTasks('image', OWNER_COLUMN[kind], ids);
+const latestImageTasks = (kind: AssetKind, ids: number[]) => latestTasks('image', ASSET_TASK_OWNER[kind].column, ids);
 
 const strip = <T extends { deletedAt: string | null }>({ deletedAt: _d, ...row }: T) => row;
 
@@ -198,12 +193,16 @@ export function updateCharacter(id: number, input: z.output<typeof UpdateCharact
   assertSomething(input);
   if (input.name !== undefined) assertUniqueCharacter(current.dramaId, input.name, id);
   checkImagePath(input.imagePath);
-  const row = db
-    .update(characters)
-    .set({ ...input, ...promptPatch(current, input, changed(current, input, ['appearance', 'styling'])) })
-    .where(eq(characters.id, id))
-    .returning()
-    .get();
+  const row = db.transaction((tx) => {
+    // Shot prompts mention the character by name.
+    if (input.name !== undefined && input.name !== current.name) markAssetPromptsStale(tx, { kind: 'character', id });
+    return tx
+      .update(characters)
+      .set({ ...input, ...promptPatch(current, input, changed(current, input, ['appearance', 'styling'])) })
+      .where(eq(characters.id, id))
+      .returning()
+      .get();
+  });
   touchDrama(current.dramaId);
   return { ...strip(row), latestImageTask: latestImageTasks('character', [id]).get(id) ?? null };
 }
@@ -212,6 +211,7 @@ export function updateCharacter(id: number, input: z.output<typeof UpdateCharact
 export function deleteCharacter(id: number): { id: number } {
   const current = getCharacterRow(id);
   db.transaction((tx) => {
+    markAssetPromptsStale(tx, { kind: 'character', id });
     tx.update(characters).set({ deletedAt: now() }).where(eq(characters.id, id)).run();
     tx.delete(episodeCharacters).where(eq(episodeCharacters.characterId, id)).run();
     tx.delete(shotCharacters).where(eq(shotCharacters.characterId, id)).run();
@@ -267,12 +267,16 @@ export function updateScene(id: number, input: z.output<typeof UpdateScene>): Sc
     assertUniqueScene(current.dramaId, input.location ?? current.location, input.time ?? current.time, id);
   }
   checkImagePath(input.imagePath);
-  const row = db
-    .update(scenes)
-    .set({ ...input, ...promptPatch(current, input, changed(current, input, ['prompt', 'lighting'])) })
-    .where(eq(scenes.id, id))
-    .returning()
-    .get();
+  const row = db.transaction((tx) => {
+    // Shot prompts mention the scene by its location and time.
+    if (changed(current, input, ['location', 'time'])) markAssetPromptsStale(tx, { kind: 'scene', id });
+    return tx
+      .update(scenes)
+      .set({ ...input, ...promptPatch(current, input, changed(current, input, ['prompt', 'lighting'])) })
+      .where(eq(scenes.id, id))
+      .returning()
+      .get();
+  });
   touchDrama(current.dramaId);
   return { ...strip(row), latestImageTask: latestImageTasks('scene', [id]).get(id) ?? null };
 }
@@ -281,6 +285,7 @@ export function updateScene(id: number, input: z.output<typeof UpdateScene>): Sc
 export function deleteScene(id: number): { id: number } {
   const current = getSceneRow(id);
   db.transaction((tx) => {
+    markAssetPromptsStale(tx, { kind: 'scene', id });
     tx.update(scenes).set({ deletedAt: now() }).where(eq(scenes.id, id)).run();
     tx.delete(episodeScenes).where(eq(episodeScenes.sceneId, id)).run();
     tx.update(shots).set({ sceneId: null }).where(eq(shots.sceneId, id)).run();
@@ -331,12 +336,16 @@ export function updateProp(id: number, input: z.output<typeof UpdateProp>): Prop
   assertSomething(input);
   if (input.name !== undefined) assertUniqueProp(current.dramaId, input.name, id);
   checkImagePath(input.imagePath);
-  const row = db
-    .update(props)
-    .set({ ...input, ...promptPatch(current, input, changed(current, input, ['description'])) })
-    .where(eq(props.id, id))
-    .returning()
-    .get();
+  const row = db.transaction((tx) => {
+    // Shot prompts mention the prop by name.
+    if (input.name !== undefined && input.name !== current.name) markAssetPromptsStale(tx, { kind: 'prop', id });
+    return tx
+      .update(props)
+      .set({ ...input, ...promptPatch(current, input, changed(current, input, ['description'])) })
+      .where(eq(props.id, id))
+      .returning()
+      .get();
+  });
   touchDrama(current.dramaId);
   return { ...strip(row), latestImageTask: latestImageTasks('prop', [id]).get(id) ?? null };
 }
@@ -344,6 +353,7 @@ export function updateProp(id: number, input: z.output<typeof UpdateProp>): Prop
 export function deleteProp(id: number): { id: number } {
   const current = getPropRow(id);
   db.transaction((tx) => {
+    markAssetPromptsStale(tx, { kind: 'prop', id });
     tx.update(props).set({ deletedAt: now() }).where(eq(props.id, id)).run();
     tx.delete(episodeProps).where(eq(episodeProps.propId, id)).run();
     tx.delete(shotProps).where(eq(shotProps.propId, id)).run();

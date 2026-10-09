@@ -24,6 +24,7 @@ export const promptRunsInFlight = (episodeId: number) => (promptRuns.get(episode
 export async function generateShotVideoPrompt(
   shotId: number,
   opts: z.input<typeof TextModelOverride> = {},
+  signal?: AbortSignal,
 ): Promise<string> {
   const shot = getShotRow(shotId);
   const ep = getEpisodeRow(shot.episodeId);
@@ -39,6 +40,7 @@ export async function generateShotVideoPrompt(
         episodeId: ep.id,
         dramaId: ep.dramaId,
         target: { kind: 'shot', id: shot.id },
+        signal,
         ...opts,
       },
       'update_shot',
@@ -83,15 +85,17 @@ export function startVideoPromptBatch(
   const total = targets.length;
   const started = runJob(
     { kind: 'videoPromptBatch', episodeId: ep.id, dramaId: ep.dramaId },
-    async ({ progress }) => {
+    async ({ progress, signal }) => {
       const state = { total, completed: 0, failed: 0, currentShotId: null as number | null };
       progress(state);
       for (const shot of targets) {
         progress({ ...state, currentShotId: shot.id });
         try {
-          await generateShotVideoPrompt(shot.id, opts);
+          await generateShotVideoPrompt(shot.id, opts, signal);
           state.completed++;
         } catch (err) {
+          // A cancel stops the batch; the prompts already saved stay.
+          if (signal.aborted) throw err;
           state.failed++;
           logger.warn(
             { episodeId: ep.id, shotId: shot.id, err: (err as Error).message },

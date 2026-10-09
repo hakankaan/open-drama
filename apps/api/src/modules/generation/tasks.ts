@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, isNotNull, or, type SQL } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNotNull, max, or, type SQL } from 'drizzle-orm';
 import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
 import type { z } from 'zod';
 import type {
@@ -36,6 +36,12 @@ export const toGenerationTask = ({ providerTaskId: _p, resultUrl: _r, ...row }: 
 export function latestTasks(type: GenerationType, column: SQLiteColumn, ids: number[]): Map<number, TaskSummary> {
   const map = new Map<number, TaskSummary>();
   if (ids.length === 0) return map;
+  // Only each owner's newest row is read, not its whole history.
+  const newest = db
+    .select({ id: max(generationTasks.id) })
+    .from(generationTasks)
+    .where(and(eq(generationTasks.type, type), inArray(column, ids)))
+    .groupBy(column);
   const rows = db
     .select({
       ownerId: column,
@@ -47,11 +53,10 @@ export function latestTasks(type: GenerationType, column: SQLiteColumn, ids: num
       completedAt: generationTasks.completedAt,
     })
     .from(generationTasks)
-    .where(and(eq(generationTasks.type, type), inArray(column, ids)))
-    .orderBy(desc(generationTasks.id))
+    .where(inArray(generationTasks.id, newest))
     .all();
   for (const { ownerId, ...task } of rows) {
-    if (typeof ownerId === 'number' && !map.has(ownerId)) map.set(ownerId, task);
+    if (typeof ownerId === 'number') map.set(ownerId, task);
   }
   return map;
 }

@@ -17,6 +17,8 @@ services:
       OPEN_DRAMA_VIDEO_CONCURRENCY: ${OPEN_DRAMA_VIDEO_CONCURRENCY:-4}
       # 1 = offline placeholders instead of real providers (to try the flow without keys).
       OPEN_DRAMA_STUB_PROVIDERS: ${OPEN_DRAMA_STUB_PROVIDERS:-0}
+      # Names besides localhost and IP addresses the app answers to, comma-separated (a LAN name, a reverse proxy's domain).
+      OPEN_DRAMA_ALLOWED_HOSTS: ${OPEN_DRAMA_ALLOWED_HOSTS:-}
       # Set only when a video provider must fetch a local reference video or audio file (a public https URL):
       # PUBLIC_BASE_URL: https://drama.example.com
     restart: unless-stopped

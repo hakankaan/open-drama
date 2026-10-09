@@ -12,6 +12,7 @@ import { useToastError } from '@/lib/errors';
 import { useServerDraft } from '@/lib/use-server-draft';
 import { textOverride, useModelPicks } from '../../configuration/model-picks';
 import { useStartOutline, useUpdateDrama } from '../api';
+import { CancelJobButton } from '../cancel-job-button';
 
 /**
  * The Story tab (adr-0015): the outline, edited by hand or written by the story writer, and the way into the episode
@@ -81,10 +82,13 @@ export function StoryTab({ drama, jobs, onPlan }: { drama: DramaDetail; jobs: Dr
       </div>
       <p className="max-w-2xl text-sm text-ink-2">{t('hint')}</p>
       {running ? (
-        <p className="flex items-center gap-2 text-sm text-ink-2" role="status">
-          <Loader2 className="h-4 w-4 animate-spin text-accent" aria-hidden />
-          {t('running')}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="flex items-center gap-2 text-sm text-ink-2" role="status">
+            <Loader2 className="h-4 w-4 animate-spin text-accent" aria-hidden />
+            {t('running')}
+          </p>
+          <CancelJobButton job={outlineJob} owner={{ dramaId: drama.id }} />
+        </div>
       ) : null}
       {failed !== null ? (
         <p className="flex max-w-2xl items-start gap-2 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger" role="alert">

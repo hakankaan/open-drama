@@ -11,6 +11,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  cancelLabel,
   onConfirm,
   pending,
   danger = true,
@@ -20,6 +21,8 @@ export function ConfirmDialog({
   title: string;
   description: string;
   confirmLabel: string;
+  /** For a confirm that itself cancels something, where a plain "Cancel" would read both ways. */
+  cancelLabel?: string;
   onConfirm: () => void;
   pending?: boolean;
   danger?: boolean;
@@ -30,7 +33,7 @@ export function ConfirmDialog({
       <DialogContent title={title} description={description}>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={pending}>
-            {t('cancel')}
+            {cancelLabel ?? t('cancel')}
           </Button>
           <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} loading={pending}>
             {confirmLabel}

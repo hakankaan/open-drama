@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { isNarrator, SHOT_DURATION_MAX, SHOT_DURATION_MIN } from '@open-drama/contracts';
 import { db } from '../../../db/client';
 import { characters, episodeCharacters, episodeProps, episodeScenes, episodes, props, scenes } from '../../../db/schema';
+import { jobState } from '../../jobs/run-job';
 import { seriesContext } from '../../production/series';
-import { getShotRow, liveShotRows, loadBindings, saveShots, writeShotUpdate } from '../../storyboard/service';
+import { assertNoBreakdown, getShotRow, liveShotRows, loadBindings, saveShots, writeShotUpdate } from '../../storyboard/service';
 import { defineTool } from '../runtime/tool';
 import type { TargetFit } from '../services/video-model';
 
@@ -15,9 +16,18 @@ const clean = <T extends Record<string, unknown>>(input: T): Partial<T> =>
     Object.entries(input).filter(([, v]) => v !== undefined && v !== null && !(typeof v === 'string' && GARBAGE.test(v.trim()))),
   ) as Partial<T>;
 
-const linked = <T extends { id: number }>(rows: T[], links: { id: number }[]) => {
+/**
+ * Marks the assets linked to the episode. Only those keep their long fields (`detail`): the rest of the drama's
+ * assets stay bindable by id and name, so the context grows with the episode rather than with the whole series.
+ */
+const linked = <T extends { id: number }>(rows: T[], links: { id: number }[], detail: (keyof T)[] = []) => {
   const ids = new Set(links.map((l) => l.id));
-  return rows.map((r) => ({ ...r, inEpisode: ids.has(r.id) }));
+  return rows.map((r) => {
+    if (ids.has(r.id)) return { ...r, inEpisode: true };
+    const brief: Partial<T> = { ...r };
+    for (const key of detail) delete brief[key];
+    return { ...brief, inEpisode: false };
+  });
 };
 
 /**
@@ -27,7 +37,7 @@ const linked = <T extends { id: number }>(rows: T[], links: { id: number }[]) =>
 export const readStoryboardContext = defineTool({
   id: 'read_storyboard_context',
   description:
-    "Without shotId: the episode's script, its target length in seconds (null: follow the script), a `series` block (the project's premise and, for a serial drama, the earlier episodes' recaps), the project's characters, scenes and props with their ids, and the current shots with their total length. With shotId: that shot's description, atmosphere, duration and bound asset names.",
+    "Without shotId: the episode's script, its target length in seconds (null: follow the script), a `series` block (the project's premise and, for a serial drama, the earlier episodes' recaps), the project's characters, scenes and props with their ids (appearance and description only for those in this episode), and the current shots with their total length. With shotId: that shot's description, atmosphere, duration and bound asset names.",
   input: z.object({ shotId: z.number().int().optional().describe('Read one shot of this episode') }),
   execute: ({ shotId }, ctx) => {
     if (shotId !== undefined) {
@@ -71,9 +81,9 @@ export const readStoryboardContext = defineTool({
       targetDurationSeconds: ctx.jobId && targets.has(ctx.jobId) ? (targets.get(ctx.jobId)?.seconds ?? null) : ep.targetDurationSeconds,
       series: seriesContext({ dramaId: ctx.dramaId, beforeEpisodeNumber: ep.episodeNumber }, ctx.log),
       script: ep.scriptContent?.trim() || ep.content,
-      characters: linked(chars, linkedChars),
+      characters: linked(chars, linkedChars, ['appearance']),
       scenes: linked(scs, linkedScenes),
-      props: linked(prs, linkedProps),
+      props: linked(prs, linkedProps, ['description']),
       shotsTotalSeconds: ep.durationSeconds,
       shots: liveShotRows(ctx.episodeId).map((s) => ({
         shotId: s.id,
@@ -110,16 +120,12 @@ const ShotFields = {
  * Breakdown jobs whose final batch was saved; the job is done only then (so a half-saved storyboard never wins). The
  * accepted storyboard is then closed to the job's writes, so nothing undoes the checks it passed.
  */
-const finished = new Set<number>();
+const finished = jobState<true>();
 const FINAL = 'The storyboard is final and was accepted; reply to finish without saving anything more.';
 /** The episode length a running breakdown must meet (null: none), fixed when the job starts (the brief the agent was given). */
-const targets = new Map<number, TargetFit | null>();
+const targets = jobState<TargetFit | null>();
 export const breakdownFinished = (jobId: number) => finished.has(jobId);
 export const trackBreakdownTarget = (jobId: number, target: TargetFit | null) => targets.set(jobId, target);
-export const forgetBreakdown = (jobId: number) => {
-  finished.delete(jobId);
-  targets.delete(jobId);
-};
 
 /** Why the saved shots miss the job's target length, or null when they meet it (or there is none). */
 function missedTarget(jobId: number, episodeId: number): string | null {
@@ -173,7 +179,7 @@ export const saveShotsTool = defineTool({
       }
       const missed = missedTarget(ctx.jobId, ctx.episodeId);
       if (missed) return { saved: result.saved.length, shotNumbers: result.saved, finished: false, error: missed };
-      finished.add(ctx.jobId);
+      finished.set(ctx.jobId, true);
     }
     return { saved: result.saved.length, shotNumbers: result.saved, finished: final === true };
   },
@@ -198,6 +204,8 @@ export const updateShotTool = defineTool({
     if (ctx.jobId && finished.has(ctx.jobId)) return { error: FINAL };
     const shot = getShotRow(shotId);
     if (shot.episodeId !== ctx.episodeId) return { error: `Shot ${shotId} is not in this episode` };
+    // A chat run's edit is a creator edit: a running breakdown owns the shots.
+    if (ctx.chat) assertNoBreakdown(ctx.episodeId);
     // A breakdown may only touch the shots it wrote: edits to earlier shots could not be undone if it fails.
     if (ctx.jobId && shot.createdByJobId !== ctx.jobId) return { error: `Shot ${shotId} was not saved by this breakdown; save it with save_shots` };
     const card = writeShotUpdate(shotId, patch);

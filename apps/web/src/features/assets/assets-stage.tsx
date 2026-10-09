@@ -11,6 +11,7 @@ import { Tag } from '@/components/ui/tag';
 import { useToastError } from '@/lib/errors';
 import { textOverride, useModelPicks } from '../configuration/model-picks';
 import { useEpisodeJobs } from '../production/api';
+import { CancelJobButton } from '../production/cancel-job-button';
 import { useDeleteAsset, useEpisodeAssets, useStartExtraction } from './api';
 import { AssetCard } from './asset-card';
 import { AssetCreateDialog } from './asset-create-dialog';
@@ -138,10 +139,13 @@ export function AssetsStage({ episode, onScript }: { episode: EpisodeView; onScr
               </h3>
               <span className="text-sm text-muted tabular-nums">{groups[kind].length}</span>
               {extracting ? (
-                <Tag tone="info">
-                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-                  {ts('extracting')}
-                </Tag>
+                <>
+                  <Tag tone="info">
+                    <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                    {ts('extracting')}
+                  </Tag>
+                  <CancelJobButton job={job} owner={{ episodeId: episode.id }} />
+                </>
               ) : job?.status === 'failed' ? (
                 <Tag tone="danger">{ts('extractFailed')}</Tag>
               ) : null}

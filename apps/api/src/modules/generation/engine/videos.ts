@@ -2,7 +2,6 @@ import { eq } from 'drizzle-orm';
 import { videoCapsFor, type AspectRatio, type Resolution, type VideoProviderCaps } from '@open-drama/contracts';
 import { db } from '../../../db/client';
 import { episodes, generationTasks, shots } from '../../../db/schema';
-import { nowIso } from '../../../db/schema/columns';
 import { env } from '../../../env';
 import { logger } from '../../../http/logger';
 import { keyedLimiter } from '../../../lib/limiter';
@@ -11,14 +10,14 @@ import { precondition } from '../../../http/errors';
 import { videoAdapterFor } from '../adapters/registry';
 import { ProviderError, type FormatMention, type ResultMedia, type VideoAdapter } from '../adapters/types';
 import { ConfigError } from './errors';
-import { claimTask, detach, generate, resolveGeneration, type ResolvedGeneration, type Tx } from './lifecycle';
+import { claimTask, completeTask, detach, generate, recordResultUrl, resolveGeneration, type ResolvedGeneration } from './lifecycle';
 import { normalizeReferenceImages, resolvePublicMediaUrls } from './references';
 
 /** Video polling profile (adr-0005): every 10 s, at most 300 attempts. */
-const POLL = { intervalMs: 10_000, attempts: 300, maxMs: 55 * 60_000 };
+export const VIDEO_POLL = { intervalMs: 10_000, attempts: 300, maxMs: 55 * 60_000 };
 
 /** At most OPEN_DRAMA_VIDEO_CONCURRENCY shot videos of one episode talk to the provider at once. */
-const perEpisode = keyedLimiter(env.OPEN_DRAMA_VIDEO_CONCURRENCY);
+export const perEpisode = keyedLimiter(env.OPEN_DRAMA_VIDEO_CONCURRENCY);
 
 export type ResolvedVideo = ResolvedGeneration<VideoAdapter> & { caps: VideoProviderCaps; formatMention: FormatMention };
 
@@ -75,23 +74,16 @@ export interface SubmitVideoInput {
   params: Record<string, unknown>;
 }
 
-/** AttachShotVideoOnGeneration: the finished clip becomes the shot's current video. A deleted shot is left alone. */
-function writeBack(tx: Tx, shotId: number, path: string, durationSeconds: number) {
-  tx.update(shots).set({ videoPath: path, videoDurationSeconds: durationSeconds }).where(eq(shots.id, shotId)).run();
-}
-
-async function complete(taskId: number, shotId: number, media: ResultMedia, serviceBaseUrl: string | undefined) {
+/** Stores the result and makes it the shot's current video (AttachShotVideoOnGeneration); a deleted shot is left alone. */
+export async function completeVideo(taskId: number, shotId: number, media: ResultMedia, serviceBaseUrl: string | undefined) {
+  recordResultUrl(taskId, media.url);
   const path = media.file ? media.file : media.url ? await storeRemoteFile(media.url, 'video', serviceBaseUrl) : null;
   if (!path) throw new ProviderError('The provider returned no video');
   const durationSeconds = await assertVideo(path);
   await deriveRenditions(path, 'video');
-  db.transaction((tx) => {
-    tx.update(generationTasks)
-      .set({ status: 'completed', localPath: path, resultUrl: media.url ?? null, durationSeconds, completedAt: nowIso() })
-      .where(eq(generationTasks.id, taskId))
-      .run();
-    writeBack(tx, shotId, path, durationSeconds);
-  });
+  completeTask(taskId, { localPath: path, durationSeconds }, (tx) =>
+    tx.update(shots).set({ videoPath: path, videoDurationSeconds: durationSeconds }).where(eq(shots.id, shotId)).run(),
+  );
   logger.info({ taskId, shotId, path, durationSeconds }, 'video task completed');
 }
 
@@ -127,7 +119,7 @@ async function run(taskId: number, resolved: ResolvedVideo, input: SubmitVideoIn
   };
   // Preparing the references can take a while too: check once more right before the provider is paid.
   if (!stillWanted(taskId, input.shotId)) return;
-  await complete(taskId, input.shotId, await generate(taskId, resolved, record, POLL, 'video'), resolved.config?.baseUrl);
+  await completeVideo(taskId, input.shotId, await generate(taskId, resolved, record, VIDEO_POLL, 'video'), resolved.config?.baseUrl);
 }
 
 /**

@@ -16,6 +16,7 @@ import { usePersistedState } from '@/lib/persisted-state';
 import { useEpisodeAssets } from '../../assets/api';
 import { textOverride, useModelPicks, videoOverride } from '../../configuration/model-picks';
 import { useDramaDetail } from '../../production/api';
+import { CancelJobButton } from '../../production/cancel-job-button';
 import {
   useEpisodeShots,
   useGenerateShotVideoPrompt,
@@ -228,6 +229,7 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
             {breaking ? null : <Scissors className="h-4 w-4" aria-hidden />}
             {breaking ? t('breaking') : t('breakdown')}
           </Button>
+          {breaking ? <CancelJobButton job={job} owner={{ episodeId: episode.id }} /> : null}
           {(assets.data?.characters.length ?? 0) + (assets.data?.scenes.length ?? 0) === 0 ? (
             <Button onClick={onAssets}>{t('toAssets')}</Button>
           ) : null}
@@ -251,10 +253,13 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
           {t('generated', { done: list.data.generatedCount, total: shots.length })}
         </Tag>
         {breaking ? (
-          <Tag tone="info">
-            <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-            {t('breaking')}
-          </Tag>
+          <>
+            <Tag tone="info">
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+              {t('breaking')}
+            </Tag>
+            <CancelJobButton job={job} owner={{ episodeId: episode.id }} />
+          </>
         ) : null}
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <Button size="sm" variant="ghost" onClick={() => setBreakAgain(true)} disabled={breaking || prompting}>
@@ -262,10 +267,13 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
             {t('breakAgain')}
           </Button>
           {prompting ? (
-            <Tag tone="info">
-              <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-              {t('promptProgress', { done: (progress?.completed ?? 0) + (progress?.failed ?? 0), total: progress?.total ?? 0 })}
-            </Tag>
+            <>
+              <Tag tone="info">
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                {t('promptProgress', { done: (progress?.completed ?? 0) + (progress?.failed ?? 0), total: progress?.total ?? 0 })}
+              </Tag>
+              <CancelJobButton job={promptJob} owner={{ episodeId: episode.id }} />
+            </>
           ) : (
             <Button size="sm" variant="ghost" onClick={fillPrompts} disabled={withoutPrompt === 0 || breaking} loading={promptBatch.isPending}>
               <Sparkles className="h-3.5 w-3.5" aria-hidden />

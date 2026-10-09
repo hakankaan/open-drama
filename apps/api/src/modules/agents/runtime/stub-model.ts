@@ -1,3 +1,4 @@
+import { setTimeout as sleep } from 'node:timers/promises';
 import { env } from '../../../env';
 import type { LanguageModelV4 } from './sdk';
 
@@ -388,7 +389,8 @@ export function stubLanguageModel(): LanguageModelV4 {
     modelId: 'stub-text',
     supportedUrls: {},
     async doGenerate(options) {
-      if (env.OPEN_DRAMA_STUB_DELAY_MS > 0) await new Promise((r) => setTimeout(r, env.OPEN_DRAMA_STUB_DELAY_MS));
+      // Aborted like a real request would be (a cancelled job, a step timeout).
+      if (env.OPEN_DRAMA_STUB_DELAY_MS > 0) await sleep(env.OPEN_DRAMA_STUB_DELAY_MS, undefined, { signal: options.abortSignal });
       const step = plan(options);
       const usage = {
         inputTokens: { total: 0, noCache: 0, cacheRead: undefined, cacheWrite: undefined },

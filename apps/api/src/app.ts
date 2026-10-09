@@ -4,6 +4,7 @@ import { HTTPException } from 'hono/http-exception';
 import { API_BASE, STATIC_PREFIX } from '@open-drama/contracts';
 import { env } from './env';
 import { ApiError } from './http/errors';
+import { requestGuard } from './http/guard';
 import { logger, requestLogger } from './http/logger';
 import { scrubSecrets } from './lib/secrets';
 import { agentsRoutes } from './modules/agents/routes';
@@ -21,6 +22,7 @@ export function createApp() {
   const app = new Hono();
 
   app.use('*', requestLogger);
+  app.use('*', requestGuard);
   // Production traffic is same-origin through the Next proxy (adr-0010); CORS only helps direct calls in dev.
   if (!env.isProduction) app.use(`${API_BASE}/*`, cors({ origin: env.WEB_ORIGIN }));
 

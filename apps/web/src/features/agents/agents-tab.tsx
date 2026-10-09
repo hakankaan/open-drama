@@ -14,6 +14,7 @@ import { Tag } from '@/components/ui/tag';
 import { LOCALE_LABELS, type Locale } from '@/i18n/locales';
 import { cn } from '@/lib/cn';
 import { useToastError } from '@/lib/errors';
+import { useServerDraft } from '@/lib/use-server-draft';
 import {
   useAgentCatalog,
   useAgentPrompt,
@@ -26,17 +27,6 @@ import {
   useUpdateSkill,
 } from './api';
 
-/** Edits a server text with an explicit Save; follows server changes unless there are unsaved edits. */
-function useTextDraft(server: string | undefined) {
-  const [draft, setDraft] = useState(server ?? '');
-  const [base, setBase] = useState(server);
-  if (server !== base) {
-    setBase(server);
-    if (draft === (base ?? '')) setDraft(server ?? '');
-  }
-  return [draft, setDraft, server !== undefined && draft !== server] as const;
-}
-
 function PromptPane({ type, lang }: { type: AgentType; lang: ContentLanguage }) {
   const t = useTranslations('settings.agents');
   const tc = useTranslations('common');
@@ -44,7 +34,7 @@ function PromptPane({ type, lang }: { type: AgentType; lang: ContentLanguage }) 
   const prompt = useAgentPrompt(type, lang);
   const save = useSaveAgentPrompt();
   const reset = useResetAgentPrompt();
-  const [draft, setDraft, dirty] = useTextDraft(prompt.data?.body);
+  const [draft, setDraft, dirty] = useServerDraft(prompt.data?.body ?? '');
   const [confirmReset, setConfirmReset] = useState(false);
 
   if (!prompt.data) return <Skeleton className="h-80" />;
@@ -102,7 +92,7 @@ function SkillCard({ skill, lang }: { skill: SkillSummary; lang: ContentLanguage
   const detail = useSkill(skill.id, lang, open);
   const update = useUpdateSkill();
   const remove = useDeleteSkill();
-  const [draft, setDraft, dirty] = useTextDraft(detail.data?.body);
+  const [draft, setDraft, dirty] = useServerDraft(detail.data?.body ?? '');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const onSave = async () => {

@@ -24,6 +24,7 @@ Save the creator's edits to an episode's raw content, formatted script, recap, t
 
 - No updatable field supplied
 - scriptContent while the script is being rewritten or written (the agent's save would replace the edit)
+- scriptContent while a breakdown or an extraction reads the script (its shots or assets would no longer match)
 - content while the script is being rewritten or written (the agent reads it as its source)
 - recap while the recap is being written
 
@@ -39,4 +40,5 @@ Save the creator's edits to an episode's raw content, formatted script, recap, t
 
 | ADR | Title | Status |
 |-----|-------|--------|
+| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |

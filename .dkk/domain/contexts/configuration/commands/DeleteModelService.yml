@@ -1,4 +1,3 @@
-# Command — an instruction to change domain state.
 name: DeleteModelService
 description: Remove a service permanently.
 fields:
@@ -6,3 +5,7 @@ fields:
     type: ID
 actor: Creator
 handled_by: ModelService
+rejections:
+  - A generation is running on the service (a restart resumes it with the service's address and key)
+adr_refs:
+  - adr-0005

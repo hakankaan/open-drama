@@ -22,6 +22,7 @@ Probe a service's endpoint with a provider-appropriate minimal request (model li
 ## Rules & Invariants
 
 - Missing service type, provider or base URL
+- Testing a saved service's key against a new origin or provider without entering the key again
 
 
 ## Relationships

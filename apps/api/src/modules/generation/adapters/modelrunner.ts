@@ -380,21 +380,24 @@ const queueGet = (config: ServiceConfig, path: string): ProviderRequest => ({
   redirect: 'error',
 });
 
-/** The status endpoint: queued and running are pending, COMPLETED means the result can be read. */
+/** Statuses that end a request without a result. */
+const FAILED_STATUSES = new Set(['FAILED', 'ERROR', 'CANCELLED', 'CANCELED']);
+
+/**
+ * The status endpoint: COMPLETED means the result can be read; a failed status, or an error on a record that is not
+ * queued or running, ends the task. Anything else is pending: an unexpected body must not fail a request the
+ * provider may still be rendering, and the poll timeout bounds the wait.
+ */
 function parseStatus(body: unknown): PollOutcome {
-  const req = body as QueueRequest;
-  switch (req.status) {
-    case 'IN_QUEUE':
-    case 'IN_PROGRESS':
-      return { status: 'pending' };
-    case 'COMPLETED':
-      return { status: 'ready' };
-    default:
-      return {
-        status: 'failed',
-        error: errorText(req.error) || errorText(req.detail) || `The ModelRunner request ended as ${req.status ?? 'an unknown status'}`,
-      };
+  const req = (body && typeof body === 'object' ? body : {}) as QueueRequest;
+  const status = typeof req.status === 'string' ? req.status.toUpperCase() : undefined;
+  if (status === 'COMPLETED') return { status: 'ready' };
+  const error = errorText(req.error) || errorText(req.detail);
+  const working = status === 'IN_QUEUE' || status === 'IN_PROGRESS';
+  if ((status && FAILED_STATUSES.has(status)) || (error && !working)) {
+    return { status: 'failed', error: error || `The ModelRunner request ended as ${status}` };
   }
+  return { status: 'pending' };
 }
 
 /** The result is the request record (`{ status, output, error }`) or the bare output; a set `error` means it failed. */

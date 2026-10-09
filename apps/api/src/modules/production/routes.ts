@@ -11,7 +11,7 @@ import {
 } from '@open-drama/contracts';
 import { created, ok } from '../../http/envelope';
 import { v } from '../../http/validate';
-import { getDramaJobs, getEpisodeJobs } from '../jobs/run-job';
+import { cancelJob, getDramaJobs, getEpisodeJobs } from '../jobs/run-job';
 import { createDrama, deleteDrama, getDramaDetail, getDramaRow, getDramaStats, listDramas, updateDrama } from './dramas';
 import {
   createEpisode,
@@ -24,8 +24,7 @@ import {
 import { startOutline } from '../agents/services/outline';
 import { startPlan } from '../agents/services/plan';
 import { maybeStartRecap, startRecap } from '../agents/services/recap';
-import { startRewrite } from '../agents/services/rewrite';
-import { startWrite } from '../agents/services/write';
+import { startRewrite, startWrite } from '../agents/services/script';
 import { getPipelineStatus } from './pipeline';
 
 export const productionRoutes = new Hono()
@@ -76,4 +75,6 @@ export const productionRoutes = new Hono()
     const { id } = c.req.valid('param');
     getEpisodeRow(id);
     return ok(c, getEpisodeJobs(id));
-  });
+  })
+  // The job is returned as it is now: it settles as cancelled a moment later.
+  .post('/agent-jobs/:id/cancel', v('param', IdParam), (c) => ok(c, cancelJob(c.req.valid('param').id)));

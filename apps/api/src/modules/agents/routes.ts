@@ -65,7 +65,7 @@ export const agentsRoutes = new Hono()
       if (ep.dramaId !== body.dramaId) throw invalid('The episode belongs to another project');
       episodeId = ep.id;
     }
-    const { toolCalls, ...result } = await runAgent({ agentType: type, ...body, episodeId });
+    const { toolCalls, ...result } = await runAgent({ agentType: type, ...body, episodeId, chat: true });
     return ok(c, { ...result, toolCalls });
   })
   .get('/skills', v('query', LangQuery), (c) => ok(c, listSkills(c.req.valid('query').lang)))

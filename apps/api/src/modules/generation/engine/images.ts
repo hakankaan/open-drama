@@ -1,22 +1,22 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import type { AspectRatio, AssetKind } from '@open-drama/contracts';
 import { db } from '../../../db/client';
 import { characters, generationTasks, props, scenes } from '../../../db/schema';
-import { nowIso } from '../../../db/schema/columns';
 import { logger } from '../../../http/logger';
 import { assertImage, deriveRenditions, storeInlineImage, storeRemoteFile } from '../../media/store';
 import { imageAdapterFor } from '../adapters/registry';
 import { ProviderError, type ImageAdapter, type ResultMedia } from '../adapters/types';
-import { claimTask, detach, generate, resolveGeneration, type ResolvedGeneration, type Tx } from './lifecycle';
+import { claimTask, completeTask, detach, generate, recordResultUrl, resolveGeneration, type ResolvedGeneration } from './lifecycle';
 import { normalizeReferenceImages } from './references';
 
 /** Image polling profile (adr-0005): every 5 s, at most 120 attempts, within 10 minutes. */
-const POLL = { intervalMs: 5000, attempts: 120, maxMs: 10 * 60_000 };
+export const IMAGE_POLL = { intervalMs: 5000, attempts: 120, maxMs: 10 * 60_000 };
 
-const OWNER_COLUMN = {
-  character: generationTasks.characterId,
-  scene: generationTasks.sceneId,
-  prop: generationTasks.propId,
+/** Per asset kind: its table, and the task column and insert key that point at it. */
+export const ASSET_TASK_OWNER = {
+  character: { table: characters, column: generationTasks.characterId, key: 'characterId' },
+  scene: { table: scenes, column: generationTasks.sceneId, key: 'sceneId' },
+  prop: { table: props, column: generationTasks.propId, key: 'propId' },
 } as const;
 
 export interface SubmitImageInput {
@@ -31,30 +31,31 @@ export interface SubmitImageInput {
   lockedServiceId?: number | null;
 }
 
-/** AttachAssetImageOnGeneration: the finished image becomes the asset's reference image. */
-function writeBack(tx: Tx, kind: AssetKind, id: number, path: string) {
-  const table = kind === 'character' ? characters : kind === 'scene' ? scenes : props;
-  tx.update(table).set({ imagePath: path }).where(eq(table.id, id)).run();
+/** The task's asset, or null when the task is not an asset image (set by submitAssetImage, read back on resume). */
+export function assetOwnerOf(task: { characterId: number | null; sceneId: number | null; propId: number | null }): SubmitImageInput['owner'] | null {
+  if (task.characterId !== null) return { kind: 'character', id: task.characterId };
+  if (task.sceneId !== null) return { kind: 'scene', id: task.sceneId };
+  if (task.propId !== null) return { kind: 'prop', id: task.propId };
+  return null;
 }
 
-async function complete(taskId: number, owner: SubmitImageInput['owner'], media: ResultMedia, serviceBaseUrl: string | undefined) {
+/** Stores the result and makes it the asset's reference image (AttachAssetImageOnGeneration); a deleted asset is left alone. */
+export async function completeImage(taskId: number, owner: SubmitImageInput['owner'], media: ResultMedia, serviceBaseUrl: string | undefined) {
+  recordResultUrl(taskId, media.url);
   const path = media.file
     ? media.file
     : media.base64
-      ? await storeInlineImage(media.base64.data, media.base64.mimeType)
+      ? await storeInlineImage(media.base64.data)
       : media.url
         ? await storeRemoteFile(media.url, 'image', serviceBaseUrl)
         : null;
   if (!path) throw new ProviderError('The provider returned no image');
   await assertImage(path);
   await deriveRenditions(path, 'image');
-  db.transaction((tx) => {
-    tx.update(generationTasks)
-      .set({ status: 'completed', localPath: path, resultUrl: media.url ?? null, completedAt: nowIso() })
-      .where(eq(generationTasks.id, taskId))
-      .run();
-    writeBack(tx, owner.kind, owner.id, path);
-  });
+  const { table } = ASSET_TASK_OWNER[owner.kind];
+  completeTask(taskId, { localPath: path }, (tx) =>
+    tx.update(table).set({ imagePath: path }).where(and(eq(table.id, owner.id), isNull(table.deletedAt))).run(),
+  );
   logger.info({ taskId, owner, path }, 'image task completed');
 }
 
@@ -65,7 +66,7 @@ async function complete(taskId: number, owner: SubmitImageInput['owner'], media:
 function stillWanted(taskId: number, owner: SubmitImageInput['owner']): boolean {
   const task = db.select({ status: generationTasks.status }).from(generationTasks).where(eq(generationTasks.id, taskId)).get();
   if (task?.status !== 'processing') return false;
-  const table = owner.kind === 'character' ? characters : owner.kind === 'scene' ? scenes : props;
+  const { table } = ASSET_TASK_OWNER[owner.kind];
   const asset = db.select({ deletedAt: table.deletedAt }).from(table).where(eq(table.id, owner.id)).get();
   if (!asset || asset.deletedAt) throw new Error(`The ${owner.kind} was deleted before its image was requested; nothing was sent to the provider`);
   return true;
@@ -81,7 +82,7 @@ async function run(taskId: number, resolved: ResolvedGeneration<ImageAdapter>, i
   }
   const record = { taskId, prompt: input.prompt, referenceImages, aspectRatio: input.aspectRatio };
   if (!stillWanted(taskId, input.owner)) return;
-  await complete(taskId, input.owner, await generate(taskId, resolved, record, POLL, 'image'), resolved.config?.baseUrl);
+  await completeImage(taskId, input.owner, await generate(taskId, resolved, record, IMAGE_POLL, 'image'), resolved.config?.baseUrl);
 }
 
 /**
@@ -94,19 +95,19 @@ export function submitAssetImage(input: SubmitImageInput): number {
     lockedId: input.lockedServiceId,
     model: input.model,
   });
-  const ownerKey = input.owner.kind === 'character' ? 'characterId' : input.owner.kind === 'scene' ? 'sceneId' : 'propId';
+  const owner = ASSET_TASK_OWNER[input.owner.kind];
   const taskId = claimTask(
     {
       type: 'image',
       dramaId: input.dramaId,
-      [ownerKey]: input.owner.id,
+      [owner.key]: input.owner.id,
       serviceId: resolved.serviceId,
       provider: resolved.provider,
       model: resolved.model,
       prompt: input.prompt,
       params: { aspectRatio: input.aspectRatio, references: (input.referenceImages ?? []).length },
     },
-    { column: OWNER_COLUMN[input.owner.kind], id: input.owner.id, busyMessage: 'An image is already being generated for this asset' },
+    { column: owner.column, id: input.owner.id, busyMessage: 'An image is already being generated for this asset' },
   );
   logger.info({ taskId, provider: resolved.provider, model: resolved.model, owner: input.owner }, 'image task submitted');
   detach(taskId, 'image', () => run(taskId, resolved, input));

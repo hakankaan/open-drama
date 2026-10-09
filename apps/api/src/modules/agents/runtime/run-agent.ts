@@ -21,10 +21,20 @@ export interface RunAgentInput {
   maxSteps?: number;
   target?: AgentContext['target'];
   jobId?: number;
+  /** Started from the chat endpoint (see DramaAgentContext.chat). */
+  chat?: boolean;
   scriptRevision?: number;
+  /** The job's cancel signal: the run stops at its next provider or tool call. */
+  signal?: AbortSignal;
   /** Ends the loop as soon as this holds (the result is already saved). */
   isDone?: (calls: ToolCallRecord[]) => boolean;
 }
+
+/** One provider call (one step of the loop) longer than this is abandoned, so a hung request cannot hold a job forever. */
+const STEP_TIMEOUT_MS = 10 * 60_000;
+
+const isTimeout = (err: unknown): boolean =>
+  err instanceof Error && (err.name === 'TimeoutError' || (err.cause !== undefined && isTimeout(err.cause)));
 
 /** A provider-side failure worded for the creator; the key never appears in it (echoes are scrubbed). */
 function describeError(err: unknown): string {
@@ -38,6 +48,7 @@ function wordError(err: unknown): string {
     if (err.statusCode === 429) return `The text provider's rate limit or quota was reached${status}`;
     return `The text provider returned an error${status}: ${err.message.slice(0, 300)}`;
   }
+  if (isTimeout(err)) return `The text provider did not answer within ${STEP_TIMEOUT_MS / 60_000} minutes`;
   return err instanceof Error ? err.message : String(err);
 }
 
@@ -50,6 +61,7 @@ function contextFor(input: RunAgentInput, language: ContentLanguage, modelId: st
     language,
     log: logger.child({ agent: input.agentType, dramaId: input.dramaId, episodeId: input.episodeId, model: modelId }),
     jobId: input.jobId,
+    chat: input.chat,
   };
   if (def.scope === 'drama') return base;
   if (input.episodeId === undefined) throw new ApiError('INTERNAL', `The ${def.name} runs on an episode`);
@@ -80,6 +92,8 @@ export async function runAgent(input: RunAgentInput): Promise<AgentRunResult & R
       ctx,
       maxSteps: input.maxSteps ?? def.maxSteps,
       temperature: resolved.temperature,
+      abortSignal: input.signal,
+      stepTimeoutMs: STEP_TIMEOUT_MS,
       isDone: input.isDone,
     });
     const elapsedMs = Math.round(performance.now() - started);
@@ -89,6 +103,10 @@ export async function runAgent(input: RunAgentInput): Promise<AgentRunResult & R
     );
     return { ...result, elapsedMs, model: resolved.modelId };
   } catch (err) {
+    if (input.signal?.aborted) {
+      ctx.log.info('agent run stopped');
+      throw new Error('Cancelled');
+    }
     const message = describeError(err);
     ctx.log.warn({ err: message }, 'agent run failed');
     throw new ApiError('PROVIDER_ERROR', message);
@@ -110,15 +128,24 @@ function whyUnsaved(run: RunLoopResult): string {
 /**
  * Runs an agent and checks the expected side effect: `isDone` must hold after the run (for most agents, the save
  * tool succeeded). One retry with a reminder, then a failure naming the problem (Plan 2 §4, domain AgentRun).
+ * `retryMessage`, read after the first attempt, replaces the message for the retry when what that attempt already
+ * saved changes the task (the breakdown continues its batches instead of starting over).
  */
-export async function runAgentUntilDone(input: RunAgentInput, isDone: (calls: ToolCallRecord[]) => boolean, missing: string) {
+export async function runAgentUntilDone(
+  input: RunAgentInput,
+  isDone: (calls: ToolCallRecord[]) => boolean,
+  missing: string,
+  retryMessage?: () => string,
+) {
   const first = await runAgent({ ...input, isDone });
   if (isDone(first.toolCalls)) return first;
+  input.signal?.throwIfAborted();
   logger.warn(
     { agent: input.agentType, missing, finishReason: first.finishReason, stepLimitReached: first.stepLimitReached },
     'agent finished without saving; retrying once',
   );
-  const second = await runAgent({ ...input, isDone, message: `${input.message}\n\nImportant: the previous attempt ended before ${missing}. ${REMINDER}` });
+  const message = retryMessage?.() ?? input.message;
+  const second = await runAgent({ ...input, isDone, message: `${message}\n\nImportant: the previous attempt ended before ${missing}. ${REMINDER}` });
   if (isDone(second.toolCalls)) return second;
   throw new ApiError('PROVIDER_ERROR', `The agent finished before ${missing}.${whyUnsaved(second)} Try again or pick another model.`);
 }

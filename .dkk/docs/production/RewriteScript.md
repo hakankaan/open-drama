@@ -22,8 +22,10 @@ Ask the script-rewriter agent to turn the episode's raw content into a formatted
 - Raw content is not empty
 - If a rewrite job is already running for the episode, the running job is returned (alreadyRunning) instead of starting another
 - No episode write (WriteEpisodeScript) is running for the episode
+- No breakdown or extraction is reading the script
 - Empty raw content
 - The script is being written by the episode writer
+- A breakdown or an extraction is reading the script
 - No text model service configured
 
 

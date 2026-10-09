@@ -21,6 +21,7 @@ import { probeService } from './probe';
 import { getReadiness } from './readiness';
 import {
   addModelService,
+  assertKeyFollows,
   applyQuickSetup,
   deleteModelService,
   getServiceRow,
@@ -39,6 +40,7 @@ export const configurationRoutes = new Hono()
   .post('/model-services/test', v('json', TestModelService), async (c) => {
     const body = c.req.valid('json');
     const saved = body.id ? getServiceRow(body.id) : undefined;
+    if (saved) assertKeyFollows(saved, body);
     const serviceType = body.serviceType ?? saved?.serviceType;
     const provider = body.provider ?? saved?.provider;
     const baseUrl = body.baseUrl ?? saved?.baseUrl;

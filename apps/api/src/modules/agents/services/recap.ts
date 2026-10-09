@@ -5,7 +5,7 @@ import { runJob } from '../../jobs/run-job';
 import { getDramaRow } from '../../production/dramas';
 import { getEpisodeRow } from '../../production/episodes';
 import { runAgentUntilDone } from '../runtime/run-agent';
-import { forgetRecap, recapRefused } from '../tools/recap';
+import { recapRefused } from '../tools/recap';
 
 type Opts = z.input<typeof TextModelOverride>;
 
@@ -29,18 +29,14 @@ export function startRecap(episodeId: number, opts: Opts = {}) {
   const scriptRevision = ep.scriptRevision;
   return runJob(
     { kind: 'recap', episodeId: ep.id, dramaId: ep.dramaId, target: String(scriptRevision) },
-    async ({ jobId, progress }) => {
-      try {
-        const run = await runAgentUntilDone(
-          { agentType: 'recap_writer', message: MESSAGE, episodeId: ep.id, dramaId: ep.dramaId, jobId, scriptRevision, ...opts },
-          (calls) => calls.some((c) => c.tool === 'save_recap' && c.ok) || recapRefused(jobId),
-          'calling save_recap',
-        );
-        if (recapRefused(jobId)) throw new Error('The script changed while this recap was being written; the new script gets its own recap');
-        progress({ steps: run.steps, model: run.model });
-      } finally {
-        forgetRecap(jobId);
-      }
+    async ({ jobId, progress, signal }) => {
+      const run = await runAgentUntilDone(
+        { agentType: 'recap_writer', message: MESSAGE, episodeId: ep.id, dramaId: ep.dramaId, jobId, scriptRevision, signal, ...opts },
+        (calls) => calls.some((c) => c.tool === 'save_recap' && c.ok) || recapRefused(jobId),
+        'calling save_recap',
+      );
+      if (recapRefused(jobId)) throw new Error('The script changed while this recap was being written; the new script gets its own recap');
+      progress({ steps: run.steps, model: run.model });
     },
   );
 }

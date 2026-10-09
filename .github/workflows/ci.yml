@@ -1,0 +1,32 @@
+# The quality gates every change passes locally (CONTRIBUTING.md), run on each push and pull request.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      # The pnpm version comes from packageManager in package.json.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      # Domain model and ADRs: schema and cross-reference validation (the same check `dkk render` runs first).
+      - run: npx --yes --package domain-knowledge-kit@0.9.1 dkk validate
+      - run: pnpm build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1

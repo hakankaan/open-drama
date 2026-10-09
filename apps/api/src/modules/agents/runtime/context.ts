@@ -9,6 +9,8 @@ export interface DramaAgentContext {
   log: Logger;
   /** The job the run belongs to; the planner keeps its state on the job's progress row, save_shots parks shots with it. */
   jobId?: number;
+  /** A run started from the chat endpoint: its saves are creator edits, held to the locks the creator's own edits are. */
+  chat?: boolean;
 }
 
 /** Scope of an episode-scoped agent run: the drama scope plus the episode (adr-0015). */

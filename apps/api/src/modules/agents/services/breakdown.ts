@@ -6,10 +6,10 @@ import { characters, episodeCharacters, episodeProps, episodeScenes, films, gene
 import { conflict, precondition } from '../../../http/errors';
 import { logger } from '../../../http/logger';
 import { getEpisodeJobs, runJob } from '../../jobs/run-job';
-import { assertScriptFree, getEpisodeRow } from '../../production/episodes';
+import { assertScriptSettled, getEpisodeRow } from '../../production/episodes';
 import { liveShotRows, purgeParkedShots, restoreParkedShots } from '../../storyboard/service';
 import { runAgentUntilDone } from '../runtime/run-agent';
-import { breakdownFinished, forgetBreakdown, trackBreakdownTarget } from '../tools/storyboard';
+import { breakdownFinished, trackBreakdownTarget } from '../tools/storyboard';
 import { SERIES_NOTE } from './recap';
 import { describeVideoModel, targetFit } from './video-model';
 import { promptRunsInFlight } from './video-prompts';
@@ -48,7 +48,7 @@ export async function startBreakdown(episodeId: number, opts: z.input<typeof Tex
     // A running breakdown is returned below; otherwise the script must be settled (checked first: while it is being
     // rewritten, nothing else about the episode is worth reporting), present and extracted, and nothing may still be
     // writing to the shots the breakdown will replace.
-    assertScriptFree(ep.id, 'break down once it is saved');
+    assertScriptSettled(ep.id, 'break down');
     if (!ep.scriptContent?.trim()) throw precondition('Finish the script (rewrite or skip) before breaking it into shots');
     if (!hasAssetCandidates(ep.id)) throw precondition('Extract or add the episode’s assets before breaking it into shots');
     if (jobs.videoPromptBatch?.status === 'running' || promptRunsInFlight(ep.id)) {
@@ -76,35 +76,48 @@ export async function startBreakdown(episodeId: number, opts: z.input<typeof Tex
     }
   }
 
-  const message = [
-    `Break this episode's script into shots. The video model is ${video.label}; keep every shot ${(target ?? video).lengths}.`,
-    target?.brief,
-    "Read the script and the project's characters, scenes and props with read_storyboard_context, then save every shot with save_shots in batches of at most 8, in story order. The first batch sets replaceExisting: true and the batch holding the last shot sets final: true. Bind assets only by the ids the context gives, and write each shot's videoPrompt.",
-    SERIES_NOTE,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const brief = (steps: string) =>
+    [
+      `Break this episode's script into shots. The video model is ${video.label}; keep every shot ${(target ?? video).lengths}.`,
+      target?.brief,
+      steps,
+      'Bind assets only by the ids the context gives, and write each shot\'s videoPrompt.',
+      SERIES_NOTE,
+    ]
+      .filter(Boolean)
+      .join(' ');
+  const message = brief(
+    "Read the script and the project's characters, scenes and props with read_storyboard_context, then save every shot with save_shots in batches of at most 8, in story order. The first batch sets replaceExisting: true and the batch holding the last shot sets final: true.",
+  );
+  // A retry keeps what the first attempt saved: replaceExisting would discard it and pay for the same shots twice.
+  const continuation = (jobId: number) => () =>
+    shotsWrittenBy(jobId) === 0
+      ? message
+      : brief(
+          'An earlier attempt of this breakdown already saved some shots; they are kept. Read the script and the current shots with read_storyboard_context, then save the missing shots and fix any others with save_shots WITHOUT replaceExisting (it would discard the saved shots), in story order, in batches of at most 8; the batch holding the last shot sets final: true.',
+        );
   return runJob(
     { kind: 'breakdown', episodeId: ep.id, dramaId: ep.dramaId },
-    async ({ jobId, progress }) => {
+    async ({ jobId, progress, signal }) => {
+      let runInfo: Record<string, unknown> = {};
       trackBreakdownTarget(jobId, target);
       try {
         const run = await runAgentUntilDone(
-          { agentType: 'storyboard_breaker', message, episodeId: ep.id, dramaId: ep.dramaId, jobId, ...opts },
+          { agentType: 'storyboard_breaker', message, episodeId: ep.id, dramaId: ep.dramaId, jobId, signal, ...opts },
           () => breakdownFinished(jobId),
           `saving the final batch of shots (final: true)${target ? ` with the shots adding up to ${target.seconds} s` : ''}`,
+          continuation(jobId),
         );
-        progress({ steps: run.steps, model: run.model });
+        runInfo = { steps: run.steps, model: run.model };
+        progress(runInfo);
       } catch (err) {
         // A provider error after the final batch (the closing reply) does not undo a complete storyboard.
         if (!breakdownFinished(jobId)) throw err;
         logger.warn({ jobId, err: (err as Error).message }, 'breakdown agent failed after its final batch; keeping it');
-      } finally {
-        forgetBreakdown(jobId);
       }
       const written = shotsWrittenBy(jobId);
       if (written === 0) throw new Error('The agent saved no shots. Try again or pick another model.');
-      progress({ shots: written });
+      progress({ ...runInfo, shots: written });
     },
     {
       onDone: (jobId, tx) => purgeParkedShots(tx, jobId, ep.id),

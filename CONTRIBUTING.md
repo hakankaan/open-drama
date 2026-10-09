@@ -21,4 +21,4 @@ pnpm typecheck
 pnpm lint
 ```
 
-Both must be green. Verify behaviour by running the app (`pnpm dev`) and exercising what you changed.
+Both must be green. CI (`.github/workflows/ci.yml`) runs them on every push and pull request, together with `dkk validate` and `pnpm build`. Verify behaviour by running the app (`pnpm dev`) and exercising what you changed.

@@ -47,6 +47,8 @@ export const shots = sqliteTable(
   },
   (t) => [
     index('shots_episode_idx').on(t.episodeId),
+    // Deleting a scene unbinds its shots.
+    index('shots_scene_idx').on(t.sceneId),
     uniqueIndex('shots_episode_number_live_uq')
       .on(t.episodeId, t.shotNumber)
       .where(sql`${t.parkedByJobId} IS NULL`),
@@ -64,7 +66,8 @@ export const shotCharacters = sqliteTable(
       .references(() => characters.id),
     sortOrder: integer().notNull().default(0),
   },
-  (t) => [primaryKey({ columns: [t.shotId, t.characterId] })],
+  // The second index serves the reverse lookup (deleting or renaming a character).
+  (t) => [primaryKey({ columns: [t.shotId, t.characterId] }), index('shot_characters_character_idx').on(t.characterId)],
 );
 
 export const shotProps = sqliteTable(
@@ -78,5 +81,5 @@ export const shotProps = sqliteTable(
       .references(() => props.id),
     sortOrder: integer().notNull().default(0),
   },
-  (t) => [primaryKey({ columns: [t.shotId, t.propId] })],
+  (t) => [primaryKey({ columns: [t.shotId, t.propId] }), index('shot_props_prop_idx').on(t.propId)],
 );

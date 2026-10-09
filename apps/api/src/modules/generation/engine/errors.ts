@@ -15,7 +15,7 @@ export function classify(err: unknown): TaskErrorClass {
   const code = err instanceof ProviderError ? (err.code ?? '') : '';
   if (MODERATION.test(message) || MODERATION.test(code)) return 'moderation';
   if (status === 401 || status === 403) return 'auth';
-  if (status === 429) return 'quota';
+  if (status === 429 || status === 402) return 'quota';
   if ((err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) || /timed? ?out/i.test(message)) {
     return 'timeout';
   }

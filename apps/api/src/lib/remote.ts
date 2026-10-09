@@ -5,6 +5,8 @@
 // your own network is a normal use. Requests go out directly: an operator-enabled environment proxy
 // (NODE_USE_ENV_PROXY) would resolve hosts itself and bypass this check.
 import { lookup, type LookupAddress, type LookupOptions } from 'node:dns';
+import { createWriteStream, type WriteStream } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import http from 'node:http';
 import https from 'node:https';
 import { BlockList, isIP } from 'node:net';
@@ -25,7 +27,17 @@ function isBlocked(address: string): boolean {
   return blocked.check(address, isIP(address) === 6 ? 'ipv6' : 'ipv4');
 }
 
-const refused = (host: string) => new Error(`The address of ${host} is not allowed (loopback, link-local or cloud metadata)`);
+/** A failed fetch; `transient` when trying again later may succeed (a timeout, a dropped connection, a 5xx, a 429). */
+export class FetchError extends Error {
+  constructor(
+    message: string,
+    readonly transient: boolean,
+  ) {
+    super(message);
+  }
+}
+
+const refused = (host: string) => new FetchError(`The address of ${host} is not allowed (loopback, link-local or cloud metadata)`, false);
 
 /** dns.lookup that refuses blocked addresses; handles both the single and the `all` form Node's sockets use. */
 function safeLookup(
@@ -46,6 +58,11 @@ export interface FetchedFile {
   contentType: string;
 }
 
+export interface DownloadedFile {
+  contentType: string;
+  size: number;
+}
+
 export interface FetchOptions {
   /** Names the file in error messages ("reference image", "result"). */
   what: string;
@@ -61,67 +78,127 @@ export interface FetchOptions {
  * GETs a public http(s) URL into memory: at most `maxBytes` (the stream is cut off beyond it), at most 3 redirects,
  * and everything, redirects included, must finish within `timeoutMs`.
  */
-export function fetchPublic(url: string, opts: FetchOptions): Promise<FetchedFile> {
-  return get(url, opts, Date.now() + opts.timeoutMs, 0);
+export async function fetchPublic(url: string, opts: FetchOptions): Promise<FetchedFile> {
+  const chunks: Buffer[] = [];
+  const { contentType, size } = await get(url, opts, Date.now() + opts.timeoutMs, 0, () => ({
+    write: (chunk) => void chunks.push(chunk),
+    end: async () => {},
+    abort: async () => {},
+  }));
+  return { bytes: Buffer.concat(chunks, size), contentType };
 }
 
-function get(url: string, opts: FetchOptions, deadline: number, hops: number): Promise<FetchedFile> {
+/** fetchPublic streamed into `file` instead of memory (a result video); a partial file is removed on any failure. */
+export function downloadPublic(url: string, file: string, opts: FetchOptions): Promise<DownloadedFile> {
+  return get(url, opts, Date.now() + opts.timeoutMs, 0, (res) => {
+    const out: WriteStream = createWriteStream(file);
+    return {
+      write: (chunk) => {
+        // Disk slower than the network: hold the response until the file catches up.
+        if (!out.write(chunk)) {
+          res.pause();
+          out.once('drain', () => res.resume());
+        }
+      },
+      end: () =>
+        new Promise<void>((resolve, reject) => {
+          out.once('error', reject);
+          out.end(resolve);
+        }),
+      abort: async () => {
+        out.destroy();
+        await rm(file, { force: true });
+      },
+      onError: (fail) => out.once('error', fail),
+    };
+  });
+}
+
+interface Sink {
+  write(chunk: Buffer): void;
+  end(): Promise<void>;
+  abort(): Promise<void>;
+  onError?(fail: (err: Error) => void): void;
+}
+
+const httpFailure = (what: string, status: number) =>
+  new FetchError(`Fetching the ${what} failed (${status})`, status >= 500 || status === 429 || status === 408);
+
+function get(url: string, opts: FetchOptions, deadline: number, hops: number, open: (res: http.IncomingMessage) => Sink): Promise<DownloadedFile> {
   return new Promise((resolve, reject) => {
     let target: URL;
     try {
       target = new URL(url);
     } catch {
-      return reject(new Error(`The ${opts.what} URL is not valid`));
+      return reject(new FetchError(`The ${opts.what} URL is not valid`, false));
     }
-    if (target.protocol !== 'http:' && target.protocol !== 'https:') return reject(new Error(`The ${opts.what} URL must be http or https`));
+    if (target.protocol !== 'http:' && target.protocol !== 'https:') return reject(new FetchError(`The ${opts.what} URL must be http or https`, false));
     const host = target.hostname.replace(/^\[|\]$/g, '');
     const trusted = opts.trustedHost !== undefined && host === opts.trustedHost.replace(/^\[|\]$/g, '').toLowerCase();
     if (!trusted && isIP(host) && isBlocked(host)) return reject(refused(host));
     const remaining = deadline - Date.now();
-    if (remaining <= 0) return reject(new Error(`Fetching the ${opts.what} timed out`));
+    if (remaining <= 0) return reject(new FetchError(`Fetching the ${opts.what} timed out`, true));
 
+    let sink: Sink | null = null;
+    let settled = false;
     const client = target.protocol === 'https:' ? https : http;
     // Every way out destroys the request, so a discarded or endless response never keeps the socket open.
     const req = client.get(target, { lookup: trusted ? undefined : safeLookup, timeout: remaining }, (res) => {
       const status = res.statusCode ?? 0;
       if (status >= 300 && status < 400 && res.headers.location) {
-        const next = new URL(res.headers.location, target).toString();
+        let next: string;
+        try {
+          next = new URL(res.headers.location, target).toString();
+        } catch {
+          return fail(new FetchError(`The ${opts.what} URL redirects to an address that is not valid`, false));
+        }
         done();
-        if (hops >= 3) return reject(new Error(`The ${opts.what} URL redirects too often`));
-        return get(next, opts, deadline, hops + 1).then(resolve, reject);
+        settled = true;
+        if (hops >= 3) return reject(new FetchError(`The ${opts.what} URL redirects too often`, false));
+        return get(next, opts, deadline, hops + 1, open).then(resolve, reject);
       }
-      if (status !== 200) return fail(new Error(`Fetching the ${opts.what} failed (${status})`));
+      if (status !== 200) return fail(httpFailure(opts.what, status));
       const contentType = String(res.headers['content-type'] ?? '');
       if (opts.accept && !opts.accept.test(contentType)) {
-        return fail(new Error(`The ${opts.what} URL returned the wrong kind of file (${contentType || 'no content type'})`));
+        return fail(new FetchError(`The ${opts.what} URL returned the wrong kind of file (${contentType || 'no content type'})`, false));
       }
-      const chunks: Buffer[] = [];
+      const into = open(res);
+      sink = into;
+      into.onError?.(fail);
       let size = 0;
       res.on('data', (chunk: Buffer) => {
         size += chunk.length;
-        if (size > opts.maxBytes) return fail(new Error(`The ${opts.what} is larger than ${Math.round(opts.maxBytes / 1024 / 1024)} MB`));
-        chunks.push(chunk);
+        if (size > opts.maxBytes) return fail(new FetchError(`The ${opts.what} is larger than ${Math.round(opts.maxBytes / 1024 / 1024)} MB`, false));
+        into.write(chunk);
       });
       res.on('end', () => {
+        if (settled) return;
         clearTimeout(timer);
-        resolve({ bytes: Buffer.concat(chunks, size), contentType });
+        into.end().then(
+          () => {
+            settled = true;
+            resolve({ contentType, size });
+          },
+          (err: Error) => fail(err),
+        );
       });
       res.on('error', fail);
     });
     // The socket timeout catches a stalled connection; this one bounds the whole exchange (a trickling server too).
-    const timer = setTimeout(() => fail(new Error(`Fetching the ${opts.what} timed out`)), remaining);
+    const timer = setTimeout(() => fail(new FetchError(`Fetching the ${opts.what} timed out`, true)), remaining);
     function done() {
       clearTimeout(timer);
       req.destroy();
     }
     function fail(err: Error) {
+      if (settled) return;
+      settled = true;
       done();
-      reject(err);
+      const reason = err instanceof FetchError ? err : new FetchError(err.message, true);
+      void (sink?.abort() ?? Promise.resolve()).finally(() => reject(reason));
     }
-    req.on('timeout', () => fail(new Error(`Fetching the ${opts.what} timed out`)));
-    req.on('error', (err) => {
-      clearTimeout(timer);
-      reject(err);
-    });
+    req.on('timeout', () => fail(new FetchError(`Fetching the ${opts.what} timed out`, true)));
+    // A socket error (reset, refused, DNS) may pass; the address check's refusal is final.
+    req.on('error', (err) => fail(err instanceof FetchError ? err : new FetchError(err.message, true)));
   });
 }

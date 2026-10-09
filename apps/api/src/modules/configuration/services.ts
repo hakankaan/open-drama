@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, max, ne } from 'drizzle-orm';
+import { and, asc, count, desc, eq, max, ne } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   type AddModelService as AddModelServiceSchema,
@@ -13,8 +13,8 @@ import {
   type UpdateModelService,
 } from '@open-drama/contracts';
 import { db } from '../../db/client';
-import { modelServices } from '../../db/schema';
-import { assertSomething, invalid, notFound } from '../../http/errors';
+import { generationTasks, modelServices } from '../../db/schema';
+import { assertSomething, conflict, invalid, notFound } from '../../http/errors';
 
 type Row = typeof modelServices.$inferSelect;
 
@@ -83,9 +83,54 @@ export function addModelService(input: z.output<typeof AddModelServiceSchema>): 
   return toModelService(row);
 }
 
+const originOf = (url: string) => {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return url.replace(/\/+$/, '');
+  }
+};
+
+/**
+ * The stored key goes only where it was entered for: moving a keyed service to another address or provider needs the
+ * key again, so an edited base URL can never send the saved key to a different host (an update or a test probe).
+ */
+export function assertKeyFollows(saved: Row, change: { provider?: string; baseUrl?: string; apiKey?: string }) {
+  if (change.apiKey || !saved.apiKey) return;
+  const moved =
+    (change.baseUrl !== undefined && originOf(change.baseUrl) !== originOf(saved.baseUrl)) ||
+    (change.provider !== undefined && change.provider !== saved.provider);
+  if (moved) throw invalid('Enter the API key again to use it with the new address or provider');
+}
+
+/**
+ * A generation the provider has accepted is polled with its service's address and key, and a restart resumes it
+ * with what the service holds then (adr-0005), so neither changes, nor does the service go, while one is running.
+ */
+function assertNoRunningTasks(id: number, action: string) {
+  const running = db
+    .select({ n: count() })
+    .from(generationTasks)
+    .where(and(eq(generationTasks.serviceId, id), eq(generationTasks.status, 'processing')))
+    .get()?.n ?? 0;
+  if (running > 0) {
+    throw conflict(
+      running === 1
+        ? `A generation is still running on this service; ${action} once it has finished`
+        : `${running} generations are still running on this service; ${action} once they have finished`,
+    );
+  }
+}
+
 export function updateModelService(id: number, input: UpdateModelService): ModelService {
   const current = getServiceRow(id);
   assertSomething(input);
+  assertKeyFollows(current, input);
+  const rerouted =
+    (input.provider !== undefined && input.provider !== current.provider) ||
+    (input.baseUrl !== undefined && input.baseUrl.replace(/\/+$/, '') !== current.baseUrl) ||
+    (!!input.apiKey && input.apiKey !== current.apiKey);
+  if (rerouted) assertNoRunningTasks(id, 'change its provider, address or key');
   const provider = input.provider ?? current.provider;
   if (input.provider) assertProvider(current.serviceType, provider);
   const row = db
@@ -110,6 +155,7 @@ export function updateModelService(id: number, input: UpdateModelService): Model
 /** Hard delete. Episodes that locked it fall back to the active service of the type (resolveService). */
 export function deleteModelService(id: number): { id: number } {
   getServiceRow(id);
+  assertNoRunningTasks(id, 'delete it');
   db.delete(modelServices).where(eq(modelServices.id, id)).run();
   return { id };
 }

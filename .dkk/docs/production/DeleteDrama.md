@@ -6,7 +6,7 @@
 
 ## Summary
 
-Soft-delete a drama. Its episodes, assets, shots and generation records remain stored but are hidden everywhere.
+Soft-delete a drama together with its live episodes, characters, scenes and props, all with the drama's deletion timestamp. Shots and generation records remain stored but are hidden with their episode or asset.
 
 
 ## Fields
@@ -15,6 +15,9 @@ Soft-delete a drama. Its episodes, assets, shots and generation records remain s
 |------|------|-------------|
 | `dramaId` | `ID` | — |
 
+## Rules & Invariants
+
+- A job of the drama is running (drama-scoped or on one of its episodes): it would go on adding episodes or assets under the deleted drama, so it is cancelled or finishes first
 
 
 ## Relationships
@@ -26,4 +29,6 @@ Soft-delete a drama. Its episodes, assets, shots and generation records remain s
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |

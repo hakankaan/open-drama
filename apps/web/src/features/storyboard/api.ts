@@ -40,7 +40,7 @@ export const useEpisodeShots = (episodeId: number) =>
     refetchInterval: (query) => (active(query.state.data) ? 4000 : false),
   });
 
-function useInvalidateEpisode(episodeId: number) {
+export function useInvalidateEpisode(episodeId: number) {
   const qc = useQueryClient();
   return () => {
     void qc.invalidateQueries({ queryKey: storyboardKeys.shots(episodeId) });
@@ -85,16 +85,22 @@ export function useCreateShot(episodeId: number) {
   });
 }
 
+/**
+ * A poll of the list already in flight answers with the shot as it was before the save, so it is cancelled first;
+ * the list is refetched once the save settles.
+ */
 export function useUpdateShot(episodeId: number) {
   const put = usePutCard(episodeId);
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...body }: UpdateShot & { id: number }) => request(ShotCard, 'PATCH', `/shots/${id}`, body),
+    onMutate: () => qc.cancelQueries({ queryKey: storyboardKeys.shots(episodeId) }),
     onSuccess: (card) => {
       put(card);
       void qc.invalidateQueries({ queryKey: productionKeys.pipeline(episodeId) });
       void qc.invalidateQueries({ queryKey: storyboardKeys.videos(card.id) });
     },
+    onSettled: () => void qc.invalidateQueries({ queryKey: storyboardKeys.shots(episodeId) }),
   });
 }
 
@@ -116,14 +122,14 @@ export function useGenerateShotVideoPrompt(episodeId: number) {
   });
 }
 
+/** RequestShotVideo without the refresh, for a batch that refreshes once at the end. */
+export const requestShotVideo = ({ id, ...body }: RequestShotVideo & { id: number }) =>
+  request(ShotVideoStarted, 'POST', `/shots/${id}/video`, body);
+
 /** RequestShotVideo: the shot follows the task through the polled list (latestVideoTask). */
 export function useRequestShotVideo(episodeId: number) {
   const invalidate = useInvalidateEpisode(episodeId);
-  return useMutation({
-    mutationFn: ({ id, ...body }: RequestShotVideo & { id: number }) =>
-      request(ShotVideoStarted, 'POST', `/shots/${id}/video`, body),
-    onSettled: invalidate,
-  });
+  return useMutation({ mutationFn: requestShotVideo, onSettled: invalidate });
 }
 
 /** Completed videos of a shot. The key includes the latest task, so a finished generation refreshes the history. */

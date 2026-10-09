@@ -37,6 +37,12 @@ function liveWritten(tx: Tx | typeof db, written: number[]): number {
 
 export const planFinished = (jobId: number) => readPlan(db, jobId)?.final === true;
 
+/** How many requested episodes still need planning, or null once the plan job is no longer running. */
+export function planRemaining(jobId: number): number | null {
+  const plan = readPlan(db, jobId);
+  return plan ? Math.max(0, plan.count - liveWritten(db, plan.written)) : null;
+}
+
 export const readStoryForPlanning = defineDramaTool({
   id: 'read_story_for_planning',
   description:

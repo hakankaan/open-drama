@@ -1,21 +1,23 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { rm, writeFile } from 'node:fs/promises';
+import { rename, rm, writeFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 import sharp from 'sharp';
 import { env } from '../../env';
 import { logger } from '../../http/logger';
 import { ffmpegBin, probeDurationSeconds, run } from '../../lib/ffmpeg';
-import { fetchPublic } from '../../lib/remote';
+import { downloadPublic, FetchError } from '../../lib/remote';
 import { toAbsolute, toMediaPath } from '../../lib/paths';
 
 export type Bucket = 'uploads' | 'images' | 'videos' | 'merged' | 'temp';
 export type MediaKind = 'image' | 'video' | 'audio';
 
 /** Writes bytes under a fresh uuid name (paths are never reused, so immutable caching is safe, adr-0009). */
+const safeExt = (ext: string) => (/^\.[a-z0-9]{1,5}$/i.test(ext) ? ext.toLowerCase() : '');
+
 export async function storeBuffer(bucket: Bucket, ext: string, data: Uint8Array): Promise<string> {
-  const safeExt = /^\.[a-z0-9]{1,5}$/i.test(ext) ? ext.toLowerCase() : '';
-  const abs = join(env.storageRoot, bucket, `${randomUUID()}${safeExt}`);
+  const abs = join(env.storageRoot, bucket, `${randomUUID()}${safeExt(ext)}`);
   await writeFile(abs, data);
   return toMediaPath(abs);
 }
@@ -71,16 +73,38 @@ const extFor = (mime: string | null, url: string, fallback: string) => {
 
 const MAX_REMOTE_BYTES = 200 * 1024 * 1024;
 
-/** Refuses a stored result that is not a decodable image (an HTML error page, corrupt base64); the file is removed. */
+/**
+ * The raster formats a stored image may have, by the format sharp reads from the bytes. Anything else (an SVG, which
+ * a browser would run scripts in, a TIFF, an HTML error page) is refused whatever its content type claimed.
+ */
+const IMAGE_EXT: Record<string, string> = { png: '.png', jpeg: '.jpg', webp: '.webp', gif: '.gif', avif: '.avif' };
+
+/** The extension for the image in `abs`, from its decoded format; throws when it is not a supported raster image. */
+async function imageExtOf(abs: string): Promise<string> {
+  const meta = await sharp(abs)
+    .metadata()
+    .catch(() => null);
+  const ext = meta?.format ? IMAGE_EXT[meta.format] : undefined;
+  if (!meta?.width || !meta.height || !ext) throw new Error('The provider returned a file that is not a valid image');
+  return ext;
+}
+
+/** Refuses a stored result that is not a decodable raster image (an HTML error page, corrupt base64, an SVG); the file is removed. */
 export async function assertImage(mediaPath: string): Promise<void> {
   const abs = toAbsolute(mediaPath);
   try {
-    const meta = await sharp(abs).metadata();
-    if (!meta.width || !meta.height) throw new Error('no dimensions');
-  } catch {
+    await imageExtOf(abs);
+  } catch (err) {
     await rm(abs, { force: true });
-    throw new Error('The provider returned a file that is not a valid image');
+    throw err;
   }
+}
+
+/** Moves a downloaded or decoded image from temp/ into images/, named by the format its bytes have. */
+async function keepImage(tempAbs: string): Promise<string> {
+  const abs = join(env.storageRoot, 'images', `${randomUUID()}${await imageExtOf(tempAbs)}`);
+  await rename(tempAbs, abs);
+  return toMediaPath(abs);
 }
 
 /** Refuses a stored result that is not a playable video and returns its duration; the file is removed on refusal. */
@@ -100,15 +124,32 @@ export async function assertVideo(mediaPath: string): Promise<number> {
  * (`serviceBaseUrl`, possibly a local relay) is reached without the address check. The bytes are decoded by the caller.
  */
 export async function storeRemoteFile(url: string, kind: MediaKind, serviceBaseUrl: string | undefined): Promise<string> {
-  const { bytes, contentType } = await fetchPublic(url, {
-    what: 'result',
-    maxBytes: MAX_REMOTE_BYTES,
-    timeoutMs: 5 * 60_000,
-    trustedHost: serviceBaseUrl ? hostOf(serviceBaseUrl) : undefined,
-  });
-  const bucket: Bucket = kind === 'image' ? 'images' : 'videos';
-  return storeBuffer(bucket, extFor(contentType || null, url, kind === 'image' ? '.png' : '.mp4'), bytes);
+  // The work is already paid for: a transient failure is tried again before the task gives up on it.
+  for (let attempt = 0; ; attempt++) {
+    const temp = join(env.storageRoot, 'temp', randomUUID());
+    try {
+      const { contentType } = await downloadPublic(url, temp, {
+        what: 'result',
+        maxBytes: MAX_REMOTE_BYTES,
+        timeoutMs: 5 * 60_000,
+        trustedHost: serviceBaseUrl ? hostOf(serviceBaseUrl) : undefined,
+      });
+      if (kind === 'image') return await keepImage(temp);
+      const abs = join(env.storageRoot, 'videos', `${randomUUID()}${safeExt(extFor(contentType || null, url, '.mp4'))}`);
+      await rename(temp, abs);
+      return toMediaPath(abs);
+    } catch (err) {
+      await rm(temp, { force: true });
+      const delay = RESULT_RETRY_DELAYS_MS[attempt];
+      if (!(err instanceof FetchError && err.transient) || delay === undefined) throw err;
+      logger.warn({ attempt: attempt + 1, err: err.message, retryInMs: delay }, 'result download failed; trying again');
+      await sleep(delay);
+    }
+  }
 }
+
+/** Waits before the 2nd and 3rd download attempts of a result. */
+const RESULT_RETRY_DELAYS_MS = [5_000, 20_000];
 
 const hostOf = (url: string) => {
   try {
@@ -119,6 +160,13 @@ const hostOf = (url: string) => {
 };
 
 /** StoreInlineImage: base64 results (for example Gemini) become an ordinary stored file. */
-export async function storeInlineImage(base64: string, mimeType: string): Promise<string> {
-  return storeBuffer('images', EXT_BY_MIME[mimeType] ?? '.png', new Uint8Array(Buffer.from(base64, 'base64')));
+export async function storeInlineImage(base64: string): Promise<string> {
+  const temp = join(env.storageRoot, 'temp', randomUUID());
+  await writeFile(temp, new Uint8Array(Buffer.from(base64, 'base64')));
+  try {
+    return await keepImage(temp);
+  } catch (err) {
+    await rm(temp, { force: true });
+    throw err;
+  }
 }

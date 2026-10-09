@@ -16,7 +16,7 @@ import { db } from '../../db/client';
 import { characters, dramas, episodes, props, scenes, shots } from '../../db/schema';
 import { assertSomething, conflict, invalid, notFound } from '../../http/errors';
 import { getPresetByValue } from '../configuration/presets';
-import { getDramaJobs } from '../jobs/run-job';
+import { dramaHasRunningJob, getDramaJobs } from '../jobs/run-job';
 import { toEpisode } from './episodes';
 
 type Row = typeof dramas.$inferSelect;
@@ -119,10 +119,21 @@ export function updateDrama(id: number, input: z.output<typeof UpdateDrama>): Dr
   return toDrama(db.update(dramas).set(input).where(eq(dramas.id, id)).returning().get());
 }
 
-/** Soft delete: episodes, assets and generation records stay on disk but become unreachable. */
+/**
+ * DeleteDrama: soft-deletes the drama with its live episodes and assets, one timestamp in one transaction, so nothing
+ * under it stays live (a queued generation sees its shot's episode or its asset deleted and is never sent). Refused
+ * while one of its jobs runs, since that job would go on adding episodes or assets under the deleted drama.
+ */
 export function deleteDrama(id: number): { id: number } {
   getDramaRow(id);
-  db.update(dramas).set({ deletedAt: new Date().toISOString() }).where(eq(dramas.id, id)).run();
+  if (dramaHasRunningJob(id)) throw conflict('A job is still running in this project; cancel it or let it finish, then delete the project');
+  const deletedAt = new Date().toISOString();
+  db.transaction((tx) => {
+    tx.update(dramas).set({ deletedAt }).where(eq(dramas.id, id)).run();
+    for (const table of [episodes, characters, scenes, props]) {
+      tx.update(table).set({ deletedAt }).where(and(eq(table.dramaId, id), isNull(table.deletedAt))).run();
+    }
+  });
   return { id };
 }
 

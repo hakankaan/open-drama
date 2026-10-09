@@ -1,0 +1,13 @@
+name: ResumeInterruptedTasks
+description: >-
+  At API startup, poll again every task the provider had accepted before the restart (it is already paid for), using
+  its service's address and key. A task whose service was removed, lost its key or now names another provider fails
+  instead. The poll budget runs from the task's submission, so restarts never extend it; the result reaches its owner
+  only if the owner still exists.
+actor: Bootstrap
+handled_by: GenerationTask
+preconditions:
+  - The task is processing and has a provider task id
+  - Its service exists, has a key and still names the task's provider
+adr_refs:
+  - adr-0005
