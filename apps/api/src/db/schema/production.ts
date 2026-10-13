@@ -17,6 +17,8 @@ export const dramas = sqliteTable('dramas', {
   serial: bool().notNull().default(true),
   // The story outline the episodes are planned from (adr-0015); Markdown, empty until written.
   outline: text().notNull().default(''),
+  // Bumped on every change of the outline, whoever writes it (adr-0016).
+  outlineRevision: integer().notNull().default(0),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
   deletedAt: deletedAt(),
@@ -33,11 +35,16 @@ export const episodes = sqliteTable(
     title: text().notNull(),
     description: text().notNull().default(''),
     content: text().notNull().default(''),
+    // Bumped on every change of content (the beat sheet), whoever writes it (adr-0016).
+    beatsRevision: integer().notNull().default(0),
     scriptContent: text(),
-    // Bumped on every change of scriptContent; a recap is fresh while recapRevision matches it (adr-0014).
+    // Bumped on every change of scriptContent; a recap is fresh while recapScriptRevision matches it (adr-0014).
     scriptRevision: integer().notNull().default(0),
     recap: text().notNull().default(''),
-    recapRevision: integer().notNull().default(0),
+    // The script revision the recap was written for (adr-0014): fresh while it equals scriptRevision. Column name kept.
+    recapScriptRevision: integer('recap_revision').notNull().default(0),
+    // Bumped on every change of the recap text, whoever writes it (adr-0016): the assistant's freshness token.
+    recapRevision: integer('recap_text_revision').notNull().default(0),
     status: text().$type<EpisodeStatus>().notNull().default('draft'),
     resolution: text().$type<Resolution>().notNull().default('720p'),
     // Locked services are plain ids: services are hard-deleted and episodes then fall back to the active one.

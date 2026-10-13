@@ -1,6 +1,7 @@
-# Command — an instruction to change domain state.
 name: TestModelService
-description: Probe a service's endpoint with a provider-appropriate minimal request (model list, tiny chat completion, or an empty task post) and report reachability, HTTP status and a response preview without creating billable work.
+description: >-
+  Probe a service's endpoint with a provider-appropriate minimal request (model list, tiny chat completion, or an empty
+  task post) and report reachability, HTTP status and a response preview without creating billable work.
 fields:
   - name: serviceType
     type: string
@@ -17,3 +18,5 @@ handled_by: ModelService
 rejections:
   - Missing service type, provider or base URL
   - Testing a saved service's key against a new origin or provider without entering the key again
+adr_refs:
+  - adr-0016

@@ -96,3 +96,10 @@ export const TextModelOverride = z.object({
   textServiceId: z.number().int().positive().optional(),
 });
 export type TextModelOverride = z.input<typeof TextModelOverride>;
+
+/**
+ * TextModelOverride plus the replace guard (adr-0016) of the runs that overwrite a saved outline, script or recap:
+ * without it the run is refused while the text exists; the studio's confirmed buttons set it, an assistant asks first.
+ */
+export const StartTextRun = TextModelOverride.extend({ replace: z.boolean().default(false) });
+export type StartTextRun = z.input<typeof StartTextRun>;

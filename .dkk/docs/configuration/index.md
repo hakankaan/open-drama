@@ -13,6 +13,8 @@ Configuration of the AI model services the app talks to (text, image and video p
 | **Provider** | The dialect a service speaks: the official endpoints of the supported model families (openai, gemini, volcengine, minimax, aliyun), plus byteplus (the international Ark, served by the Volcengine adapters) and modelrunner (its own queue adapter, adr-0013). Determines the adapter and the connectivity probe. | — |
 | **Quick setup** | Writing a recommended text, image and video service in one step from a single API key of a compatible gateway. | — |
 | **Style preset** | A named visual style (3d, anime, ghibli, …) with an English prompt fragment prepended to every image and video prompt of dramas that use it. Built-ins are seeded and upgraded without overwriting user edits. | — |
+| **Assistant endpoint** | POST /mcp on the API's port, outside the versioned REST base: the MCP (Streamable HTTP) transport through which the creator's AI assistant uses the same service layer as the studio. Stateless, forwarded unchanged by the web proxy, guarded like /api, off when OPEN_DRAMA_ASSISTANT=0 (adr-0016). | — |
+| **Assistant token** | The bearer token /mcp requires. From OPEN_DRAMA_ASSISTANT_TOKEN (at least 32 characters) when set, else generated at first boot (32 random bytes, base64url) into app_settings and printed once to stdout. Read through GET /settings/assistant, rotated through POST /settings/assistant/rotate, compared in constant time; never logged. | — |
 | **Content language** | The language every agent must write in (scripts, extracted fields, prompts). Changes the prompt and skill variants loaded and appends a highest-priority language directive. | — |
 
 ## Events
@@ -81,3 +83,4 @@ _No policies._
 | [adr-0011](../../adr/adr-0011.md) | English is the canonical language for prompts, skills, UI and content | accepted |
 | [adr-0012](../../adr/adr-0012.md) | Licence: CC BY-NC-SA 4.0 | accepted |
 | [adr-0013](../../adr/adr-0013.md) | Model providers: official endpoints of supported models, plus BytePlus and ModelRunner | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

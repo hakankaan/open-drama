@@ -12,17 +12,25 @@ fields:
   - name: textServiceId
     type: ID
     description: Optional text service override
+  - name: replace
+    type: boolean
+    description: Write over an existing script (the studio's button sets it; an assistant must ask first)
 actor: Creator
 handled_by: EpisodeWriteJob
 preconditions:
   - Raw content (the beats) is not empty
+  - The script is empty, or replace is set
+  - In a serial drama, no earlier episode's recap job is running (its recap feeds this script, adr-0016)
   - No rewrite is running for the episode
   - No breakdown or extraction is reading the script
   - If a write job is already running for the episode, the running job is returned (alreadyRunning)
 rejections:
   - Empty raw content
+  - A script exists and replace is not set
+  - An earlier episode's recap is still being written
   - The script is being rewritten
   - A breakdown or an extraction is reading the script
   - No text model service configured
 adr_refs:
   - adr-0015
+  - adr-0016

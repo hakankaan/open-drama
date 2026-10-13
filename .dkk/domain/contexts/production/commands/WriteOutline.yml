@@ -12,13 +12,21 @@ fields:
   - name: textServiceId
     type: ID
     description: Optional text service override
+  - name: replace
+    type: boolean
+    description: Rewrite over an existing outline (the studio's button sets it; an assistant must ask first)
 actor: Creator
 handled_by: OutlineJob
 preconditions:
   - The drama has a title (always true) — a synopsis is recommended but not required
+  - No plan job is running for the drama (the mirror of PlanEpisodes' rule, adr-0016)
+  - The outline is empty, or replace is set
   - If an outline job is already running for the drama, the running job is returned (alreadyRunning)
 rejections:
   - Drama not found or deleted
+  - Episodes are being planned from the outline
+  - An outline exists and replace is not set
   - No text model service configured
 adr_refs:
   - adr-0015
+  - adr-0016

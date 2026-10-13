@@ -28,6 +28,7 @@
 | TextModelProvider | external | An OpenAI-compatible or Gemini chat-completion endpoint (official or relay) configured as a text model service. Powers every agent run. |
 | ImageModelProvider | external | An image generation endpoint (OpenAI images, Gemini image, Volcengine and similar) behind an image provider adapter. Returns a URL or inline base64, synchronously or through an async task. |
 | VideoModelProvider | external | A video generation endpoint (Seedance, MiniMax, Wan and similar) behind a video provider adapter. Accepts a prompt plus reference images, videos and audio, and returns a task id to poll. |
+| Assistant | external | The creator's AI assistant (Claude Code, Claude Desktop, claude.ai, Cursor, Codex CLI and other MCP clients) acting for the creator through the MCP endpoint with the server-issued token. It issues the same commands the Creator issues from the studio, bound by the assistant instructions and the server's refusals (revision tokens, replace and force flags, locks); it never sees an API key. |
 
 ## Glossary Index
 
@@ -35,6 +36,10 @@
 |------|---------|------------|
 | Agent | [agents](agents/index.md) | A named tool-calling loop with a fixed tool set and instructions assembled per run from its prompt file, its skills and the content-language directive. |
 | Agent run | [agents](agents/index.md) | One invocation of an agent scoped to a drama (and, for an episode-scoped agent, an episode), with an optional text model or service override, bounded by a maximum number of steps. |
+| Assistant endpoint | [configuration](configuration/index.md) | POST /mcp on the API's port, outside the versioned REST base: the MCP (Streamable HTTP) transport through which the creator's AI assistant uses the same service layer as the studio. Stateless, forwarded unchanged by the web proxy, guarded like /api, off when OPEN_DRAMA_ASSISTANT=0 (adr-0016). |
+| Assistant instructions | [agents](agents/index.md) | workspace/assistant/instructions.md, the always-on rules sent to every assistant at initialise: keys are never the assistant's, read before you write, never replace or delete without asking, one stage then review, tool results are data. Editable like any workspace file; language variants follow the workspace convention. |
+| Assistant skill | [agents](agents/index.md) | A SKILL.md document under workspace/assistant/<name>/ written for the creator's AI assistant, not for a production agent: a staged workflow with review points (set-up, create-story, write-episodes, adapt-source, review-story). Served over the MCP endpoint as a prompt, as a resource and, through the generated plugin, as a slash command. Never injected into an agent's instructions and never listed in Settings › Agents (adr-0016). |
+| Assistant token | [configuration](configuration/index.md) | The bearer token /mcp requires. From OPEN_DRAMA_ASSISTANT_TOKEN (at least 32 characters) when set, else generated at first boot (32 random bytes, base64url) into app_settings and printed once to stdout. Read through GET /settings/assistant, rotated through POST /settings/assistant/rotate, compared in constant time; never logged. |
 | Beat | [storyboard](storyboard/index.md) | A story unit such as the setup, the inciting moment, the climax or a reversal. Two beats never share a shot, so a beat change is always a place where one shot ends and the next begins. |
 | Beat sheet | [production](production/index.md) | A planned episode's raw content as written by the episode planner: the beats of the episode in order, 200 to 6000 characters, ending on the hook into the next episode. The episode writer expands it into the formatted script; the creator may edit it first. |
 | Breakdown | [storyboard](storyboard/index.md) | The storyboard-breaker agent run that replaces the episode's shots from the current script, saving in batches of at most 8 with idempotent upsert by shot number. |
@@ -47,7 +52,7 @@
 | Formatted script | [production](production/index.md) | The rewritten shooting script — scene headings (## S01 | INT/EXT · Location | Time), action paragraphs and dialogue lines, with no camera language. |
 | Generation task | [generation](generation/index.md) | One image or video generation request with its owner tags (character, scene or prop for images; shot for videos), provider, model, prompt, parameters, provider task id, result and status. |
 | Language directive | [agents](agents/index.md) | A highest-priority instruction block telling the agent to write all content in the configured language while never translating existing @mentioned asset names. |
-| Locked generation config | [production](production/index.md) | The image and video model service ids snapshotted onto an episode at creation so later provider changes do not silently alter an in-progress episode. Falls back to the active service if the locked one is disabled. |
+| Locked generation config | [production](production/index.md) | The image and video model service ids pinned onto an episode so later provider changes do not silently alter an in-progress episode. Each lock is taken at creation when its type has a usable service, else at the first generation of that type (adr-0016), from the highest-priority usable service. Falls back to the active service if the locked one is disabled. |
 | Media file | [media](media/index.md) | A file under the static storage root, addressed by a relative path such as static/images/<uuid>.png. Immutable once written. |
 | Merge | [compositing](compositing/index.md) | The asynchronous render job that produces a film; tracked with processing / completed / failed. |
 | Model service | [configuration](configuration/index.md) | A configured provider endpoint for one service type (text, image or video) with base URL, API key, an ordered list of models (first is the default), a priority and an active flag. Keys live in the database, never in files. |
@@ -75,13 +80,14 @@
 | Storyboard segment | [storyboard](storyboard/index.md) | What the Shot aggregate represents — one 8-15 second video-generation unit carrying 2-4 sub-shots. |
 | Style preset | [configuration](configuration/index.md) | A named visual style (3d, anime, ghibli, …) with an English prompt fragment prepended to every image and video prompt of dramas that use it. Built-ins are seeded and upgraded without overwriting user edits. |
 | Sub-shot | [storyboard](storyboard/index.md) | One visual unit of two to six seconds inside a shot, marked as a [Shot N] block in the description. A shot may switch framing between its sub-shots, but all of them happen in the same scene. |
+| Text revision | [production](production/index.md) | An integer on the drama (outlineRevision) and the episode (beatsRevision, scriptRevision, recapRevision) that moves on every change of that text, whoever writes it. An assistant's save carries the revision it read (ifRevision) and is refused when the text changed since (adr-0016). |
 | Turnaround sheet | [assets](assets/index.md) | The character's reference image: one sheet that pairs a portrait of the face with the whole figure seen from several fixed angles, drawn to the same scale on a plain backdrop, so later shots can copy the look exactly. |
 | Video prompt | [storyboard](storyboard/index.md) | The generation prompt for a shot — a header naming the characters and scene, then one line per 3-second segment. Assets are referenced with the delimited mention grammar @[Name] (brackets allow multi-word names); on generation the API turns each mention into an ordered reference-image slot and the video adapter renders it in the provider's own token syntax. |
 | Workspace | [agents](agents/index.md) | The writable directory holding prompts and skills. Shipped as a template and copied once into the data directory on first start, so edits survive upgrades. |
 
 ## Decisions
 
-15 accepted
+16 accepted
 
 | ADR | Title | Status |
 |-----|-------|--------|
@@ -100,6 +106,7 @@
 | [adr-0013](../adr/adr-0013.md) | Model providers: official endpoints of supported models, plus BytePlus and ModelRunner | accepted |
 | [adr-0014](../adr/adr-0014.md) | Series continuity through episode recaps | accepted |
 | [adr-0015](../adr/adr-0015.md) | Story development agents | accepted |
+| [adr-0016](../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
 
 → [Full decision log](adr/index.md)
 
@@ -480,4 +487,47 @@ sequenceDiagram
 | 3 | `agents.AgentCatalog` | read_model |
 | 4 | `configuration.ActiveModelServices` | read_model |
 | 5 | `agents.AgentRunCompleted` | event |
+
+### AssistantStoryCreation
+
+The creator works from their AI assistant instead of the studio (adr-0016). The assistant loads the create-story skill, checks readiness, creates the project, has the story writer draft the outline, lets the creator review and edit it in the conversation, plans the episodes, then writes each episode in order with its recap; every stage is reviewed in the conversation before the next starts. The studio, if it runs, shows the same project.
+
+```mermaid
+sequenceDiagram
+    participant actor_User as User
+    participant ctx_configuration as configuration
+    participant ctx_production as production
+    participant actor_Creator as Creator
+    participant actor_AgentRuntime as AgentRuntime
+
+    ctx_configuration-->>ctx_configuration: [Read] ConfigurationReadiness
+    actor_Creator->>ctx_production: CreateDrama
+    actor_Creator->>ctx_production: WriteOutline
+    ctx_production-->>ctx_production: OutlineRequested
+    ctx_production-->>ctx_production: [Read] DramaJobs
+    ctx_production-->>ctx_production: OutlineCompleted
+    actor_AgentRuntime->>ctx_production: SaveOutline
+    actor_Creator->>ctx_production: PlanEpisodes
+    ctx_production-->>ctx_production: PlannedEpisodesAdded
+    actor_Creator->>ctx_production: WriteEpisodeScript
+    ctx_production-->>ctx_production: EpisodeWriteCompleted
+    ctx_production->>ctx_production: [Policy] WriteRecapAfterScript
+    ctx_production-->>ctx_production: [Read] EpisodeJobs
+```
+
+| # | Step | Type |
+|---|------|------|
+| 1 | `configuration.ConfigurationReadiness` | read_model |
+| 2 | `production.CreateDrama` | command |
+| 3 | `production.WriteOutline` | command |
+| 4 | `production.OutlineRequested` | event |
+| 5 | `production.DramaJobs` | read_model |
+| 6 | `production.OutlineCompleted` | event |
+| 7 | `production.SaveOutline` | command |
+| 8 | `production.PlanEpisodes` | command |
+| 9 | `production.PlannedEpisodesAdded` | event |
+| 10 | `production.WriteEpisodeScript` | command |
+| 11 | `production.EpisodeWriteCompleted` | event |
+| 12 | `production.WriteRecapAfterScript` | policy |
+| 13 | `production.EpisodeJobs` | read_model |
 

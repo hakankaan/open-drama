@@ -155,9 +155,10 @@
       "ai": "AIサービス",
       "general": "一般",
       "styles": "ビジュアルスタイル",
+      "agents": "エージェント",
+      "assistant": "アシスタント",
       "storage": "ストレージ",
-      "about": "情報",
-      "agents": "エージェント"
+      "about": "情報"
     },
     "ai": {
       "types": {
@@ -368,6 +369,31 @@
         "descriptionField": "説明",
         "submit": "スキルを追加"
       }
+    },
+    "assistant": {
+      "title": "AI アシスタント接続",
+      "intro": "MCP に対応した AI アシスタント(Claude Code、Claude Desktop、Cursor など)は、会話からストーリールームを操作できます。プロジェクトの作成、あらすじの執筆、エピソードの計画、脚本の執筆とレビューまで。下のエンドポイントに、トークンを Bearer ヘッダーとして付けて接続します。",
+      "enabled": "有効",
+      "disabled": "無効",
+      "disabledBody": "アシスタントのエンドポイントは無効です(OPEN_DRAMA_ASSISTANT=0)。変数を外して API を再起動すると有効になります。",
+      "failed": "接続情報を読み込めませんでした。",
+      "endpoint": "エンドポイント",
+      "token": "アクセストークン",
+      "connect": "Claude Code を接続",
+      "connectNote": "ターミナルで実行します。他のアシスタントには、MCP 設定でエンドポイントと、Bearer の後にトークンを続けた Authorization ヘッダーを指定します。",
+      "sourceEnvironment": "環境変数 OPEN_DRAMA_ASSISTANT_TOKEN で設定されています。",
+      "sourceGenerated": "初回起動時にこのサーバーが生成し、データベースに保存しています。",
+      "rotate": "トークンを更新",
+      "rotateEnvironment": "環境変数のトークンは環境側で変更し、API を再起動します。",
+      "rotateTitle": "アクセストークンを更新しますか?",
+      "rotateBody": "新しいトークンがすぐに現在のものと置き換わります。古いトークンで接続しているアシスタントは、新しいトークンを渡すまで使えなくなります。",
+      "rotated": "新しいトークンを発行しました。",
+      "copied": "コピーしました。",
+      "copy": "{label}をコピー",
+      "show": "表示",
+      "hide": "隠す",
+      "exposureTitle": "トークンが必要なのは /mcp だけです",
+      "exposureBody": "トークンが守るのはアシスタントのエンドポイントだけで、ページと /api はポートに届く誰にでも開かれたままです。外部のクラウドアシスタントを受け入れるときは、リバースプロキシで /mcp だけを公開し、ほかは非公開にしてください。トークンを持つ人は、アシスタントを通じて保存された API キーを使えます。"
     }
   },
   "assets": {
@@ -463,7 +489,7 @@
     "deleteEpisodeConfirm": "エピソードを削除",
     "newEpisode": {
       "title": "第{number}話を追加",
-      "lockNote": "エピソードには、現在有効な画像・動画サービスが固定されます。あとでサービスを変更しても、このエピソードでは同じサービスが使われます。",
+      "lockNote": "エピソードの画像・動画サービスは作成時に固定されます（まだ設定がない場合は最初の生成時）。あとで設定を変えても、途中のエピソードには影響しません。",
       "name": "タイトル",
       "nameHint": "任意。未入力の場合は「第{number}話」になります。",
       "resolution": "動画の解像度",
@@ -563,7 +589,9 @@
         "failed": "まとめの作成に失敗しました：{error}",
         "stale": "このまとめを書いた後に脚本が変わりました。書き直すか、合うように編集してください。",
         "earlier": "前の {n, plural, other {# 話}}のうち {ready} 話のまとめが準備できています（{stale, plural, =0 {古いものなし} other {# 話が古い}}、{missing, plural, =0 {欠けなし} other {# 話が未作成}}）。該当する話を開いて作成してください。",
-        "allReady": "前の {n, plural, other {# 話}}のまとめはすべて準備できています。"
+        "allReady": "前の {n, plural, other {# 話}}のまとめはすべて準備できています。",
+        "confirmTitle": "まとめを書き直しますか?",
+        "confirmBody": "AI が脚本から新しいまとめを書き、あなたの編集も含めて現在のものを置き換えます。"
       }
     },
     "models": {

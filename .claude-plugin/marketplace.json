@@ -1,0 +1,17 @@
+{
+  "name": "open-drama",
+  "owner": {
+    "name": "Open Drama"
+  },
+  "metadata": {
+    "description": "Open Drama, an open self-hostable AI short-drama studio, for Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "open-drama",
+      "source": "./plugins/open-drama",
+      "description": "Run the Open Drama story room from Claude Code over your own server.",
+      "version": "0.1.0"
+    }
+  ]
+}

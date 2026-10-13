@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
-import { API_BASE, STATIC_PREFIX } from '@open-drama/contracts';
+import { API_BASE, MCP_PATH, STATIC_PREFIX } from '@open-drama/contracts';
 import { env } from './env';
 import { ApiError } from './http/errors';
 import { requestGuard } from './http/guard';
 import { logger, requestLogger } from './http/logger';
 import { scrubSecrets } from './lib/secrets';
+import { mcpHandler } from './mcp/routes';
 import { agentsRoutes } from './modules/agents/routes';
 import { assetsRoutes } from './modules/assets/routes';
 import { compositingRoutes } from './modules/compositing/routes';
@@ -37,6 +38,8 @@ export function createApp() {
     .route('/', mediaRoutes)
     .route('/', agentsRoutes);
   app.route(API_BASE, api);
+  // The assistant endpoint (adr-0016), after the guard; off, it is simply not mounted and answers 404.
+  if (env.OPEN_DRAMA_ASSISTANT) app.all(MCP_PATH, mcpHandler);
 
   app.on(['GET', 'HEAD'], `${STATIC_PREFIX}/*`, (c) => serveStatic(c));
 

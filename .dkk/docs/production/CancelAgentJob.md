@@ -33,3 +33,4 @@ Stop a running agent job of any kind (rewrite, write, recap, outline, plan, extr
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

@@ -32,3 +32,4 @@ rejections:
     service's address and key)
 adr_refs:
   - adr-0005
+  - adr-0016

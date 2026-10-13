@@ -29,6 +29,8 @@ export interface SubmitImageInput {
   imageServiceId?: number;
   /** The episode's locked image service, used when no explicit service is given. */
   lockedServiceId?: number | null;
+  /** The episode whose empty image lock this generation claims before it starts (adr-0016). */
+  lockFor?: number;
 }
 
 /** The task's asset, or null when the task is not an asset image (set by submitAssetImage, read back on resume). */
@@ -89,10 +91,11 @@ async function run(taskId: number, resolved: ResolvedGeneration<ImageAdapter>, i
  * SubmitImageGeneration for an asset (adr-0005): resolves the service (explicit → episode lock → active),
  * refuses while the asset already has an image task processing, records the task and dispatches it detached.
  */
-export function submitAssetImage(input: SubmitImageInput): number {
+export function submitAssetImage(input: SubmitImageInput): { taskId: number; serviceId: number | null } {
   const resolved = resolveGeneration('image', imageAdapterFor, {
     explicitId: input.imageServiceId,
     lockedId: input.lockedServiceId,
+    lockFor: input.lockFor,
     model: input.model,
   });
   const owner = ASSET_TASK_OWNER[input.owner.kind];
@@ -111,5 +114,5 @@ export function submitAssetImage(input: SubmitImageInput): number {
   );
   logger.info({ taskId, provider: resolved.provider, model: resolved.model, owner: input.owner }, 'image task submitted');
   detach(taskId, 'image', () => run(taskId, resolved, input));
-  return taskId;
+  return { taskId, serviceId: resolved.serviceId };
 }

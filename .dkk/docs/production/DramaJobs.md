@@ -38,3 +38,4 @@ The latest outline and plan job for a drama, with status (running / done / faile
 |-----|-------|--------|
 | [adr-0007](../../adr/adr-0007.md) | API contract: camelCase JSON validated by shared zod schemas | accepted |
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

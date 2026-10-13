@@ -1,4 +1,5 @@
 # Open Drama: one image running the API (127.0.0.1:4000) and the web app (0.0.0.0:3000) — Plan 1 Phase 8.
+# With OPEN_DRAMA_WEB_UI=0 the entrypoint runs the API alone on 0.0.0.0:3000 (adr-0016); the healthcheck follows.
 
 FROM node:22-bookworm-slim AS build
 # Toolchain for native modules without a prebuilt binary (better-sqlite3 falls back to a source build).
@@ -52,6 +53,6 @@ VOLUME /app/data
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:4000/api/v1/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
+  CMD node -e "const api=['0','false'].includes(process.env.OPEN_DRAMA_WEB_UI??'1')?3000:4000;fetch('http://127.0.0.1:'+api+'/api/v1/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
 
 ENTRYPOINT ["/app/entrypoint.sh"]

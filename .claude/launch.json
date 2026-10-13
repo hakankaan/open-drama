@@ -27,6 +27,33 @@
         "OPEN_DRAMA_DATA_DIR=data/preview OPEN_DRAMA_STUB_PROVIDERS=1 PORT=4300 pnpm --filter @open-drama/api dev"
       ],
       "port": 4300
+    },
+    {
+      "name": "stub-api-only",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "OPEN_DRAMA_DATA_DIR=data/api-only OPEN_DRAMA_STUB_PROVIDERS=1 OPEN_DRAMA_WEB_UI=0 OPEN_DRAMA_MODELRUNNER_API_KEY=stub-modelrunner-key-for-the-seeder PORT=4500 pnpm --filter @open-drama/api dev"
+      ],
+      "port": 4500
+    },
+    {
+      "name": "stub-api-only-slow",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "OPEN_DRAMA_DATA_DIR=data/api-only OPEN_DRAMA_STUB_PROVIDERS=1 OPEN_DRAMA_STUB_DELAY_MS=4000 OPEN_DRAMA_WEB_UI=0 OPEN_DRAMA_ASSISTANT_TOKEN=environment-token-for-the-rotate-check-0123456789 OPEN_DRAMA_MODELRUNNER_API_KEY=stub-modelrunner-key-for-the-seeder PORT=4501 pnpm --filter @open-drama/api dev"
+      ],
+      "port": 4501
+    },
+    {
+      "name": "stub-api-off",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "OPEN_DRAMA_DATA_DIR=data/api-off OPEN_DRAMA_STUB_PROVIDERS=1 OPEN_DRAMA_ASSISTANT=0 PORT=4502 pnpm --filter @open-drama/api dev"
+      ],
+      "port": 4502
     }
   ]
 }

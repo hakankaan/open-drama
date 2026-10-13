@@ -1,29 +1,52 @@
 name: configuration
-description: Configuration of the AI model services the app talks to (text, image and video providers with base URL, key, models and priority), the visual style presets injected into prompts, and application-level settings such as the AI content language.
+description: >-
+  Configuration of the AI model services the app talks to (text, image and video providers with base URL, key, models
+  and priority), the visual style presets injected into prompts, and application-level settings such as the AI content
+  language.
 glossary:
-- term: Model service
-  definition: A configured provider endpoint for one service type (text, image or video) with base URL, API key, an ordered list of models (first is the default), a priority and an active flag. Keys live in the database, never in files.
-  aliases:
-  - AI service config
-- term: Service type
-  definition: text, image or video — each stage needs exactly one active service of the type it uses.
-- term: Provider
-  definition: 'The dialect a service speaks: the official endpoints of the supported model families (openai, gemini, volcengine, minimax, aliyun), plus byteplus (the international Ark, served by the Volcengine adapters) and modelrunner (its own queue adapter, adr-0013). Determines the adapter and the connectivity probe.'
-- term: Quick setup
-  definition: Writing a recommended text, image and video service in one step from a single API key of a compatible gateway.
-- term: Style preset
-  definition: A named visual style (3d, anime, ghibli, …) with an English prompt fragment prepended to every image and video prompt of dramas that use it. Built-ins are seeded and upgraded without overwriting user edits.
-- term: Content language
-  definition: The language every agent must write in (scripts, extracted fields, prompts). Changes the prompt and skill variants loaded and appends a highest-priority language directive.
+  - term: Model service
+    definition: >-
+      A configured provider endpoint for one service type (text, image or video) with base URL, API key, an ordered list
+      of models (first is the default), a priority and an active flag. Keys live in the database, never in files.
+    aliases:
+      - AI service config
+  - term: Service type
+    definition: text, image or video — each stage needs exactly one active service of the type it uses.
+  - term: Provider
+    definition: >-
+      The dialect a service speaks: the official endpoints of the supported model families (openai, gemini, volcengine,
+      minimax, aliyun), plus byteplus (the international Ark, served by the Volcengine adapters) and modelrunner (its
+      own queue adapter, adr-0013). Determines the adapter and the connectivity probe.
+  - term: Quick setup
+    definition: Writing a recommended text, image and video service in one step from a single API key of a compatible gateway.
+  - term: Style preset
+    definition: >-
+      A named visual style (3d, anime, ghibli, …) with an English prompt fragment prepended to every image and video
+      prompt of dramas that use it. Built-ins are seeded and upgraded without overwriting user edits.
+  - term: Assistant endpoint
+    definition: >-
+      POST /mcp on the API's port, outside the versioned REST base: the MCP (Streamable HTTP) transport through which
+      the creator's AI assistant uses the same service layer as the studio. Stateless, forwarded unchanged by the web
+      proxy, guarded like /api, off when OPEN_DRAMA_ASSISTANT=0 (adr-0016).
+  - term: Assistant token
+    definition: >-
+      The bearer token /mcp requires. From OPEN_DRAMA_ASSISTANT_TOKEN (at least 32 characters) when set, else generated
+      at first boot (32 random bytes, base64url) into app_settings and printed once to stdout. Read through
+      GET /settings/assistant, rotated through POST /settings/assistant/rotate, compared in constant time; never logged.
+  - term: Content language
+    definition: >-
+      The language every agent must write in (scripts, extracted fields, prompts). Changes the prompt and skill variants
+      loaded and appends a highest-priority language directive.
 adr_refs:
-- adr-0001
-- adr-0002
-- adr-0003
-- adr-0004
-- adr-0007
-- adr-0010
-- adr-0012
-- adr-0013
+  - adr-0001
+  - adr-0002
+  - adr-0003
+  - adr-0004
+  - adr-0007
+  - adr-0010
+  - adr-0012
+  - adr-0013
+  - adr-0016
 code_refs:
   - apps/api/src/modules/configuration/**
   - apps/api/src/db/schema/configuration.ts
@@ -31,3 +54,5 @@ code_refs:
   - packages/contracts/src/configuration.ts
   - packages/contracts/src/quick-setup.ts
   - apps/web/src/features/configuration/**
+  - apps/api/src/mcp/routes.ts
+  - apps/api/src/mcp/tools/configuration.ts

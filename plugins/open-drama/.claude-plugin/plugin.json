@@ -1,0 +1,30 @@
+{
+  "name": "open-drama",
+  "version": "0.1.0",
+  "description": "Run the Open Drama story room from Claude Code: create projects, write outlines, plan episodes, write and review scripts, over the server you host.",
+  "author": {
+    "name": "Open Drama"
+  },
+  "keywords": [
+    "open-drama",
+    "short-drama",
+    "story",
+    "mcp"
+  ],
+  "userConfig": {
+    "server_url": {
+      "type": "string",
+      "title": "Open Drama server address",
+      "description": "Where your Open Drama server is reached, without a trailing slash (for example http://localhost:3000).",
+      "required": true,
+      "default": "http://localhost:3000"
+    },
+    "api_token": {
+      "type": "string",
+      "title": "Assistant access token",
+      "description": "From Settings › Assistant in the studio, or GET /api/v1/settings/assistant on the server.",
+      "required": true,
+      "sensitive": true
+    }
+  }
+}

@@ -43,3 +43,4 @@ The latest job per kind for an episode — rewrite, episode write, extraction pe
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

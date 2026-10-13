@@ -1,8 +1,8 @@
-import { and, eq, isNull, max } from 'drizzle-orm';
+import { and, count, eq, isNull, max } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { CreateEpisode, Episode, EpisodeView, LockedService, RecapStatus, Resolution, ServiceType, UpdateEpisode } from '@open-drama/contracts';
 import { db } from '../../db/client';
-import { episodes } from '../../db/schema';
+import { episodes, shots } from '../../db/schema';
 import { assertSomething, conflict, notFound, precondition } from '../../http/errors';
 import { resolveService } from '../configuration/services';
 import { getEpisodeJobs, runningJobKinds } from '../jobs/run-job';
@@ -13,13 +13,16 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Db = typeof db | Tx;
 
 /** A recap written for another revision of the script is stale (adr-0014); an empty one is simply missing. */
-export const isRecapStale = (row: Pick<Row, 'recap' | 'recapRevision' | 'scriptRevision'>) =>
-  row.recap !== '' && row.recapRevision !== row.scriptRevision;
+export const isRecapStale = (row: Pick<Row, 'recap' | 'recapScriptRevision' | 'scriptRevision'>) =>
+  row.recap !== '' && row.recapScriptRevision !== row.scriptRevision;
 
-/** The revision numbers stay internal; the view carries the derived staleness instead. */
-export const toEpisode = ({ deletedAt: _deletedAt, scriptRevision: _s, recapRevision: _r, ...row }: Row): Episode => ({
+/**
+ * The script revision a recap was written for stays internal; the view carries the derived staleness, and the three
+ * text revisions an assistant passes back as freshness tokens (adr-0016).
+ */
+export const toEpisode = ({ deletedAt: _deletedAt, recapScriptRevision, ...row }: Row): Episode => ({
   ...row,
-  recapStale: isRecapStale({ recap: row.recap, scriptRevision: _s, recapRevision: _r }),
+  recapStale: isRecapStale({ recap: row.recap, scriptRevision: row.scriptRevision, recapScriptRevision }),
 });
 
 /** A live episode of a live drama. */
@@ -53,8 +56,9 @@ export function getEpisodeView(id: number): EpisodeView {
 }
 
 /**
- * CreateEpisode: next number (max + 1 among live episodes), default title, and the image and video services
- * snapshotted from the explicit ids or the highest-priority active ones. Rejected when either type has none.
+ * CreateEpisode: next number (max + 1 among live episodes), default title, and the image and video locks: an explicit
+ * id is checked and locked at once, a type with a usable service locks the highest-priority one, and a type without
+ * one stays unlocked until the first generation (adr-0016), so the story room runs with a text service alone.
  */
 export function createEpisode(input: z.output<typeof CreateEpisode>): EpisodeView {
   const drama = getDramaRow(input.dramaId);
@@ -72,20 +76,39 @@ export function createEpisode(input: z.output<typeof CreateEpisode>): EpisodeVie
   return getEpisodeView(id);
 }
 
+export interface ServiceLocks {
+  imageServiceId: number | null;
+  videoServiceId: number | null;
+}
+
+/** An explicit id must be a service of the type, active (resolveService's checks); else the highest-priority usable one, else nothing. */
+const lockFor = (type: ServiceType, id: number | undefined) => resolveService(type, { explicitId: id })?.row.id ?? null;
+
 /**
- * The image and video services a new episode locks: the explicit ids or the highest-priority active ones. Rejected
- * with the same wording for CreateEpisode and PlanEpisodes when either type has none.
+ * The image and video services a new episode starts with, shared by CreateEpisode and PlanEpisodes: the explicit ids,
+ * else the usable service of each type, else nothing. An empty lock is claimed by the first generation of the type
+ * (claimServiceLock).
  */
-export function lockServices(input: { imageServiceId?: number; videoServiceId?: number }): { imageServiceId: number; videoServiceId: number } {
-  const image = resolveService('image', { explicitId: input.imageServiceId });
-  const video = resolveService('video', { explicitId: input.videoServiceId });
-  const missing = [!image && 'image', !video && 'video'].filter(Boolean);
-  if (missing.length > 0) {
-    throw precondition(`Add an active ${missing.join(' and ')} service with an API key in Settings before creating an episode`, {
-      missingTypes: missing,
-    });
-  }
-  return { imageServiceId: image!.row.id, videoServiceId: video!.row.id };
+export function lockServices(input: { imageServiceId?: number; videoServiceId?: number }): ServiceLocks {
+  return { imageServiceId: lockFor('image', input.imageServiceId), videoServiceId: lockFor('video', input.videoServiceId) };
+}
+
+/**
+ * The first generation of a type claims the empty lock before it starts (adr-0016): compare-and-set on the empty
+ * column, then the stored id is read back, so two first generations racing each other both go on with the one
+ * service that won. Never written over a lock.
+ */
+export function claimServiceLock(episodeId: number, type: 'image' | 'video', serviceId: number): number {
+  const column = type === 'image' ? episodes.imageServiceId : episodes.videoServiceId;
+  return db.transaction((tx) => {
+    tx.update(episodes)
+      .set(type === 'image' ? { imageServiceId: serviceId } : { videoServiceId: serviceId })
+      .where(and(eq(episodes.id, episodeId), isNull(column)))
+      .run();
+    const row = tx.select({ locked: column }).from(episodes).where(eq(episodes.id, episodeId)).get();
+    if (!row) throw notFound('Episode');
+    return row.locked ?? serviceId;
+  });
 }
 
 /** What an episode holds, as the story writer and the planner read it (adr-0015). */
@@ -125,7 +148,7 @@ export function episodeStates(dramaId: number): EpisodeState[] {
     });
 }
 
-export interface NewEpisode {
+export interface NewEpisode extends ServiceLocks {
   dramaId: number;
   /** Empty or absent: `Episode N`. */
   title?: string;
@@ -133,8 +156,6 @@ export interface NewEpisode {
   content?: string;
   resolution: Resolution;
   targetDurationSeconds: number | null;
-  imageServiceId: number;
-  videoServiceId: number;
 }
 
 /**
@@ -167,6 +188,23 @@ export function insertEpisode(tx: Tx, values: NewEpisode): { id: number; episode
   return { id, episodeNumber };
 }
 
+/** The three texts an episode holds, each with its own revision (adr-0016). */
+export type EpisodeTextPart = 'beats' | 'script' | 'recap';
+const PART_NAMES: Record<EpisodeTextPart, string> = { beats: 'beat sheet', script: 'script', recap: 'recap' };
+
+/**
+ * UpdateEpisodeContent's write of the beats (the raw content): the one writer of `content`. The beats revision moves
+ * only when the text changes. Returns the revision the beats now have.
+ */
+export function writeBeats(id: number, text: string, tx: Db = db): number {
+  const row = tx.select({ content: episodes.content, beatsRevision: episodes.beatsRevision }).from(episodes).where(eq(episodes.id, id)).get();
+  if (!row) throw notFound('Episode');
+  if (row.content === text) return row.beatsRevision;
+  const beatsRevision = row.beatsRevision + 1;
+  tx.update(episodes).set({ content: text, beatsRevision }).where(eq(episodes.id, id)).run();
+  return beatsRevision;
+}
+
 /**
  * SaveScript: the one writer of scriptContent. The script revision moves only when the text actually changes,
  * so a recap stays fresh across a no-op save. Returns the revision the script now has.
@@ -186,20 +224,25 @@ export function writeScript(id: number, text: string, tx: Db = db): number {
 
 /**
  * SaveRecap, pinned to a script revision: the creator's edit pins to the current one (forRevision omitted), the
- * recap writer passes the revision its job started from. The write is refused (false) once the script has moved on,
- * so a slow recap never claims a newer script.
+ * recap writer passes the revision its job started from. The write is refused (null) once the script has moved on,
+ * so a slow recap never claims a newer script. The recap's own revision moves when its text changes; the revision
+ * the recap now has is returned.
  */
-export function writeRecap(id: number, text: string, forRevision?: number, tx: Db = db): boolean {
-  const revision =
-    forRevision ??
-    tx.select({ scriptRevision: episodes.scriptRevision }).from(episodes).where(eq(episodes.id, id)).get()?.scriptRevision;
-  if (revision === undefined) throw notFound('Episode');
+export function writeRecap(id: number, text: string, forRevision?: number, tx: Db = db): number | null {
+  const row = tx
+    .select({ scriptRevision: episodes.scriptRevision, recap: episodes.recap, recapRevision: episodes.recapRevision })
+    .from(episodes)
+    .where(eq(episodes.id, id))
+    .get();
+  if (!row) throw notFound('Episode');
+  const revision = forRevision ?? row.scriptRevision;
+  const recapRevision = row.recap === text ? row.recapRevision : row.recapRevision + 1;
   const result = tx
     .update(episodes)
-    .set({ recap: text, recapRevision: revision })
+    .set({ recap: text, recapScriptRevision: revision, recapRevision })
     .where(and(eq(episodes.id, id), eq(episodes.scriptRevision, revision)))
     .run();
-  return result.changes > 0;
+  return result.changes > 0 ? recapRevision : null;
 }
 
 /** The jobs that write the script, and those that work from it as they read it at their start. */
@@ -238,6 +281,34 @@ export function assertScriptFree(id: number, action: string, except?: keyof type
   }
 }
 
+/** The guards the creator's and an assistant's text saves share: no agent is writing or reading the text. */
+function assertEditable(id: number, part: EpisodeTextPart) {
+  if (part === 'script') assertScriptFree(id, 'edit it');
+  else if (part === 'beats') assertScriptSettled(id, 'edit the source text');
+  else if (getEpisodeJobs(id).recap?.status === 'running') throw conflict('The recap is being written; edit it once it is saved');
+}
+
+/** `2026-10-09 14:02` from an ISO timestamp, for refusal texts. */
+export const when = (iso: string) => iso.slice(0, 16).replace('T', ' ');
+
+/** `a script (4 210 characters), 12 shots and a film`. */
+const listOf = (items: string[]) => (items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`);
+
+/**
+ * The replace guard (adr-0016): a run or a copy that would overwrite a saved script refuses until it is called with
+ * `replace`, naming what the episode holds so the caller can tell the creator. This protects against a model that did
+ * not read first; the creator's agreement is the caller's business (the studio's confirmation, the conversation).
+ */
+export function assertScriptReplaceable(row: Row, replace: boolean | undefined) {
+  const script = row.scriptContent?.trim() ?? '';
+  if (replace || !script) return;
+  const recapStatus: RecapStatus = !row.recap.trim() ? 'missing' : isRecapStale(row) ? 'stale' : 'ready';
+  throw precondition(
+    `Episode ${row.episodeNumber} already has a script (${script.length} characters, revision ${row.scriptRevision}, changed ${when(row.updatedAt)}, recap ${recapStatus}). Replacing it makes the recap stale and the storyboard outdated. Call again with replace: true once the creator has agreed.`,
+    { scriptChars: script.length, scriptRevision: row.scriptRevision, changedAt: row.updatedAt, recapStatus },
+  );
+}
+
 /**
  * Field-based dispatch of UpdateEpisodeContent, SaveScript, SaveRecap, SetEpisodeResolution, SetEpisodeTargetDuration
  * and SetEpisodeStatus.
@@ -248,12 +319,13 @@ export function assertScriptFree(id: number, action: string, except?: keyof type
 export function updateEpisode(id: number, input: z.output<typeof UpdateEpisode>): EpisodeView {
   const row = getEpisodeRow(id);
   assertSomething(input);
-  const { scriptContent, recap, ...rest } = input;
-  if (scriptContent !== undefined) assertScriptFree(id, 'edit it');
-  else if (rest.content !== undefined) assertScriptSettled(id, 'edit the source text');
-  if (recap !== undefined && getEpisodeJobs(id).recap?.status === 'running') throw conflict('The recap is being written; edit it once it is saved');
+  const { content, scriptContent, recap, ...rest } = input;
+  if (scriptContent !== undefined) assertEditable(id, 'script');
+  else if (content !== undefined) assertEditable(id, 'beats');
+  if (recap !== undefined) assertEditable(id, 'recap');
   db.transaction((tx) => {
     if (Object.keys(rest).length > 0) tx.update(episodes).set(rest).where(eq(episodes.id, id)).run();
+    if (content !== undefined) writeBeats(id, content, tx);
     if (scriptContent !== undefined) writeScript(id, scriptContent, tx);
     if (recap !== undefined) writeRecap(id, recap, undefined, tx);
   });
@@ -261,18 +333,117 @@ export function updateEpisode(id: number, input: z.output<typeof UpdateEpisode>)
   return getEpisodeView(id);
 }
 
-export function deleteEpisode(id: number): { id: number } {
+export interface TextSaved {
+  revision: number;
+  characters: number;
+  changed: boolean;
+}
+
+/** The revision a part is at, and its text, as one read. */
+function partState(row: Pick<Row, 'content' | 'beatsRevision' | 'scriptContent' | 'scriptRevision' | 'recap' | 'recapRevision'>, part: EpisodeTextPart) {
+  switch (part) {
+    case 'beats':
+      return { text: row.content, revision: row.beatsRevision };
+    case 'script':
+      return { text: row.scriptContent ?? '', revision: row.scriptRevision };
+    case 'recap':
+      return { text: row.recap, revision: row.recapRevision };
+  }
+}
+
+/**
+ * ReadEpisode's text of one part with the revision to pass back when saving it (adr-0016); the recap also carries the
+ * script revision it is read against.
+ */
+export function readEpisodeText(id: number, part: EpisodeTextPart): TextSaved & { text: string; scriptRevision?: number } {
   const row = getEpisodeRow(id);
+  const { text, revision } = partState(row, part);
+  return { text, revision, characters: text.length, changed: false, ...(part === 'recap' ? { scriptRevision: row.scriptRevision } : {}) };
+}
+
+/**
+ * SaveBeats, SaveScript and SaveRecap with a freshness token (adr-0016): the save happens only while the part is
+ * still at the revision the caller read, checked inside the write transaction; otherwise CONFLICT names both
+ * revisions. A recap may also name the script revision it was written for (`forScriptRevision`), and is refused
+ * once the script moved on, so a recap of an older script is never pinned to a newer one. The same job guards as
+ * the creator's edit apply.
+ */
+export function saveEpisodeText(id: number, part: EpisodeTextPart, text: string, ifRevision: number, forScriptRevision?: number): TextSaved {
+  const row = getEpisodeRow(id);
+  assertEditable(id, part);
+  const saved = db.transaction((tx) => {
+    const current = tx.select().from(episodes).where(eq(episodes.id, id)).get();
+    if (!current) throw notFound('Episode');
+    const before = partState(current, part);
+    if (before.revision !== ifRevision) {
+      throw conflict(`The ${PART_NAMES[part]} is at revision ${before.revision}; you read revision ${ifRevision}. Read it again before saving.`, {
+        part,
+        revision: before.revision,
+        ifRevision,
+      });
+    }
+    if (part === 'recap' && forScriptRevision !== undefined && forScriptRevision !== current.scriptRevision) {
+      throw conflict(
+        `The script is at revision ${current.scriptRevision}; the recap was read against revision ${forScriptRevision}. Read the episode again before saving a recap for it.`,
+        { part, scriptRevision: current.scriptRevision, forScriptRevision },
+      );
+    }
+    const revision =
+      part === 'beats' ? writeBeats(id, text, tx) : part === 'script' ? writeScript(id, text, tx) : (writeRecap(id, text, undefined, tx) ?? before.revision);
+    return { revision, characters: text.length, changed: before.text !== text };
+  });
+  touchDrama(row.dramaId);
+  return saved;
+}
+
+/** What deleting the episode would lose: its script, its live shots, its film. */
+function heldWork(row: Row): { items: string[]; details: { scriptChars: number; shots: number; film: boolean } } {
+  const scriptChars = row.scriptContent?.trim().length ?? 0;
+  const shotCount =
+    db
+      .select({ n: count() })
+      .from(shots)
+      .where(and(eq(shots.episodeId, row.id), isNull(shots.parkedByJobId)))
+      .get()?.n ?? 0;
+  const items = [
+    scriptChars > 0 && `a script (${scriptChars} characters)`,
+    shotCount > 0 && `${shotCount} ${shotCount === 1 ? 'shot' : 'shots'}`,
+    !!row.filmPath && 'a film',
+  ].filter((x): x is string => typeof x === 'string');
+  return { items, details: { scriptChars, shots: shotCount, film: !!row.filmPath } };
+}
+
+/**
+ * DeleteEpisode: soft delete. Refused while a job of the episode runs (it would go on writing under a deleted
+ * episode) and, unless forced, when the episode holds a script, shots or a film, naming what would be lost
+ * (adr-0016). The studio's confirmation dialog forces; an assistant asks the creator first.
+ */
+export function deleteEpisode(id: number, opts: { force?: boolean } = {}): { id: number } {
+  const row = getEpisodeRow(id);
+  if (runningJobKinds(id).size > 0) throw conflict('A job is still running on this episode; cancel it or let it finish, then delete the episode');
+  if (!opts.force) {
+    const held = heldWork(row);
+    if (held.items.length > 0) {
+      throw precondition(
+        `Episode ${row.episodeNumber} holds ${listOf(held.items)}. Deleting it loses them; call again with force: true once the creator has agreed.`,
+        held.details,
+      );
+    }
+  }
   db.update(episodes).set({ deletedAt: new Date().toISOString() }).where(eq(episodes.id, id)).run();
   touchDrama(row.dramaId);
   return { id };
 }
 
-/** SkipRewrite: the raw content becomes the script, so the skip is persisted and survives reloads. */
-export function skipRewrite(id: number): EpisodeView {
+/**
+ * SkipRewrite: the raw content becomes the script, so the skip is persisted and survives reloads. An existing script
+ * is replaced only with `replace` (adr-0016). The recap chain is the caller's (useContentAsScript).
+ */
+export function skipRewrite(id: number, opts: { replace?: boolean } = {}): EpisodeView {
   const row = getEpisodeRow(id);
   if (!row.content.trim()) throw precondition('Paste the raw content before skipping the rewrite');
   assertScriptFree(id, 'use the raw content');
+  assertScriptReplaceable(row, opts.replace);
   writeScript(id, row.content);
   touchDrama(row.dramaId);
   return getEpisodeView(id);

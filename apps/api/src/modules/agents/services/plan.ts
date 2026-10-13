@@ -20,6 +20,7 @@ export function startPlan(dramaId: number, input: z.output<typeof PlanEpisodes>)
   const running = getDramaJobs(dramaId).plan;
   if (running?.status === 'running') return { jobId: running.id, alreadyRunning: true };
   const { count, targetDurationSeconds, resolution, model, textServiceId } = input;
+  // Explicit ids are checked and locked, a type with a usable service locks it, the rest lock at first use (adr-0016).
   const services = lockServices(input);
   if (!drama.outline.trim() && !drama.description.trim()) {
     throw precondition('Write the story outline or a synopsis before planning episodes');

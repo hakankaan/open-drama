@@ -101,8 +101,12 @@ export const Episode = z.object({
   scriptContent: z.string().nullable(),
   /** What happened in this episode, for the writers of the next ones (adr-0014); empty until written. */
   recap: z.string(),
-  /** The script changed since the recap was written (the revision numbers themselves stay internal). */
+  /** The script changed since the recap was written. */
   recapStale: z.boolean(),
+  /** Freshness tokens (adr-0016): each moves on every change of its text; an assistant's save carries the one it read. */
+  beatsRevision: z.number().int(),
+  scriptRevision: z.number().int(),
+  recapRevision: z.number().int(),
   status: EpisodeStatus,
   resolution: Resolution,
   imageServiceId: z.number().int().nullable(),
@@ -146,6 +150,8 @@ export type EpisodeSummary = z.infer<typeof EpisodeSummary>;
 export const DramaDetail = Drama.extend({
   /** The story outline, empty until written (adr-0015); kept off the list rows for their size. */
   outline: z.string(),
+  /** Moves on every change of the outline (adr-0016). */
+  outlineRevision: z.number().int(),
   episodes: z.array(EpisodeSummary),
   counts: z.object({ characters: z.number().int(), scenes: z.number().int(), props: z.number().int() }),
 });
@@ -162,6 +168,22 @@ export const CreateEpisode = z.object({
 export type CreateEpisode = z.input<typeof CreateEpisode>;
 
 export const RECAP_MAX_CHARS = 2000;
+
+/** SkipRewrite's body: a saved script is replaced only with `replace` (adr-0016). */
+export const UseContentAsScript = z.strictObject({ replace: z.boolean().default(false) });
+export type UseContentAsScript = z.input<typeof UseContentAsScript>;
+
+/** SkipRewrite's result: the episode and, in a serial drama, the recap job the save started. */
+export const ScriptFromContent = z.object({ episode: EpisodeView, recapJobId: z.number().int().nullable() });
+export type ScriptFromContent = z.infer<typeof ScriptFromContent>;
+
+/** DeleteEpisode's query: `force=1` loses the script, shots or film the episode holds (adr-0016). */
+export const DeleteEpisodeQuery = z.object({
+  force: z
+    .enum(['0', '1', 'true', 'false'])
+    .optional()
+    .transform((v) => v === '1' || v === 'true'),
+});
 
 // PlanEpisodes (adr-0015): the episode planner writes `count` planned episodes after the last live one.
 
@@ -184,8 +206,9 @@ export const PlanProgress = z.object({
   count: z.number().int(),
   targetDurationSeconds: z.number().int().nullable(),
   resolution: Resolution,
-  imageServiceId: z.number().int(),
-  videoServiceId: z.number().int(),
+  /** Null when the type had no usable service at start: the episodes lock it at first use (adr-0016). */
+  imageServiceId: z.number().int().nullable(),
+  videoServiceId: z.number().int().nullable(),
   /** Ids of the episodes the planner added, in order; a deleted one stays listed but no longer counts. */
   written: z.array(z.number().int()),
   /** Set once the planner sent final with every one of `count` episodes live; the job is done only then. */

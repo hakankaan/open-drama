@@ -7,6 +7,7 @@ const STATUS: Record<ErrorCode, ContentfulStatusCode> = {
   CONFLICT: 409,
   FORBIDDEN: 403,
   PRECONDITION_FAILED: 412,
+  UNAUTHORIZED: 401,
   PROVIDER_ERROR: 502,
   INTERNAL: 500,
 };
@@ -26,6 +27,7 @@ export class ApiError extends Error {
 
 export const notFound = (what: string) => new ApiError('NOT_FOUND', `${what} not found`);
 export const forbidden = (message: string) => new ApiError('FORBIDDEN', message);
+export const unauthorized = (message: string) => new ApiError('UNAUTHORIZED', message);
 export const conflict = (message: string, details?: unknown) => new ApiError('CONFLICT', message, details);
 export const precondition = (message: string, details?: unknown) =>
   new ApiError('PRECONDITION_FAILED', message, details);

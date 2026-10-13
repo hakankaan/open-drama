@@ -26,8 +26,9 @@ const key = (name: string) => name.trim().toLowerCase();
  * is a drama whose shape the model does not render (412).
  */
 export async function requestShotVideo(shotId: number, body: z.output<typeof RequestShotVideo>): Promise<ShotVideoStarted> {
-  const lockedId = getEpisodeRow(getShotRow(shotId).episodeId).videoServiceId;
-  const resolved = await resolveVideo({ explicitId: body.videoServiceId, lockedId, model: body.model });
+  // The first video generation of the episode claims its video lock as the service resolves (adr-0016).
+  const episodeId = getShotRow(shotId).episodeId;
+  const resolved = await resolveVideo({ explicitId: body.videoServiceId, lockedId: getEpisodeRow(episodeId).videoServiceId, lockFor: episodeId, model: body.model });
   const { caps, formatMention } = resolved;
   // Reading the model's limits can take seconds: the shot and its episode are read, and checked, after it.
   const shot = getShotRow(shotId);

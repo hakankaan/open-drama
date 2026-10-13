@@ -1,4 +1,3 @@
-# Command — an instruction to change domain state.
 name: CreateStylePreset
 description: Add a visual style with a unique key, a name, an English prompt fragment, an optional description and sort order.
 fields:
@@ -20,3 +19,5 @@ rejections:
   - Missing name, key or prompt
   - Key not lowercase letters, digits and dashes
   - Key already exists
+adr_refs:
+  - adr-0016

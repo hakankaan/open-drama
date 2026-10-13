@@ -22,6 +22,7 @@ export const AgentJob = z.object({
   episodeId: z.number().int().nullable(),
   target: z.string(),
   status: JobStatus,
+  /** Per kind: steps and model once settled; a plan's request and written ids; a write/rewrite's `recapJobId` (adr-0016). */
   progress: z.record(z.string(), z.unknown()),
   error: z.string().nullable(),
   startedAt: Timestamp,

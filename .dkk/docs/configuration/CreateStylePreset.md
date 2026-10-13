@@ -36,4 +36,6 @@ Add a visual style with a unique key, a name, an English prompt fragment, an opt
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

@@ -26,4 +26,6 @@ Hard-delete a style. Dramas keep their key; a deleted built-in may be re-seeded 
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

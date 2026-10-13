@@ -9,3 +9,4 @@ rejections:
   - A generation is running on the service (a restart resumes it with the service's address and key)
 adr_refs:
   - adr-0005
+  - adr-0016

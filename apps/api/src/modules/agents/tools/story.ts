@@ -1,10 +1,7 @@
-import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { OUTLINE_MAX_CHARS } from '@open-drama/contracts';
-import { db } from '../../../db/client';
-import { dramas } from '../../../db/schema';
 import { getDramaJobs } from '../../jobs/run-job';
-import { getDramaRow } from '../../production/dramas';
+import { getDramaRow, writeOutline } from '../../production/dramas';
 import { episodeStates, type EpisodeState } from '../../production/episodes';
 import { fitRecaps } from '../../production/series';
 import { defineDramaTool } from '../runtime/tool';
@@ -71,7 +68,7 @@ export const saveOutline = defineDramaTool({
     if (ctx.chat && getDramaJobs(ctx.dramaId).outline?.status === 'running') {
       return { error: 'The outline is being written by its job; save once it has finished' };
     }
-    db.update(dramas).set({ outline: text, updatedAt: new Date().toISOString() }).where(eq(dramas.id, ctx.dramaId)).run();
-    return { saved: true, characters: text.length };
+    const revision = writeOutline(ctx.dramaId, text);
+    return { saved: true, characters: text.length, revision };
   },
 });

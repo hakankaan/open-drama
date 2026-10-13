@@ -25,6 +25,13 @@ logger.info('migrations applied');
 const { seedStylePresets } = await import('./db/seeds/style-presets');
 logger.info(seedStylePresets(), 'style presets seeded');
 
+const { ensureAssistantToken } = await import('./modules/configuration/assistant');
+logger.info(ensureAssistantToken(), 'assistant endpoint');
+
+const { seedFromEnvironment } = await import('./modules/configuration/seed');
+const seeded = seedFromEnvironment();
+if (seeded) logger.info(seeded, 'model services seeded from the environment');
+
 const { ensureWorkspace } = await import('./modules/agents/workspace/copy');
 logger.info(ensureWorkspace(), 'workspace ready');
 

@@ -41,7 +41,7 @@ export const saveRecap = defineTool({
     }
     // Outside a recap job there is no revision to pin to, so a save could claim a script it was not written for.
     if (ctx.scriptRevision === undefined || ctx.jobId === undefined) return { error: 'save_recap only runs inside a recap job' };
-    if (!writeRecap(ctx.episodeId, text, ctx.scriptRevision)) {
+    if (writeRecap(ctx.episodeId, text, ctx.scriptRevision) === null) {
       refused.set(ctx.jobId, true);
       return { error: 'The script changed while this recap was being written; this run is abandoned' };
     }

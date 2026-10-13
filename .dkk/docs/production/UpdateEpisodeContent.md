@@ -6,7 +6,7 @@
 
 ## Summary
 
-Save the creator's edits to an episode's raw content, formatted script, recap, title or description. A recap is pinned to the current script revision; with scriptContent in the same command the script is written first and the recap pinned to the new revision.
+Save the creator's edits to an episode's raw content, formatted script, recap, title or description. A recap is pinned to the current script revision; with scriptContent in the same command the script is written first and the recap pinned to the new revision. Every write of content bumps beatsRevision, of scriptContent scriptRevision, of recap recapRevision (adr-0016); the studio's saves are last-write-wins, the assistant's go through SaveScript, SaveRecap and the beats save with a revision token.
 
 
 ## Fields
@@ -42,3 +42,4 @@ Save the creator's edits to an episode's raw content, formatted script, recap, t
 |-----|-------|--------|
 | [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

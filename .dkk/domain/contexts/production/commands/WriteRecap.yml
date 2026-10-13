@@ -1,9 +1,8 @@
-# Command — an instruction to change domain state.
 name: WriteRecap
 description: >-
   Ask the recap writer to write the episode's recap from its saved script. Issued by the policy WriteRecapAfterScript
-  after every saved script of a serial drama, and by the creator from the recap card to write or rewrite it; the
-  creator may pick a text model or service for this run.
+  after every saved script of a serial drama, and by the creator from the recap card to write or rewrite it; the creator
+  may pick a text model or service for this run.
 fields:
   - name: episodeId
     type: ID
@@ -13,15 +12,25 @@ fields:
   - name: textServiceId
     type: ID
     description: Optional text service override
+  - name: replace
+    type: boolean
+    description: >-
+      Rewrite over a fresh recap (one written for the current script revision); the studio's rewrite button sets it,
+      the automatic chain after a saved script never needs it, an assistant must ask first
 actor: Creator
 handled_by: RecapJob
 preconditions:
   - The drama is serial
   - The script is present
-  - If a recap job is already running for the episode's current script revision, the running job is returned (alreadyRunning)
+  - The recap is empty or stale, or replace is set
+  - >-
+    If a recap job is already running for the episode's current script revision, the running job is returned
+    (alreadyRunning)
 rejections:
   - Drama not serial
   - Empty script
+  - A fresh recap exists and replace is not set
   - No text model service configured
 adr_refs:
   - adr-0014
+  - adr-0016

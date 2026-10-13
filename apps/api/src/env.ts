@@ -7,6 +7,26 @@ const flag = z
   .optional()
   .transform((v) => v === '1' || v === 'true');
 
+/** A switch that is on unless set to 0 or false. */
+const onFlag = z
+  .enum(['0', '1', 'true', 'false'])
+  .default('1')
+  .transform((v) => v === '1' || v === 'true');
+
+/**
+ * An optional secret from the environment. Blank counts as unset (Compose passes an unset variable as ''), surrounding
+ * whitespace is dropped, and whitespace inside is refused: a bearer header cannot carry it.
+ */
+const optionalSecret = (min: number, message: string) =>
+  z.preprocess(
+    (v) => (typeof v === 'string' ? v.trim() || undefined : v),
+    z
+      .string()
+      .min(min, message)
+      .refine((s) => !/\s/.test(s), { message: 'must not contain whitespace' })
+      .optional(),
+  );
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
@@ -35,6 +55,14 @@ const EnvSchema = z.object({
   API_ORIGIN: z.string().optional(),
   // Names besides localhost and IP literals the servers answer to (adr-0010), comma-separated.
   OPEN_DRAMA_ALLOWED_HOSTS: z.string().optional(),
+  // adr-0016. 0: the API runs alone (no web process; the studio's address is not reported to assistants).
+  OPEN_DRAMA_WEB_UI: onFlag,
+  // 0: the assistant endpoint (/mcp) answers 404.
+  OPEN_DRAMA_ASSISTANT: onFlag,
+  // The assistant endpoint's bearer token; unset, one is generated at first boot into app_settings.
+  OPEN_DRAMA_ASSISTANT_TOKEN: optionalSecret(32, 'OPEN_DRAMA_ASSISTANT_TOKEN must be at least 32 characters'),
+  // Seeds the ModelRunner services (text, image, video) with this key at boot, insert-only (adr-0013 amendment 6).
+  OPEN_DRAMA_MODELRUNNER_API_KEY: optionalSecret(1, 'OPEN_DRAMA_MODELRUNNER_API_KEY must not be blank'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   OPEN_DRAMA_VERSION: z.string().default(API_VERSION),
 });

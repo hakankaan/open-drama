@@ -21,12 +21,13 @@ Update a drama's title, description, genre, style, status, tags, serial flag or 
 | `status` | `string` | draft | active | completed (project-level status shown on the launcher) |
 | `tags` | `string[]` | — |
 | `serial` | `boolean` | — |
-| `outline` | `string` | Markdown, at most 20000 characters; empty clears it |
+| `outline` | `string` | Markdown, at most 20000 characters; empty clears it; every change bumps outlineRevision (adr-0016) |
 
 ## Rules & Invariants
 
 - Drama not found or deleted
 - outline while an outline job is running (the agent's save would replace the edit)
+- outline while a plan job is running (the planner reads the outline batch by batch)
 
 
 ## Relationships
@@ -41,3 +42,4 @@ Update a drama's title, description, genre, style, status, tags, serial flag or 
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

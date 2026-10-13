@@ -155,9 +155,10 @@
       "ai": "AI 서비스",
       "general": "일반",
       "styles": "비주얼 스타일",
+      "agents": "에이전트",
+      "assistant": "어시스턴트",
       "storage": "저장소",
-      "about": "정보",
-      "agents": "에이전트"
+      "about": "정보"
     },
     "ai": {
       "types": {
@@ -368,6 +369,31 @@
         "descriptionField": "설명",
         "submit": "스킬 추가"
       }
+    },
+    "assistant": {
+      "title": "AI 어시스턴트 연결",
+      "intro": "MCP를 지원하는 AI 어시스턴트(Claude Code, Claude Desktop, Cursor 등)는 대화에서 스토리룸을 다룰 수 있어요. 프로젝트 만들기, 줄거리 쓰기, 에피소드 계획, 대본 작성과 검토까지요. 아래 엔드포인트에 토큰을 Bearer 헤더로 붙여 연결합니다.",
+      "enabled": "켜짐",
+      "disabled": "꺼짐",
+      "disabledBody": "어시스턴트 엔드포인트가 꺼져 있어요(OPEN_DRAMA_ASSISTANT=0). 변수를 지우고 API를 다시 시작하면 켜집니다.",
+      "failed": "연결 정보를 불러오지 못했어요.",
+      "endpoint": "엔드포인트",
+      "token": "액세스 토큰",
+      "connect": "Claude Code 연결",
+      "connectNote": "터미널에서 실행하세요. 다른 어시스턴트는 MCP 설정에 엔드포인트와, Bearer 뒤에 토큰을 붙인 Authorization 헤더를 넣습니다.",
+      "sourceEnvironment": "환경 변수 OPEN_DRAMA_ASSISTANT_TOKEN으로 설정되었어요.",
+      "sourceGenerated": "첫 시작 때 이 서버가 생성해 데이터베이스에 저장했어요.",
+      "rotate": "토큰 교체",
+      "rotateEnvironment": "환경 변수의 토큰은 환경에서 바꾸고 API를 다시 시작하세요.",
+      "rotateTitle": "액세스 토큰을 교체할까요?",
+      "rotateBody": "새 토큰이 바로 현재 토큰을 대체해요. 이전 토큰으로 연결된 어시스턴트는 새 토큰을 받기 전까지 동작하지 않아요.",
+      "rotated": "새 토큰을 발급했어요.",
+      "copied": "복사했어요.",
+      "copy": "{label} 복사",
+      "show": "보기",
+      "hide": "숨기기",
+      "exposureTitle": "토큰이 필요한 건 /mcp만이에요",
+      "exposureBody": "토큰은 어시스턴트 엔드포인트만 보호해요. 페이지와 /api는 포트에 닿는 누구에게나 열려 있어요. 외부의 클라우드 어시스턴트를 들이려면 리버스 프록시로 /mcp만 노출하고 나머지는 비공개로 두세요. 토큰을 가진 사람은 어시스턴트를 통해 저장된 API 키를 쓸 수 있어요."
     }
   },
   "assets": {
@@ -463,7 +489,7 @@
     "deleteEpisodeConfirm": "에피소드 삭제",
     "newEpisode": {
       "title": "{number}화 추가",
-      "lockNote": "에피소드에는 지금 활성화된 이미지·영상 서비스가 고정돼요. 나중에 서비스를 바꿔도 그대로 유지돼요.",
+      "lockNote": "에피소드의 이미지·영상 서비스는 만들 때 고정돼요(아직 설정이 없으면 첫 생성 때). 나중에 설정을 바꿔도 진행 중인 에피소드에는 영향이 없어요.",
       "name": "제목",
       "nameHint": "선택 사항이에요. 비워 두면 기본 제목(Episode {number})이 붙어요.",
       "resolution": "영상 해상도",
@@ -563,7 +589,9 @@
         "failed": "요약 작성에 실패했습니다: {error}",
         "stale": "이 요약을 쓴 뒤 대본이 바뀌었습니다. 다시 쓰거나 맞게 고쳐 주세요.",
         "earlier": "이전 {n, plural, other {#화}} 중 {ready}화의 요약이 준비되었습니다({stale, plural, =0 {오래된 것 없음} other {#화 오래됨}}, {missing, plural, =0 {빠진 것 없음} other {#화 없음}}). 해당 에피소드를 열어 작성하세요.",
-        "allReady": "이전 {n, plural, other {#화}}의 요약이 모두 준비되었습니다."
+        "allReady": "이전 {n, plural, other {#화}}의 요약이 모두 준비되었습니다.",
+        "confirmTitle": "요약을 다시 쓸까요?",
+        "confirmBody": "AI가 대본에서 새 요약을 써서 직접 고친 내용까지 포함해 현재 요약을 대체해요."
       }
     },
     "models": {

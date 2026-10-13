@@ -114,7 +114,9 @@ flows:
         type: policy
       - ref: agents.RunAgent
         type: command
-        note: story_writer (drama-scoped) reads the premise, the draft outline and the episode states, then calls SaveOutline
+        note: >-
+          story_writer (drama-scoped) reads the premise, the draft outline and the episode states, then calls
+          SaveOutline
       - ref: production.SaveOutline
         type: command
       - ref: production.OutlineSaved
@@ -134,7 +136,9 @@ flows:
         type: policy
       - ref: agents.RunAgent
         type: command
-        note: episode_planner (drama-scoped) reads the outline and every live episode's state, then calls AddPlannedEpisodes per batch
+        note: >-
+          episode_planner (drama-scoped) reads the outline and every live episode's state, then calls AddPlannedEpisodes
+          per batch
       - ref: production.AddPlannedEpisodes
         type: command
         note: One transaction per batch of at most 8; final only once count episodes are live
@@ -155,7 +159,9 @@ flows:
         type: policy
       - ref: agents.RunAgent
         type: command
-        note: episode_writer (episode-scoped) reads the beats, the SeriesContext (with the outline) and the next episode's beats, then calls SaveScript
+        note: >-
+          episode_writer (episode-scoped) reads the beats, the SeriesContext (with the outline) and the next episode's
+          beats, then calls SaveScript
       - ref: production.SeriesContext
         type: read_model
         note: Premise, outline and earlier recaps; budget 60000 characters, only recaps are dropped
@@ -352,3 +358,47 @@ flows:
         note: Or AgentRunFailed; success is judged by what the tools persisted
     adr_refs:
       - adr-0006
+  - name: AssistantStoryCreation
+    description: >-
+      The creator works from their AI assistant instead of the studio (adr-0016). The assistant loads the create-story
+      skill, checks readiness, creates the project, has the story writer draft the outline, lets the creator review and
+      edit it in the conversation, plans the episodes, then writes each episode in order with its recap; every stage is
+      reviewed in the conversation before the next starts. The studio, if it runs, shows the same project.
+    steps:
+      - ref: configuration.ConfigurationReadiness
+        type: read_model
+        note: get_status; a text service is enough for the story room
+      - ref: production.CreateDrama
+        type: command
+        note: create_drama with the brief the creator agreed to
+      - ref: production.WriteOutline
+        type: command
+        note: write_outline starts the story writer; refused with replace unset once an outline exists
+      - ref: production.OutlineRequested
+        type: event
+      - ref: production.DramaJobs
+        type: read_model
+        note: wait_for_job until the outline job settles
+      - ref: production.OutlineCompleted
+        type: event
+      - ref: production.SaveOutline
+        type: command
+        note: save_outline for the creator's edits, with ifRevision from the last read
+      - ref: production.PlanEpisodes
+        type: command
+        note: plan_episodes once the outline is approved; episodes are created without locked services
+      - ref: production.PlannedEpisodesAdded
+        type: event
+      - ref: production.WriteEpisodeScript
+        type: command
+        note: write_episode_script per episode, in order; refused while an earlier recap is pending
+      - ref: production.EpisodeWriteCompleted
+        type: event
+      - ref: production.WriteRecapAfterScript
+        type: policy
+        note: the recap job starts by itself in a serial; its id is in the write job's result
+      - ref: production.EpisodeJobs
+        type: read_model
+        note: wait_for_job on the recap before the next episode is written
+    adr_refs:
+      - adr-0016

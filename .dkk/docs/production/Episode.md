@@ -15,7 +15,9 @@ One episode of a drama. Holds the raw content and the formatted script with its 
 - episodeNumber is unique among the drama's non-deleted episodes and assigned as max(existing) + 1, inside the transaction that inserts the episode, so a planner batch and a manual Add episode never collide.
 - An episode is planned when the planner created it: its description is the synopsis and its raw content the beat sheet. The planner only appends; an episode the creator added keeps its title, status, resolution, target and locks. Deleting a planned episode is the way to reject it.
 - The script has one agent at a time: a rewrite (RewriteScript) and a write (WriteEpisodeScript) refuse each other while running, and a breakdown, the skip, the creator's content edit and the creator's script edit are refused while either runs.
-- imageServiceId and videoServiceId are snapshotted at creation from the highest-priority active model service of each type; creation is rejected when either type has no active service.
+- imageServiceId and videoServiceId are each taken from the highest-priority usable model service of the type at creation when one exists, else left empty and written at the first generation of that type (adr-0016); from then on the episode uses that one service per type. Creation needs no image or video service.
+- beatsRevision increments on every change of the raw content (the beat sheet), whoever writes it; with scriptRevision and recapRevision it is the freshness token an assistant's save must carry (ifRevision).
+- An episode that holds a script, shots or a film is deleted only with force; no episode is deleted while one of its jobs runs.
 - resolution is one of 480p, 720p or 1080p and applies to every video generated for the episode; adapters map it to the provider's nearest tier.
 - targetDurationSeconds is null (the storyboard follows the script) or a whole number of seconds from 10 to 600. The script rewrite is told to write what fits it, and a breakdown is held to it (StoryboardBreakdown). durationSeconds stays the sum of the live shots' durations.
 - status is one of draft, active or completed (the same vocabulary as Drama); completed is a manual mark set from the export stage and can be undone.
@@ -58,3 +60,4 @@ One episode of a drama. Holds the raw content and the formatted script with its 
 |-----|-------|--------|
 | [adr-0014](../../adr/adr-0014.md) | Series continuity through episode recaps | accepted |
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

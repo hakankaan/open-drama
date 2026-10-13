@@ -1,10 +1,22 @@
-# Command — an instruction to change domain state.
 name: DeleteEpisode
-description: Soft-delete an episode. Its shots and generation records are kept but no longer reachable; later episodes keep their numbers.
+description: >-
+  Soft-delete an episode. Its shots and generation records are kept but no longer reachable; later episodes keep their
+  numbers. Refused while a job of the episode runs, and, unless forced, when the episode holds a script, shots or a
+  film, naming what would be lost (adr-0016); the studio's confirmation dialog forces.
 fields:
   - name: episodeId
     type: ID
+  - name: force
+    type: boolean
+    description: Delete even though the episode holds a script, shots or a film
+preconditions:
+  - No job of the episode is running
+  - force is set, or the episode holds no script, no shots and no film
 actor: Creator
 handled_by: Episode
 rejections:
   - Episode not found
+  - A job of the episode is still running
+  - The episode holds a script, shots or a film and force is not set
+adr_refs:
+  - adr-0016

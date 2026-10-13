@@ -38,3 +38,4 @@ One configured provider endpoint for a service type. Selected at runtime by expl
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0013](../../adr/adr-0013.md) | Model providers: official endpoints of supported models, plus BytePlus and ModelRunner | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

@@ -37,7 +37,8 @@ export function StoryTab({ drama, jobs, onPlan }: { drama: DramaDetail; jobs: Dr
   const run = async () => {
     setConfirm(false);
     try {
-      await start.mutateAsync(textOverride(picks));
+      // Over an existing outline the click came through the dialog, so it carries replace (adr-0016).
+      await start.mutateAsync({ ...textOverride(picks), replace: hasOutline });
       // The new outline replaces the draft too; a stale unsaved draft on top of it would be saved over the result.
       setDraft(drama.outline);
     } catch (err) {
@@ -61,7 +62,7 @@ export function StoryTab({ drama, jobs, onPlan }: { drama: DramaDetail; jobs: Dr
         </h2>
         <span className="text-xs text-muted tabular-nums">{t('chars', { count: draft.length, max: OUTLINE_MAX_CHARS })}</span>
         <div className="ml-auto flex flex-wrap gap-2">
-          <Button size="sm" onClick={save} loading={update.isPending} disabled={!dirty || running}>
+          <Button size="sm" onClick={save} loading={update.isPending} disabled={!dirty || running || planRunning}>
             {tc('save')}
           </Button>
           <Button

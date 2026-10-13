@@ -20,9 +20,11 @@ import { dramaHasRunningJob, getDramaJobs } from '../jobs/run-job';
 import { toEpisode } from './episodes';
 
 type Row = typeof dramas.$inferSelect;
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Db = typeof db | Tx;
 
-/** The outline stays off the list rows (up to 20 000 characters each); DramaDetail carries it. */
-const toDrama = ({ deletedAt: _deletedAt, outline: _outline, ...row }: Row): Drama => row;
+/** The outline stays off the list rows (up to 20 000 characters each); DramaDetail carries it with its revision. */
+const toDrama = ({ deletedAt: _deletedAt, outline: _outline, outlineRevision: _revision, ...row }: Row): Drama => row;
 
 export function getDramaRow(id: number): Row {
   const row = db
@@ -105,18 +107,70 @@ export function createDrama(input: z.output<typeof CreateDrama>): Drama {
   return toDrama(db.insert(dramas).values(input).returning().get());
 }
 
+/**
+ * The outline has one writer at a time: a running outline job owns it (adr-0015), and a running plan reads it batch
+ * by batch, so an edit meanwhile would plan one season from two outlines (adr-0016).
+ */
+export function assertOutlineEditable(id: number) {
+  const jobs = getDramaJobs(id);
+  if (jobs.outline?.status === 'running') throw conflict('The outline is being written; edit it once it is saved');
+  if (jobs.plan?.status === 'running') throw conflict('Episodes are being planned from the outline; edit it once the plan is done');
+}
+
 /** UpdateDrama, including the creator's outline edit, which is refused while the story writer holds the outline (adr-0015). */
 export function updateDrama(id: number, input: z.output<typeof UpdateDrama>): Drama {
   const current = getDramaRow(id);
   assertSomething(input);
-  if (input.outline !== undefined && getDramaJobs(id).outline?.status === 'running') {
-    throw conflict('The outline is being written; edit it once it is saved');
+  const { outline, ...rest } = input;
+  if (outline !== undefined) assertOutlineEditable(id);
+  if (rest.style !== undefined && rest.style !== current.style) {
+    const preset = getPresetByValue(rest.style);
+    if (!preset || !preset.isActive) throw invalid(`Unknown or disabled visual style: ${rest.style}`);
   }
-  if (input.style !== undefined && input.style !== current.style) {
-    const preset = getPresetByValue(input.style);
-    if (!preset || !preset.isActive) throw invalid(`Unknown or disabled visual style: ${input.style}`);
-  }
-  return toDrama(db.update(dramas).set(input).where(eq(dramas.id, id)).returning().get());
+  db.transaction((tx) => {
+    if (Object.keys(rest).length > 0) tx.update(dramas).set(rest).where(eq(dramas.id, id)).run();
+    if (outline !== undefined) writeOutline(id, outline, tx);
+  });
+  return toDrama(getDramaRow(id));
+}
+
+/**
+ * SaveOutline: the one writer of the outline, for the creator's edit, the story writer's save and an assistant's
+ * save alike. The outline revision moves only when the text changes (adr-0016). Returns the revision it now has.
+ */
+export function writeOutline(id: number, text: string, tx: Db = db): number {
+  const row = tx.select({ outline: dramas.outline, outlineRevision: dramas.outlineRevision }).from(dramas).where(eq(dramas.id, id)).get();
+  if (!row) throw notFound('Project');
+  if (row.outline === text) return row.outlineRevision;
+  const outlineRevision = row.outlineRevision + 1;
+  tx.update(dramas).set({ outline: text, outlineRevision }).where(eq(dramas.id, id)).run();
+  return outlineRevision;
+}
+
+/** ReadOutline for an assistant: the text with the revision to pass back when saving it (adr-0016). */
+export function readOutline(id: number): { text: string; revision: number; characters: number } {
+  const row = getDramaRow(id);
+  return { text: row.outline, revision: row.outlineRevision, characters: row.outline.length };
+}
+
+/**
+ * SaveOutline with a freshness token (adr-0016): written only while the outline is still at the revision the caller
+ * read, checked inside the transaction; otherwise CONFLICT names both revisions.
+ */
+export function saveOutlineText(id: number, text: string, ifRevision: number): { revision: number; characters: number; changed: boolean } {
+  getDramaRow(id);
+  assertOutlineEditable(id);
+  return db.transaction((tx) => {
+    const row = tx.select({ outline: dramas.outline, outlineRevision: dramas.outlineRevision }).from(dramas).where(eq(dramas.id, id)).get();
+    if (!row) throw notFound('Project');
+    if (row.outlineRevision !== ifRevision) {
+      throw conflict(`The outline is at revision ${row.outlineRevision}; you read revision ${ifRevision}. Read it again before saving.`, {
+        revision: row.outlineRevision,
+        ifRevision,
+      });
+    }
+    return { revision: writeOutline(id, text, tx), characters: text.length, changed: row.outline !== text };
+  });
 }
 
 /**
@@ -140,7 +194,7 @@ export function deleteDrama(id: number): { id: number } {
 /** DramaDetail: the drama with its live episodes (with shot counts) and asset counts. */
 export function getDramaDetail(id: number): DramaDetail {
   const row = getDramaRow(id);
-  const drama = { ...toDrama(row), outline: row.outline };
+  const drama = { ...toDrama(row), outline: row.outline, outlineRevision: row.outlineRevision };
   const eps = db
     .select()
     .from(episodes)

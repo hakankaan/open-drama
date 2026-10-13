@@ -32,3 +32,4 @@ Remove a service permanently.
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

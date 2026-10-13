@@ -42,3 +42,4 @@ Ask the script-rewriter agent to turn the episode's raw content into a formatted
 |-----|-------|--------|
 | [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

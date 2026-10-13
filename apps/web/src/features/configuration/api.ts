@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import {
   AppSettingsView,
+  AssistantConnection,
   CatalogModel,
   ConfigurationReadiness,
   Health,
@@ -29,6 +30,7 @@ export const configurationKeys = {
   catalog: (type: ServiceType) => ['configuration', 'modelrunner-catalog', type] as const,
   presets: (all: boolean) => ['configuration', 'presets', all] as const,
   settings: ['configuration', 'settings'] as const,
+  assistant: ['configuration', 'assistant'] as const,
 };
 
 export const useReadiness = () =>
@@ -127,5 +129,24 @@ export function useUpdateAppSettings() {
   return useMutation({
     mutationFn: (body: UpdateAppSettings) => request(AppSettingsView, 'PATCH', '/settings', body),
     onSuccess: (data) => qc.setQueryData(configurationKeys.settings, data),
+  });
+}
+
+// The assistant connection (adr-0016): the token is a secret, fetched when the card opens and never kept in a cache
+// longer than the page.
+
+export const useAssistantConnection = () =>
+  useQuery({
+    queryKey: configurationKeys.assistant,
+    queryFn: () => request(AssistantConnection, 'GET', '/settings/assistant'),
+    staleTime: Infinity,
+    gcTime: 0,
+  });
+
+export function useRotateAssistantToken() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => request(AssistantConnection, 'POST', '/settings/assistant/rotate'),
+    onSuccess: (data) => qc.setQueryData(configurationKeys.assistant, data),
   });
 }

@@ -5,9 +5,11 @@ import {
   DramaListQuery,
   IdParam,
   PlanEpisodes,
-  TextModelOverride,
+  DeleteEpisodeQuery,
+  StartTextRun,
   UpdateDrama,
   UpdateEpisode,
+  UseContentAsScript,
 } from '@open-drama/contracts';
 import { created, ok } from '../../http/envelope';
 import { v } from '../../http/validate';
@@ -18,13 +20,12 @@ import {
   deleteEpisode,
   getEpisodeRow,
   getEpisodeView,
-  skipRewrite,
   updateEpisode,
 } from './episodes';
 import { startOutline } from '../agents/services/outline';
 import { startPlan } from '../agents/services/plan';
-import { maybeStartRecap, startRecap } from '../agents/services/recap';
-import { startRewrite, startWrite } from '../agents/services/script';
+import { startRecap } from '../agents/services/recap';
+import { startRewrite, startWrite, useContentAsScript } from '../agents/services/script';
 import { getPipelineStatus } from './pipeline';
 
 export const productionRoutes = new Hono()
@@ -41,7 +42,7 @@ export const productionRoutes = new Hono()
     getDramaRow(id);
     return ok(c, getDramaJobs(id));
   })
-  .post('/dramas/:id/outline', v('param', IdParam), v('json', TextModelOverride.default({})), (c) =>
+  .post('/dramas/:id/outline', v('param', IdParam), v('json', StartTextRun.prefault({})), (c) =>
     ok(c, startOutline(c.req.valid('param').id, c.req.valid('json'))),
   )
   .post('/dramas/:id/plan', v('param', IdParam), v('json', PlanEpisodes), (c) =>
@@ -52,20 +53,19 @@ export const productionRoutes = new Hono()
   .patch('/episodes/:id', v('param', IdParam), v('json', UpdateEpisode), (c) =>
     ok(c, updateEpisode(c.req.valid('param').id, c.req.valid('json'))),
   )
-  .delete('/episodes/:id', v('param', IdParam), (c) => ok(c, deleteEpisode(c.req.valid('param').id)))
-  .post('/episodes/:id/rewrite', v('param', IdParam), v('json', TextModelOverride.default({})), (c) =>
+  .delete('/episodes/:id', v('param', IdParam), v('query', DeleteEpisodeQuery), (c) =>
+    ok(c, deleteEpisode(c.req.valid('param').id, c.req.valid('query'))),
+  )
+  .post('/episodes/:id/rewrite', v('param', IdParam), v('json', StartTextRun.prefault({})), (c) =>
     ok(c, startRewrite(c.req.valid('param').id, c.req.valid('json'))),
   )
-  .post('/episodes/:id/write', v('param', IdParam), v('json', TextModelOverride.default({})), (c) =>
+  .post('/episodes/:id/write', v('param', IdParam), v('json', StartTextRun.prefault({})), (c) =>
     ok(c, startWrite(c.req.valid('param').id, c.req.valid('json'))),
   )
-  .post('/episodes/:id/skip-rewrite', v('param', IdParam), (c) => {
-    const { id } = c.req.valid('param');
-    const episode = skipRewrite(id);
-    maybeStartRecap(id);
-    return ok(c, episode);
-  })
-  .post('/episodes/:id/recap', v('param', IdParam), v('json', TextModelOverride.default({})), (c) =>
+  .post('/episodes/:id/skip-rewrite', v('param', IdParam), v('json', UseContentAsScript.prefault({})), (c) =>
+    ok(c, useContentAsScript(c.req.valid('param').id, c.req.valid('json'))),
+  )
+  .post('/episodes/:id/recap', v('param', IdParam), v('json', StartTextRun.prefault({})), (c) =>
     ok(c, startRecap(c.req.valid('param').id, c.req.valid('json'))),
   )
   .get('/episodes/:id/pipeline-status', v('param', IdParam), (c) =>

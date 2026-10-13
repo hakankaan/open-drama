@@ -43,6 +43,13 @@
       "when": 1791532151160,
       "tag": "0005_indexes_and_drama_cascade",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791741760937,
+      "tag": "0006_text_revisions",
+      "breakpoints": true
     }
   ]
 }

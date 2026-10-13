@@ -22,8 +22,8 @@ actors:
     type: system
     description: >-
       The in-process agent runtime inside the API. Runs the five production agents (script rewriter, extractor,
-      storyboard breaker, prompt generator, recap writer) as tool-calling loops against a text model, and executes
-      their tools as commands on the domain.
+      storyboard breaker, prompt generator, recap writer) as tool-calling loops against a text model, and executes their
+      tools as commands on the domain.
     capabilities:
       - Resolve an agent's instructions from its prompt file, its skills and the content-language directive
       - Resolve the text model service (episode default or per-request override) and patch provider quirks
@@ -69,7 +69,9 @@ actors:
       agent workspace template once into the data directory, fails the generation tasks no provider had accepted and
       resumes the ones a provider had.
     capabilities:
-      - Back the database up before pending migrations and apply them in one transaction, refusing to start if they leave dangling references
+      - >-
+        Back the database up before pending migrations and apply them in one transaction, refusing to start if they
+        leave dangling references
       - Seed or upgrade built-in style presets without overwriting user edits
       - Fail tasks that were still processing when the previous process died before a provider accepted them
       - Resume polling the tasks a provider had accepted
@@ -132,3 +134,24 @@ actors:
     adr_refs:
       - adr-0005
       - adr-0013
+  - name: Assistant
+    type: external
+    description: >-
+      The creator's AI assistant (Claude Code, Claude Desktop, claude.ai, Cursor, Codex CLI and other MCP clients)
+      acting for the creator through the MCP endpoint with the server-issued token. It issues the same commands the
+      Creator issues from the studio, bound by the assistant instructions and the server's refusals (revision tokens,
+      replace and force flags, locks); it never sees an API key.
+    capabilities:
+      - Create projects and episodes, write and edit outlines, beat sheets, scripts and recaps through the tools
+      - Start and wait for the outline, plan, write, rewrite and recap jobs; cancel one when the creator asks
+      - Configure model services (without ever handling a key), style presets and the content language
+      - Follow the assistant skills (set-up, create-story, write-episodes, adapt-source, review-story) stage by stage
+    failure_modes:
+      - Saves over text the creator changed meanwhile (refused by the revision token)
+      - >-
+        Replaces or deletes without the creator's agreement (refused without replace or force; the client asks the
+        creator first)
+      - Asks the creator for an API key in the conversation (the instructions forbid it; the tools have no key field)
+      - Spends the text provider's budget on repeated agent runs without pausing for review
+    adr_refs:
+      - adr-0016

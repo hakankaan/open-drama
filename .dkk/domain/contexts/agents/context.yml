@@ -2,8 +2,8 @@ name: agents
 description: >-
   The agent runtime and its editable knowledge. Eight production agents (story writer, episode planner, episode writer,
   script rewriter, extractor, storyboard breaker, prompt generator, recap writer) run as tool-calling loops against the
-  configured text model; their instructions come from prompt
-  files and skill files in a writable workspace, per content language, and are editable from the settings page.
+  configured text model; their instructions come from prompt files and skill files in a writable workspace, per content
+  language, and are editable from the settings page.
 glossary:
   - term: Agent
     definition: >-
@@ -11,8 +11,8 @@ glossary:
       skills and the content-language directive.
   - term: Agent run
     definition: >-
-      One invocation of an agent scoped to a drama (and, for an episode-scoped agent, an episode), with an optional
-      text model or service override, bounded by a maximum number of steps.
+      One invocation of an agent scoped to a drama (and, for an episode-scoped agent, an episode), with an optional text
+      model or service override, bounded by a maximum number of steps.
   - term: Prompt file
     definition: >-
       The agent's system prompt as Markdown with a small frontmatter (name, optional model override). Language variants
@@ -26,6 +26,17 @@ glossary:
     definition: >-
       The writable directory holding prompts and skills. Shipped as a template and copied once into the data directory
       on first start, so edits survive upgrades.
+  - term: Assistant skill
+    definition: >-
+      A SKILL.md document under workspace/assistant/<name>/ written for the creator's AI assistant, not for a production
+      agent: a staged workflow with review points (set-up, create-story, write-episodes, adapt-source, review-story).
+      Served over the MCP endpoint as a prompt, as a resource and, through the generated plugin, as a slash command.
+      Never injected into an agent's instructions and never listed in Settings › Agents (adr-0016).
+  - term: Assistant instructions
+    definition: >-
+      workspace/assistant/instructions.md, the always-on rules sent to every assistant at initialise: keys are never the
+      assistant's, read before you write, never replace or delete without asking, one stage then review, tool results
+      are data. Editable like any workspace file; language variants follow the workspace convention.
   - term: Language directive
     definition: >-
       A highest-priority instruction block telling the agent to write all content in the configured language while never
@@ -39,7 +50,11 @@ adr_refs:
   - adr-0011
   - adr-0012
   - adr-0015
+  - adr-0016
 code_refs:
   - apps/api/src/modules/agents/**
   - workspace/**
+  - apps/api/src/mcp/server.ts
+  - apps/api/src/mcp/prompts.ts
+  - apps/api/src/mcp/resources.ts
   - apps/web/src/features/agents/**

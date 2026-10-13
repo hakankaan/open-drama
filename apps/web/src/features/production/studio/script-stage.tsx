@@ -108,7 +108,8 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
   const run = async (kind: ScriptAgent) => {
     setConfirm(null);
     try {
-      await start[kind].mutateAsync(textOverride(picks));
+      // Over an existing script the click came through the dialog above, so it carries replace (adr-0016).
+      await start[kind].mutateAsync({ ...textOverride(picks), replace: hasScript });
       // The new script replaces the draft too; a stale unsaved draft on top of it would be saved over the result.
       setDraft(episode.scriptContent ?? '');
     } catch (err) {
@@ -117,7 +118,7 @@ export function RewritePanel({ episode, drama, onRaw }: { episode: EpisodeView; 
   };
   const doSkip = async () => {
     try {
-      await skip.mutateAsync(episode.id);
+      await skip.mutateAsync({ id: episode.id, replace: false });
     } catch (err) {
       toastError(err);
     }
@@ -239,9 +240,12 @@ function RecapCard({ episode, jobs }: { episode: EpisodeView; jobs: EpisodeJobs 
   const start = useStartRecap(episode.id);
   const update = useUpdateEpisode();
   const [draft, setDraft, dirty] = useServerDraft(episode.recap);
+  const [confirm, setConfirm] = useState(false);
   const job = jobs?.recap ?? null;
   const running = job?.status === 'running';
   const hasRecap = episode.recap.trim().length > 0;
+  // A recap that still matches the script is replaced only after the dialog; a stale or missing one needs no ask.
+  const fresh = hasRecap && !episode.recapStale;
   const failed = job?.status === 'failed' && (!hasRecap || episode.recapStale);
   // A recap job replaces the draft too, also one the API starts after a script save: a stale unsaved draft on top of
   // the result would be saved over it.
@@ -249,8 +253,9 @@ function RecapCard({ episode, jobs }: { episode: EpisodeView; jobs: EpisodeJobs 
   useReportUnsaved(dirty);
 
   const write = async () => {
+    setConfirm(false);
     try {
-      await start.mutateAsync(textOverride(picks));
+      await start.mutateAsync({ ...textOverride(picks), replace: fresh });
       setDraft(episode.recap);
     } catch (err) {
       toastError(err);
@@ -278,12 +283,21 @@ function RecapCard({ episode, jobs }: { episode: EpisodeView; jobs: EpisodeJobs 
               {t('save')}
             </Button>
           ) : null}
-          <Button size="sm" variant="quiet" onClick={write} loading={start.isPending} disabled={running}>
+          <Button size="sm" variant="quiet" onClick={() => (fresh ? setConfirm(true) : void write())} loading={start.isPending} disabled={running}>
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
             {hasRecap ? t('rewrite') : t('write')}
           </Button>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirm}
+        onOpenChange={setConfirm}
+        title={t('confirmTitle')}
+        description={t('confirmBody')}
+        confirmLabel={t('rewrite')}
+        onConfirm={write}
+        pending={start.isPending}
+      />
       {failed && !running ? (
         <p className="flex items-start gap-2 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger" role="alert">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />

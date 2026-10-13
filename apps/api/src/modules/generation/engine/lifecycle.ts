@@ -10,6 +10,7 @@ import { logger } from '../../../http/logger';
 import { rememberSecret } from '../../../lib/secrets';
 import { isShuttingDown } from '../../../lib/shutdown';
 import { resolveService } from '../../configuration/services';
+import { claimServiceLock } from '../../production/episodes';
 import { ProviderError, type Dialect, type ProviderRequest, type ResultMedia, type ServiceConfig } from '../adapters/types';
 import { classify, messageOf } from './errors';
 
@@ -39,20 +40,26 @@ export interface ResolvedGeneration<A> {
 
 /**
  * The adapter and credentials for a task: explicit service → the episode's lock → the highest-priority active one.
- * With OPEN_DRAMA_STUB_PROVIDERS=1 the offline adapter serves every request.
+ * When the episode's lock for the type is still empty (`lockFor`), the resolved service claims it here, before any
+ * work is dispatched, and a request that lost that claim to a concurrent one goes on with the winner (adr-0016).
+ * With OPEN_DRAMA_STUB_PROVIDERS=1 the offline adapter serves every request and nothing is locked.
  */
 export function resolveGeneration<A>(
   type: Exclude<ServiceType, 'text'>,
   adapterFor: (provider: string) => A | null,
-  opts: { explicitId?: number; lockedId?: number | null; model?: string },
+  opts: { explicitId?: number; lockedId?: number | null; lockFor?: number; model?: string },
 ): ResolvedGeneration<A> {
   if (env.OPEN_DRAMA_STUB_PROVIDERS) {
     const adapter = adapterFor('stub');
     if (!adapter) throw precondition(`No offline ${type} adapter is available`);
     return { adapter, config: null, serviceId: null, provider: 'stub', model: `stub-${type}` };
   }
-  const resolved = resolveService(type, { explicitId: opts.explicitId, lockedId: opts.lockedId });
+  let resolved = resolveService(type, { explicitId: opts.explicitId, lockedId: opts.lockedId });
   if (!resolved) throw precondition(`Add an active ${type} service with an API key in Settings before generating ${type}s`);
+  if (opts.lockFor !== undefined && opts.lockedId == null) {
+    const winner = claimServiceLock(opts.lockFor, type, resolved.row.id);
+    if (winner !== resolved.row.id) resolved = resolveService(type, { lockedId: winner }) ?? resolved;
+  }
   const { row } = resolved;
   const adapter = adapterFor(row.provider);
   if (!adapter) throw precondition(`${type === 'image' ? 'Image' : 'Video'} generation through ${row.provider} is not available yet`);

@@ -14,3 +14,4 @@ export * from './compositing';
 export * from './storyboard';
 export * from './video-providers';
 export * from './hosts';
+export * from './mcp';

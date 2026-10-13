@@ -14,10 +14,11 @@ import {
   EpisodeJobs,
   EpisodeView,
   JobStarted,
+  ScriptFromContent,
   type CreateDrama,
   type CreateEpisode,
   type PlanEpisodes,
-  type TextModelOverride,
+  type StartTextRun,
   type UpdateDrama,
   type UpdateEpisode,
 } from '@open-drama/contracts';
@@ -132,20 +133,23 @@ export function useSkipRewrite() {
   const qc = useQueryClient();
   const invalidate = useInvalidateDramas();
   return useMutation({
-    mutationFn: (id: number) => request(EpisodeView, 'POST', `/episodes/${id}/skip-rewrite`),
-    onSuccess: (data) => {
-      qc.setQueryData(productionKeys.episode(data.id), data);
-      void qc.invalidateQueries({ queryKey: productionKeys.pipeline(data.id) });
-      invalidate(data.dramaId);
+    // `replace` is the confirmed click over an existing script (adr-0016); the API refuses the save without it.
+    mutationFn: ({ id, replace }: { id: number; replace: boolean }) =>
+      request(ScriptFromContent, 'POST', `/episodes/${id}/skip-rewrite`, { replace }),
+    onSuccess: ({ episode }) => {
+      qc.setQueryData(productionKeys.episode(episode.id), episode);
+      void qc.invalidateQueries({ queryKey: productionKeys.pipeline(episode.id) });
+      invalidate(episode.dramaId);
     },
-    onSettled: (_data, _err, id) => void qc.invalidateQueries({ queryKey: productionKeys.jobs(id) }),
+    onSettled: (_data, _err, { id }) => void qc.invalidateQueries({ queryKey: productionKeys.jobs(id) }),
   });
 }
 
 export function useDeleteEpisode(dramaId: number) {
   const invalidate = useInvalidateDramas();
   return useMutation({
-    mutationFn: (id: number) => request(z.object({ id: z.number() }), 'DELETE', `/episodes/${id}`),
+    // The dialog named what the episode holds, so the confirmed click carries force (adr-0016).
+    mutationFn: (id: number) => request(z.object({ id: z.number() }), 'DELETE', `/episodes/${id}?force=1`),
     onSettled: () => invalidate(dramaId),
   });
 }
@@ -205,7 +209,7 @@ export function useDramaJobs(id: number) {
 export function useStartOutline(dramaId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: TextModelOverride) => request(JobStarted, 'POST', `/dramas/${dramaId}/outline`, body),
+    mutationFn: (body: StartTextRun) => request(JobStarted, 'POST', `/dramas/${dramaId}/outline`, body),
     onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.dramaJobs(dramaId) }),
   });
 }
@@ -223,7 +227,7 @@ export function useStartPlan(dramaId: number) {
 export function useStartRewrite(episodeId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: TextModelOverride) => request(JobStarted, 'POST', `/episodes/${episodeId}/rewrite`, body),
+    mutationFn: (body: StartTextRun) => request(JobStarted, 'POST', `/episodes/${episodeId}/rewrite`, body),
     onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.jobs(episodeId) }),
   });
 }
@@ -232,7 +236,7 @@ export function useStartRewrite(episodeId: number) {
 export function useStartWrite(episodeId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: TextModelOverride) => request(JobStarted, 'POST', `/episodes/${episodeId}/write`, body),
+    mutationFn: (body: StartTextRun) => request(JobStarted, 'POST', `/episodes/${episodeId}/write`, body),
     onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.jobs(episodeId) }),
   });
 }
@@ -240,7 +244,7 @@ export function useStartWrite(episodeId: number) {
 export function useStartRecap(episodeId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: TextModelOverride) => request(JobStarted, 'POST', `/episodes/${episodeId}/recap`, body),
+    mutationFn: (body: StartTextRun) => request(JobStarted, 'POST', `/episodes/${episodeId}/recap`, body),
     onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.jobs(episodeId) }),
   });
 }

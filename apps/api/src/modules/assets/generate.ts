@@ -42,7 +42,8 @@ async function requestClaimed(kind: AssetKind, id: number, body: z.output<typeof
   if (running) throw conflict('An image is already being generated for this asset', { taskId: running.id });
   const prompt = await ensureFinalPrompt(kind, id, { episodeId: ep.id, model: body.textModel, textServiceId: body.textServiceId });
   const drama = getDramaRow(asset.dramaId);
-  const taskId = submitAssetImage({
+  // The first image generation of the episode claims its image lock before the task starts (adr-0016).
+  const { taskId } = submitAssetImage({
     owner: { kind, id },
     dramaId: asset.dramaId,
     prompt,
@@ -50,6 +51,7 @@ async function requestClaimed(kind: AssetKind, id: number, body: z.output<typeof
     model: body.model,
     imageServiceId: body.imageServiceId,
     lockedServiceId: ep.imageServiceId,
+    lockFor: ep.id,
   });
   touchDrama(asset.dramaId);
   return { taskId };

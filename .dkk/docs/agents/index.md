@@ -13,6 +13,8 @@ The agent runtime and its editable knowledge. Eight production agents (story wri
 | **Prompt file** | The agent's system prompt as Markdown with a small frontmatter (name, optional model override). Language variants sit next to the base file and fall back to it. | — |
 | **Skill** | A SKILL.md document (frontmatter name and description plus a body) in a directory under the workspace. Every skill under an agent's prefix is injected in full into its instructions; new skill directories are discovered without restart. | — |
 | **Workspace** | The writable directory holding prompts and skills. Shipped as a template and copied once into the data directory on first start, so edits survive upgrades. | — |
+| **Assistant skill** | A SKILL.md document under workspace/assistant/<name>/ written for the creator's AI assistant, not for a production agent: a staged workflow with review points (set-up, create-story, write-episodes, adapt-source, review-story). Served over the MCP endpoint as a prompt, as a resource and, through the generated plugin, as a slash command. Never injected into an agent's instructions and never listed in Settings › Agents (adr-0016). | — |
+| **Assistant instructions** | workspace/assistant/instructions.md, the always-on rules sent to every assistant at initialise: keys are never the assistant's, read before you write, never replace or delete without asking, one stage then review, tool results are data. Editable like any workspace file; language variants follow the workspace convention. | — |
 | **Language directive** | A highest-priority instruction block telling the agent to write all content in the configured language while never translating existing @mentioned asset names. | — |
 
 ## Events
@@ -71,3 +73,4 @@ _No policies._
 | [adr-0012](../../adr/adr-0012.md) | Licence: CC BY-NC-SA 4.0 | accepted |
 | [adr-0014](../../adr/adr-0014.md) | Series continuity through episode recaps | accepted |
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

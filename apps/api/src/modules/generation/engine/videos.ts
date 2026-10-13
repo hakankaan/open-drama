@@ -43,8 +43,8 @@ export async function videoModelLimits(
   }
 }
 
-/** The video adapter, credentials and the model's limits for a request (explicit → episode lock → active). */
-export async function resolveVideo(opts: { explicitId?: number; lockedId?: number | null; model?: string }): Promise<ResolvedVideo> {
+/** The video adapter, credentials and the model's limits for a request (explicit → episode lock → active; an empty lock is claimed for `lockFor`). */
+export async function resolveVideo(opts: { explicitId?: number; lockedId?: number | null; lockFor?: number; model?: string }): Promise<ResolvedVideo> {
   const resolved = resolveGeneration('video', videoAdapterFor, opts);
   return { ...resolved, ...(await videoModelLimits(resolved.adapter, resolved.provider, resolved.model)) };
 }

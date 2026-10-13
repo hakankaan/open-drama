@@ -40,3 +40,4 @@ Add a provider endpoint for a service type with its base URL, API key, models, p
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0013](../../adr/adr-0013.md) | Model providers: official endpoints of supported models, plus BytePlus and ModelRunner | accepted |
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

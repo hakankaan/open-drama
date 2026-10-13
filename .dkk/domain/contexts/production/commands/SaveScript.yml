@@ -1,12 +1,21 @@
-# Command — an instruction to change domain state.
 name: SaveScript
-description: Persist the formatted script produced by the script-rewriter agent (its save_script tool). Replaces the previous formatted script.
+description: >-
+  Persist the formatted script produced by the script rewriter or the episode writer (their save_script tool), or an
+  assistant's edit of it carrying the revision it read (ifRevision). Replaces the previous formatted script and bumps
+  scriptRevision when the text changed (adr-0016).
 fields:
   - name: episodeId
     type: ID
   - name: scriptContent
     type: string
+  - name: ifRevision
+    type: number
+    description: An assistant's save only — the scriptRevision it read; refused when the script changed since
 actor: AgentRuntime
 handled_by: Episode
 rejections:
   - Empty script
+  - ifRevision is not the current scriptRevision (CONFLICT, naming both revisions)
+  - The script is being written or read by an agent (an assistant's save follows the creator's rule)
+adr_refs:
+  - adr-0016

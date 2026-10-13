@@ -183,6 +183,19 @@ export const AppSettingsView = z.object({
 });
 export type AppSettingsView = z.infer<typeof AppSettingsView>;
 
+/** The assistant endpoint's connection (adr-0016): its own read model, never part of AppSettingsView. */
+export const AssistantConnection = z.object({
+  /** false when OPEN_DRAMA_ASSISTANT=0: the endpoint answers 404 and there is nothing to connect to. */
+  enabled: z.boolean(),
+  /** The bearer token; null while the endpoint is off. */
+  token: z.string().nullable(),
+  /** 'environment': OPEN_DRAMA_ASSISTANT_TOKEN is set and the token cannot be rotated here. */
+  source: z.enum(['generated', 'environment']),
+  /** The endpoint as the server knows itself to be reached (PUBLIC_BASE_URL, else WEB_ORIGIN, else the API's own address). */
+  endpoint: z.string(),
+});
+export type AssistantConnection = z.infer<typeof AssistantConnection>;
+
 /** `SetContentLanguage` and `RecordToursSeen`; toursSeen entries are added, never removed. */
 export const UpdateAppSettings = z.object({
   contentLanguage: ContentLanguage.optional(),

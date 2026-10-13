@@ -23,3 +23,4 @@ invariants:
   - Deleting a service is a hard delete; episodes that locked it fall back to the active service of the type.
 adr_refs:
   - adr-0013
+  - adr-0016

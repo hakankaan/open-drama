@@ -26,8 +26,10 @@ invariants:
   - >-
     outline is Markdown of at most 20000 characters (empty until written), the story the episodes are planned from.
     The story writer replaces it only through SaveOutline inside an outline job; the creator edits it from the story
-    tab through UpdateDrama, which is refused while an outline job runs. It joins the SeriesContext of every agent,
-    serial or not.
+    tab through UpdateDrama, which is refused while an outline job runs, and from an assistant through SaveOutline with
+    the revision it read. outlineRevision increments on every change (adr-0016). It joins the SeriesContext of every
+    agent, serial or not. The story writer does not start while the planner reads the outline.
 adr_refs:
   - adr-0014
   - adr-0015
+  - adr-0016

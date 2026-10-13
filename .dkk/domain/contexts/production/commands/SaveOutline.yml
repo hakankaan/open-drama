@@ -1,18 +1,26 @@
 name: SaveOutline
 description: >-
-  Persist the outline produced by the story writer (its save_outline tool). The creator's own edit of the outline goes
+  Persist the outline produced by the story writer (its save_outline tool), or an assistant's edit of it carrying the
+  revision it read (ifRevision); either bumps outlineRevision (adr-0016). The creator's own edit from the story tab goes
   through UpdateDrama.
 fields:
   - name: dramaId
     type: ID
   - name: outline
     type: string
-    description: Markdown, 200 to 20000 characters
+    description: Markdown, 200 to 20000 characters (an assistant may save at most 20000 characters of any length above 0)
+  - name: ifRevision
+    type: number
+    description: An assistant's save only — the outlineRevision it read; refused when the outline changed since
 actor: AgentRuntime
 handled_by: Drama
 rejections:
   - Outline shorter than 200 characters
   - Outline longer than 20000 characters
-  - Called outside an outline job
+  - Called outside an outline job (the agent's save)
+  - ifRevision is not the current outlineRevision (CONFLICT, naming both revisions)
+  - An outline job is running (an assistant's save)
+  - A plan job is running (an assistant's save; the planner reads the outline batch by batch)
 adr_refs:
   - adr-0015
+  - adr-0016

@@ -57,7 +57,7 @@ export function seriesContext({ dramaId, beforeEpisodeNumber }: SeriesScope, log
       episodeNumber: episodes.episodeNumber,
       title: episodes.title,
       recap: episodes.recap,
-      recapRevision: episodes.recapRevision,
+      recapScriptRevision: episodes.recapScriptRevision,
       scriptRevision: episodes.scriptRevision,
     })
     .from(episodes)

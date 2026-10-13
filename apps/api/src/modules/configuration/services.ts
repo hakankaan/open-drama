@@ -7,6 +7,7 @@ import {
   QUICK_SETUP_TEMPLATES,
   type ApplyQuickSetup,
   type ModelService,
+  type ModelServiceProbe,
   type ProviderName,
   type ServiceSettings,
   type ServiceType,
@@ -15,6 +16,7 @@ import {
 import { db } from '../../db/client';
 import { generationTasks, modelServices } from '../../db/schema';
 import { assertSomething, conflict, invalid, notFound } from '../../http/errors';
+import { probeService } from './probe';
 
 type Row = typeof modelServices.$inferSelect;
 
@@ -158,6 +160,16 @@ export function deleteModelService(id: number): { id: number } {
   assertNoRunningTasks(id, 'delete it');
   db.delete(modelServices).where(eq(modelServices.id, id)).run();
   return { id };
+}
+
+/**
+ * TestModelService on a saved service with its stored key (the route's plain case and the assistant's only case,
+ * adr-0016): the key never leaves the server. `model` overrides the default model for this probe only.
+ */
+export function testSavedModelService(id: number, model?: string): Promise<ModelServiceProbe> {
+  const saved = getServiceRow(id);
+  if (!saved.apiKey) throw invalid('An API key is required to test the service');
+  return probeService({ serviceType: saved.serviceType, provider: saved.provider, baseUrl: saved.baseUrl, apiKey: saved.apiKey, model: model || saved.models[0] });
 }
 
 /**

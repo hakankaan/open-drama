@@ -1,8 +1,9 @@
-# Command — an instruction to change domain state.
 name: SaveRecap
 description: >-
   Persist the recap produced by the recap writer (its save_recap tool), pinned to the script revision its job started
-  from. The creator's own edit of the recap goes through UpdateEpisodeContent and is pinned to the current revision.
+  from. The creator's own edit of the recap goes through UpdateEpisodeContent and is pinned to the current revision; an
+  assistant's edit comes here with the recapRevision it read (ifRevision) and is pinned the same way. Every save bumps
+  recapRevision (adr-0016).
 fields:
   - name: episodeId
     type: ID
@@ -10,13 +11,21 @@ fields:
     type: string
   - name: scriptRevision
     type: number
-    description: The revision the recap was written for
+    description: >-
+      The revision the recap was written for: the job's start revision for the agent's save; for an assistant's save
+      the scriptRevision it read (forScriptRevision), optional
+  - name: ifRevision
+    type: number
+    description: An assistant's save only — the recapRevision it read; refused when the recap changed since
 actor: AgentRuntime
 handled_by: Episode
 rejections:
   - Recap shorter than 20 characters
   - Recap longer than 2000 characters
-  - The script revision has moved on since the job started
-  - Called outside a recap job (no revision to pin to)
+  - The script revision has moved on since the job started, or since the assistant read the recap (CONFLICT, naming both revisions)
+  - Called outside a recap job (no revision to pin to) — the agent's save
+  - ifRevision is not the current recapRevision (CONFLICT, naming both revisions)
+  - The recap is being written (an assistant's save)
 adr_refs:
   - adr-0014
+  - adr-0016

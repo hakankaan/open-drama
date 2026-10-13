@@ -75,6 +75,8 @@ export const ErrorCode = z.enum([
   'CONFLICT',
   'FORBIDDEN',
   'PRECONDITION_FAILED',
+  /** The assistant endpoint's bearer token is missing or wrong (adr-0016). */
+  'UNAUTHORIZED',
   'PROVIDER_ERROR',
   'INTERNAL',
 ]);

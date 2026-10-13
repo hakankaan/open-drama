@@ -34,4 +34,6 @@ Probe a service's endpoint with a provider-appropriate minimal request (model li
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

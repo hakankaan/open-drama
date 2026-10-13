@@ -22,11 +22,13 @@ fields:
     type: boolean
   - name: outline
     type: string
-    description: Markdown, at most 20000 characters; empty clears it
+    description: Markdown, at most 20000 characters; empty clears it; every change bumps outlineRevision (adr-0016)
 actor: Creator
 handled_by: Drama
 rejections:
   - Drama not found or deleted
   - outline while an outline job is running (the agent's save would replace the edit)
+  - outline while a plan job is running (the planner reads the outline batch by batch)
 adr_refs:
   - adr-0015
+  - adr-0016

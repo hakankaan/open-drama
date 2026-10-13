@@ -1,6 +1,9 @@
-# Command — an instruction to change domain state.
 name: CreateEpisode
-description: Add the next episode to a drama. Assigns the next episode number, defaults the title, fixes the video resolution and locks the image and video model services that will be used for this episode.
+description: >-
+  Add the next episode to a drama. Assigns the next episode number, defaults the title, fixes the video resolution and
+  locks the image and video model services that will be used for this episode, for each type that has a usable
+  service; a type without one is locked at its first generation (adr-0016), so the story room needs only a text
+  service.
 fields:
   - name: dramaId
     type: ID
@@ -15,15 +18,17 @@ fields:
     description: Optional; how long the episode should run, 10-600 s (SetEpisodeTargetDuration)
   - name: imageServiceId
     type: ID
-    description: Optional explicit lock; defaults to the active image service
+    description: Optional explicit lock; defaults to the highest-priority usable image service, else empty
   - name: videoServiceId
     type: ID
-    description: Optional explicit lock; defaults to the active video service
+    description: Optional explicit lock; defaults to the highest-priority usable video service, else empty
 actor: Creator
 handled_by: Episode
 preconditions:
   - The drama exists and is not deleted
-  - An active image model service and an active video model service exist
+  - An explicit imageServiceId or videoServiceId names a usable service of that type
 rejections:
-  - No active image service configured
-  - No active video service configured
+  - Drama not found or deleted
+  - An explicit service id is unknown, inactive, keyless or of the wrong type
+adr_refs:
+  - adr-0016

@@ -145,14 +145,65 @@ export function runJob(
   return inserted;
 }
 
+/** A job by id, however it is scoped; 404 when there is none. */
+export function getJobRow(jobId: number): Row {
+  const row = db.select().from(agentJobs).where(eq(agentJobs.id, jobId)).get();
+  if (!row) throw notFound('Job');
+  return row;
+}
+
+export const getJob = (jobId: number): AgentJob => toAgentJob(getJobRow(jobId));
+
+/** Callers waiting for a job to settle (wait_for_job, adr-0016), woken by the settle path. */
+const waiters = new Map<number, Set<() => void>>();
+settledHandlers.push((jobId) => {
+  for (const wake of waiters.get(jobId) ?? []) wake();
+  waiters.delete(jobId);
+});
+
+/**
+ * The job once it has settled, or as it is when `timeoutMs` passes or the caller's signal aborts first. The waiter is
+ * registered before the row is read, so a job that settles in between is not missed; a row still marked running that
+ * this process does not hold (nothing can settle it) answers at once.
+ */
+export function waitForSettled(jobId: number, timeoutMs: number, signal?: AbortSignal): Promise<AgentJob> {
+  return new Promise((resolve, reject) => {
+    const set = waiters.get(jobId) ?? new Set<() => void>();
+    waiters.set(jobId, set);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      clearTimeout(timer);
+      set.delete(finish);
+      if (set.size === 0 && waiters.get(jobId) === set) waiters.delete(jobId);
+      signal?.removeEventListener('abort', finish);
+      try {
+        resolve(getJob(jobId));
+      } catch (err) {
+        reject(err);
+      }
+    };
+    set.add(finish);
+    signal?.addEventListener('abort', finish, { once: true });
+    let row: Row;
+    try {
+      row = getJobRow(jobId);
+    } catch (err) {
+      finish();
+      reject(err);
+      return;
+    }
+    if (row.status !== 'running' || !running.has(jobId) || timeoutMs <= 0) finish();
+    else timer = setTimeout(finish, timeoutMs);
+  });
+}
+
 /**
  * CancelAgentJob: aborts a running job of this process. Its agent run stops at the next provider call or tool call
  * (a tool already started finishes first), then the job settles as cancelled through its failure hook, so what the
  * job saved stays saved and what it parked is restored. Returns the job as it is now, still running for a moment.
  */
 export function cancelJob(jobId: number): AgentJob {
-  const row = db.select().from(agentJobs).where(eq(agentJobs.id, jobId)).get();
-  if (!row) throw notFound('Job');
+  const row = getJobRow(jobId);
   const controller = running.get(jobId);
   if (row.status !== 'running' || !controller) throw conflict('The job is no longer running');
   controller.abort(new Error(CANCELLED));
