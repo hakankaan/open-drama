@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
+  coverOf,
   isNarrator,
   type AssetKind,
   type CharacterCard,
@@ -37,6 +38,7 @@ import { getDramaRow, touchDrama } from '../production/dramas';
 import { getEpisodeRow } from '../production/episodes';
 import { markAssetPromptsStale } from '../storyboard/service';
 import { normaliseName, sceneKey } from './names';
+import { viewColumns, viewsOf } from './views';
 
 type CharacterRow = typeof characters.$inferSelect;
 type SceneRow = typeof scenes.$inferSelect;
@@ -44,17 +46,22 @@ type PropRow = typeof props.$inferSelect;
 
 const now = () => new Date().toISOString();
 
-// Latest image task per asset (readiness is derived from it plus imagePath, never stored)
+// Latest image task per asset (readiness is derived from it plus the image, never stored)
 
 const latestImageTasks = (kind: AssetKind, ids: number[]) => latestTasks('image', ASSET_TASK_OWNER[kind].column, ids);
 
 const strip = <T extends { deletedAt: string | null }>({ deletedAt: _d, ...row }: T) => row;
 
+/** A character as the studio reads it: its views, and the cover that stands for it (adr-0018). */
+const characterCard = (row: CharacterRow, task: CharacterCard['latestImageTask'] | undefined): CharacterCard => {
+  const views = viewsOf(row);
+  const { sheetPath: _s, headshotPath: _h, bodyPath: _b, sidePath: _si, backPath: _ba, ...fields } = row;
+  return { ...strip(fields), imagePath: coverOf(views), views, latestImageTask: task ?? null };
+};
+
 const characterCards = (rows: CharacterRow[]): CharacterCard[] => {
   const tasks = latestImageTasks('character', rows.map((r) => r.id));
-  return rows
-    .filter((r) => !isNarrator(r.name, r.role))
-    .map((r) => ({ ...strip(r), latestImageTask: tasks.get(r.id) ?? null }));
+  return rows.filter((r) => !isNarrator(r.name, r.role)).map((r) => characterCard(r, tasks.get(r.id)));
 };
 const sceneCards = (rows: SceneRow[]): SceneCard[] => {
   const tasks = latestImageTasks('scene', rows.map((r) => r.id));
@@ -185,26 +192,32 @@ export function createCharacter(input: z.output<typeof CreateCharacter>): Charac
     return created;
   });
   touchDrama(input.dramaId);
-  return characterCards([row])[0] ?? { ...strip(row), latestImageTask: null };
+  return characterCard(row, null);
 }
 
 export function updateCharacter(id: number, input: z.output<typeof UpdateCharacter>): CharacterCard {
   const current = getCharacterRow(id);
   assertSomething(input);
   if (input.name !== undefined) assertUniqueCharacter(current.dramaId, input.name, id);
-  checkImagePath(input.imagePath);
+  const { views, ...fields } = input;
+  for (const path of Object.values(views ?? {})) checkImagePath(path);
+  // A running view chain draws its next views from the headshot and writes each result onto its view (adr-0018).
+  const running = views && latestImageTasks('character', [id]).get(id);
+  if (running?.status === 'processing') {
+    throw conflict("A character's views cannot change while one of its images is generating", { taskId: running.id });
+  }
   const row = db.transaction((tx) => {
     // Shot prompts mention the character by name.
     if (input.name !== undefined && input.name !== current.name) markAssetPromptsStale(tx, { kind: 'character', id });
     return tx
       .update(characters)
-      .set({ ...input, ...promptPatch(current, input, changed(current, input, ['appearance', 'styling'])) })
+      .set({ ...fields, ...viewColumns(views), ...promptPatch(current, input, changed(current, input, ['appearance', 'styling'])) })
       .where(eq(characters.id, id))
       .returning()
       .get();
   });
   touchDrama(current.dramaId);
-  return { ...strip(row), latestImageTask: latestImageTasks('character', [id]).get(id) ?? null };
+  return characterCard(row, latestImageTasks('character', [id]).get(id));
 }
 
 /** Soft delete; the character leaves every episode and shot of the drama. */

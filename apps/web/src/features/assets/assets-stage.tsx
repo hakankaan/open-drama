@@ -196,12 +196,12 @@ export function AssetsStage({ episode, onScript }: { episode: EpisodeView; onScr
           item={openItem}
           dramaId={episode.dramaId}
           onClose={() => setOpen(null)}
-          onUpload={() => upload.pick(openItem)}
+          onUpload={(view) => upload.pick(openItem, view)}
           uploading={upload.isBusy(openItem)}
           generation={{
             onGeneratePrompt: () => generation.prompt(openItem),
             promptPending: generation.isPromptPending(openItem),
-            onGenerateImage: () => generation.image(openItem),
+            onGenerateImage: (views) => generation.image(openItem, views),
             imagePending: generation.isImagePending(openItem),
           }}
         />

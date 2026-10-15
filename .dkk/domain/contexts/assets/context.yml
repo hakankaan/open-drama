@@ -25,10 +25,16 @@ glossary:
     definition: >-
       Characters and props match by exact name or by the name with parenthesised qualifiers and whitespace removed;
       scenes match by normalised location plus time.
+  - term: Character view
+    definition: >-
+      One of a character's reference images (adr-0018): the headshot, a close-up of the head generated first, and the
+      full body, side and back views drawn from it. A video call sends the views its model uses; the cover (headshot,
+      else body, sheet, side, back) stands for the character where one image is shown.
   - term: Turnaround sheet
     definition: >-
-      The character's reference image: one sheet that pairs a portrait of the face with the whole figure seen from
-      several fixed angles, drawn to the same scale on a plain backdrop, so later shots can copy the look exactly.
+      One image that pairs a portrait of the face with the whole figure seen from several fixed angles. The character
+      image made before views existed, kept as its sheet; sent only to models that read a sheet as one person, and
+      composed from the headshot and full body when separate views do not fit.
   - term: Establishing shot
     definition: >-
       The scene's reference image: a single wide, steady view of the place with nobody in it, laid out so the depth of

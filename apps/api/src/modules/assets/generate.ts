@@ -1,20 +1,36 @@
 import { and, eq } from 'drizzle-orm';
-import type { AspectRatio, AssetKind, RequestAssetImage } from '@open-drama/contracts';
+import { GeneratedView, type AspectRatio, type AssetKind, type RequestAssetImage } from '@open-drama/contracts';
 import type { z } from 'zod';
 import { db } from '../../db/client';
-import { generationTasks } from '../../db/schema';
-import { conflict } from '../../http/errors';
+import { characters, generationTasks } from '../../db/schema';
+import { conflict, invalid, precondition } from '../../http/errors';
 import { episodeForAsset, ensureFinalPrompt, loadAssetForPrompt } from '../agents/services/final-prompt';
-import { ASSET_TASK_OWNER, submitAssetImage } from '../generation/engine/images';
+import { ASSET_TASK_OWNER, submitAssetImage, type SubmitImageInput } from '../generation/engine/images';
 import { getDramaRow, touchDrama } from '../production/dramas';
+import { referenceReason, VIEW_SHAPE, viewPrompt } from './views';
 
-/** Reference-image shape per kind: turnaround sheets are wide, scenes follow the drama's frame, props are square. */
-const shapeFor = (kind: AssetKind, dramaAspect: AspectRatio): AspectRatio =>
-  kind === 'character' ? '16:9' : kind === 'scene' ? dramaAspect : '1:1';
+/** Reference-image shape of a scene (the drama's frame) or a prop (square); a character's follows its view. */
+const shapeFor = (kind: 'scene' | 'prop', dramaAspect: AspectRatio): AspectRatio => (kind === 'scene' ? dramaAspect : '1:1');
+
+/**
+ * A character's view request (adr-0018): the views in order, the headshot first. Any other view is drawn from the
+ * headshot, so it needs one, existing or made earlier in the same request. The headshot is drawn from the
+ * character's sheet while it has no headshot yet, keeping the face of a character made before views; a new headshot
+ * of a character that has one starts afresh.
+ */
+function characterViews(id: number, requested: GeneratedView[] | undefined) {
+  const order = GeneratedView.options;
+  const views = [...(requested ?? ['headshot', 'body'])].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  const row = db.select().from(characters).where(eq(characters.id, id)).get()!;
+  if (views[0] !== 'headshot' && !row.headshotPath) throw precondition('Generate the headshot first: the other views are drawn from it');
+  const reference = views[0] === 'headshot' ? (row.headshotPath ? null : row.sheetPath) : row.headshotPath;
+  return { views: views as [GeneratedView, ...GeneratedView[]], reference };
+}
 
 /**
  * Request*Image: refuses while an image is already generating for the asset, ensures an up-to-date final prompt
- * (agent, or the local fallback), then submits the image task in the episode's locked image service.
+ * (agent, or the local fallback), then submits the image task in the episode's locked image service; for a
+ * character, its first view, the others following one by one (adr-0018).
  */
 /** Assets with an image request in flight (prompt agent + submit). One process, so an in-memory claim suffices. */
 const inFlight = new Set<string>();
@@ -32,6 +48,7 @@ export async function requestAssetImage(kind: AssetKind, id: number, body: z.out
 
 /** Runs while the asset is claimed, so two requests never both rewrite the prompt. */
 async function requestClaimed(kind: AssetKind, id: number, body: z.output<typeof RequestAssetImage>) {
+  if (body.views && kind !== 'character') throw invalid('Only a character has views');
   const asset = loadAssetForPrompt(kind, id);
   const ep = episodeForAsset(asset.dramaId, body.episodeId);
   const running = db
@@ -40,19 +57,28 @@ async function requestClaimed(kind: AssetKind, id: number, body: z.output<typeof
     .where(and(eq(generationTasks.type, 'image'), eq(ASSET_TASK_OWNER[kind].column, id), eq(generationTasks.status, 'processing')))
     .get();
   if (running) throw conflict('An image is already being generated for this asset', { taskId: running.id });
+  const chain = kind === 'character' ? characterViews(id, body.views) : null;
   const prompt = await ensureFinalPrompt(kind, id, { episodeId: ep.id, model: body.textModel, textServiceId: body.textServiceId });
-  const drama = getDramaRow(asset.dramaId);
+  const service = { model: body.model, imageServiceId: body.imageServiceId, lockedServiceId: ep.imageServiceId, lockFor: ep.id };
+  let input: SubmitImageInput;
+  if (chain) {
+    const [view, ...rest] = chain.views;
+    input = {
+      owner: { kind, id },
+      dramaId: asset.dramaId,
+      prompt: viewPrompt(asset.dramaId, prompt, view),
+      aspectRatio: VIEW_SHAPE[view],
+      ...(chain.reference ? { referenceImages: [chain.reference], referenceRequired: referenceReason(view) } : {}),
+      view,
+      ...(rest.length ? { then: { views: rest, finalPrompt: prompt } } : {}),
+      ...service,
+    };
+  } else {
+    const shape = shapeFor(kind as 'scene' | 'prop', getDramaRow(asset.dramaId).aspectRatio);
+    input = { owner: { kind, id }, dramaId: asset.dramaId, prompt, aspectRatio: shape, ...service };
+  }
   // The first image generation of the episode claims its image lock before the task starts (adr-0016).
-  const { taskId } = submitAssetImage({
-    owner: { kind, id },
-    dramaId: asset.dramaId,
-    prompt,
-    aspectRatio: shapeFor(kind, drama.aspectRatio),
-    model: body.model,
-    imageServiceId: body.imageServiceId,
-    lockedServiceId: ep.imageServiceId,
-    lockFor: ep.id,
-  });
+  const { taskId } = submitAssetImage(input);
   touchDrama(asset.dramaId);
   return { taskId };
 }

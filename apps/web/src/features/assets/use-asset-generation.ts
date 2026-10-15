@@ -7,7 +7,8 @@ import { ApiError } from '@/lib/api';
 import { useToastError } from '@/lib/errors';
 import { imageOverride, textOverride, type ModelPicks } from '../configuration/model-picks';
 import { useGenerateFinalPrompt, useRequestAssetImage } from './api';
-import type { AnyAsset } from './model';
+import type { GeneratedView } from '@open-drama/contracts';
+import { viewsBody, type AnyAsset } from './model';
 
 const keyOf = (item: AnyAsset) => `${item.kind}:${item.asset.id}`;
 
@@ -52,12 +53,13 @@ export function useAssetGeneration(dramaId: number, episodeId: number | undefine
     [episodeId, finalPrompt, picks, toastError],
   );
 
+  /** A character draws `views`, or its headshot and the views drawn from it (adr-0018). */
   const image = useCallback(
-    async (item: AnyAsset) => {
+    async (item: AnyAsset, views?: GeneratedView[]) => {
       if (!episodeId) return;
       track(setImaging, keyOf(item), true);
       try {
-        await request.mutateAsync({ kind: item.kind, id: item.asset.id, body: { episodeId, ...imageOverride(picks) } });
+        await request.mutateAsync({ kind: item.kind, id: item.asset.id, body: { episodeId, ...imageOverride(picks), ...viewsBody(item, views) } });
       } catch (err) {
         if (err instanceof ApiError && err.code === 'CONFLICT') toast.info(t('alreadyGenerating'));
         else toastError(err);

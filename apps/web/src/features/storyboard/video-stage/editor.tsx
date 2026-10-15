@@ -6,11 +6,15 @@ import { useRef } from 'react';
 import {
   AUDIO_UPLOAD_EXTENSIONS,
   IMAGE_UPLOAD_EXTENSIONS,
+  imageLimitOf,
+  planShotReferences,
   VIDEO_UPLOAD_EXTENSIONS,
   type EpisodeAssets,
   type ReferenceMedia,
+  type ReferencePlan,
   type ShotCard,
   type UpdateShot,
+  type VideoProviderCaps,
 } from '@open-drama/contracts';
 import { MentionTextarea } from '@/components/mention-textarea';
 import { Button } from '@/components/ui/button';
@@ -170,6 +174,40 @@ function ExtraReferences({ shot, save }: { shot: ShotCard; save: Save }) {
   );
 }
 
+/**
+ * The shot's bindings with each asset's images as its row has them now: the shot carries a copy as old as its last
+ * fetch, asset changes do not refetch shots, and the API plans from the current images.
+ */
+function liveBindings(b: ShotCard['bindings'], assets: EpisodeAssets | undefined): ShotCard['bindings'] {
+  if (!assets) return b;
+  const scenes = new Map(assets.scenes.map((s) => [s.id, s]));
+  const characters = new Map(assets.characters.map((c) => [c.id, c]));
+  const props = new Map(assets.props.map((p) => [p.id, p]));
+  const scene = b.scene && scenes.get(b.scene.id);
+  return {
+    scene: b.scene && scene ? { ...b.scene, imagePath: scene.imagePath } : b.scene,
+    characters: b.characters.map((c) => {
+      const row = characters.get(c.id);
+      return row ? { ...c, imagePath: row.imagePath, views: row.views } : c;
+    }),
+    props: b.props.map((p) => {
+      const row = props.get(p.id);
+      return row ? { ...p, imagePath: row.imagePath } : p;
+    }),
+  };
+}
+
+/** Each sent asset once, a character with the views it gets: `Mei (headshot + full body), Night market`. */
+function planLabel(plan: ReferencePlan, view: (v: string) => string): string {
+  const out: { name: string; views: string[] }[] = [];
+  for (const s of plan.slots) {
+    const last = out.at(-1);
+    if (last?.name === s.name) last.views.push(view(s.view!));
+    else out.push({ name: s.name, views: s.view ? [view(s.view)] : [] });
+  }
+  return out.map((a) => (a.views.length ? `${a.name} (${a.views.join(' + ')})` : a.name)).join(', ');
+}
+
 /** Column 2: what the shot is (description, atmosphere), what it references, and its video prompt. */
 export function ShotEditor({
   shot,
@@ -178,6 +216,7 @@ export function ShotEditor({
   onGeneratePrompt,
   promptPending,
   onToAssets,
+  target,
 }: {
   shot: ShotCard;
   assets: EpisodeAssets | undefined;
@@ -185,11 +224,14 @@ export function ShotEditor({
   onGeneratePrompt: () => void;
   promptPending: boolean;
   onToAssets: () => void;
+  /** The video model a generation would use, to show what it will be sent (adr-0018). */
+  target: { model: string | null; caps: VideoProviderCaps };
 }) {
   const t = useTranslations('studio.video');
+  const tv = useTranslations('assets.views');
   const toastError = useToastError();
   const promptDraft = useDraft(shot.videoPrompt, (videoPrompt) => save({ videoPrompt }));
-  const b = shot.bindings;
+  const b = liveBindings(shot.bindings, assets);
   const boundChars = new Set(b.characters.map((c) => c.id));
   const boundProps = new Set(b.props.map((p) => p.id));
   const missingImages = [b.scene, ...b.characters, ...b.props].filter((a) => a && !a.imagePath).length;
@@ -201,6 +243,13 @@ export function ShotEditor({
   const toggle = (list: number[], id: number) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
   const bind = (patch: UpdateShot) => void save(patch).catch((err) => toastError(err));
   const sceneLabel = (s: { location: string; time: string }) => (s.time ? `${s.location} (${s.time})` : s.location);
+  // What the target model would get from this shot as it stands, planned as the API plans it.
+  const media = shot.referenceMedia;
+  const imageLimit = imageLimitOf(target.caps, new Set(media.videoUrls ?? []).size, new Set(media.audioUrls ?? []).size);
+  const plan = target.model
+    ? planShotReferences({ bindings: b, prompt: promptDraft.value, imageLimit, reserved: media.imageUrls ?? [], model: target.model })
+    : null;
+  const planLine = plan?.slots.length ? t('refs.plan', { model: target.model ?? '', list: planLabel(plan, tv) }) : null;
 
   return (
     <div className="flex flex-col gap-5 p-4">
@@ -269,6 +318,17 @@ export function ShotEditor({
               {assets?.props.length === 0 ? <span className="text-xs text-muted">{t('refs.none')}</span> : null}
             </div>
           </div>
+          {planLine ? (
+            <p className="truncate text-xs text-muted" title={planLine}>
+              {planLine}
+            </p>
+          ) : null}
+          {plan?.dropped.length ? (
+            <p className="flex items-start gap-2 rounded-md bg-warning-soft px-3 py-2 text-xs text-warning" role="status">
+              <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+              {t('refs.notSent', { names: plan.dropped.join(', '), count: imageLimit })}
+            </p>
+          ) : null}
         </div>
       </Section>
 

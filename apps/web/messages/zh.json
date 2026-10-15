@@ -465,6 +465,32 @@
     "batch": {
       "progress": "正在启动图片生成：{done}/{total}",
       "summary": "已开始 {started} 个，{already} 个已在生成中，{failed} 个失败"
+    },
+    "views": {
+      "headshot": "头像特写",
+      "body": "全身",
+      "side": "侧面",
+      "back": "背面",
+      "sheet": "多视图设定图",
+      "composed": "合成设定图",
+      "strip": "参考图",
+      "empty": "此视图暂无图片",
+      "upload": "上传",
+      "remove": "移除",
+      "generateOne": "由头像生成",
+      "needHeadshot": "请先生成头像特写：此视图以它为参考生成。",
+      "generate": "生成{views}",
+      "regenerate": "重新生成{views}",
+      "firstHint": "先生成头像特写，其他视图都以它为参考，脸部保持一致。",
+      "fromSheetHint": "头像特写以设定图为参考生成，保留角色外貌；其他视图再以头像特写为参考。",
+      "redrawHint": "新的头像特写就是一张新的脸，所有视图都会以它为参考重新生成。",
+      "hint": {
+        "headshot": "脸部特写。其他视图都以它为参考生成，发送时排在最前。",
+        "body": "完整身形与服装，以头像特写为参考生成。",
+        "side": "侧面视图，以头像特写为参考生成。只发送给使用转身视图的模型（Seedance 2.5），多占一张图。",
+        "back": "背面视图，以头像特写为参考生成。只发送给使用转身视图的模型（Seedance 2.5），多占一张图。",
+        "sheet": "一张图里包含多个视图，制作于角色视图功能之前。多数视频模型可能把它识别为多个人；有了头像特写或全身图后，它将不再被发送。"
+      }
     }
   },
   "project": {
@@ -734,7 +760,9 @@
         "none": "本集暂无",
         "noneBound": "此分镜未绑定任何素材。",
         "character": "角色",
-        "prop": "道具"
+        "prop": "道具",
+        "plan": "发送给 {model}：{list}",
+        "notSent": "未发送：{names}。单次调用最多包含 4 个人、5 个素材，此模型最多 {count} 张图；提示词中提到的素材优先。"
       },
       "extra": {
         "title": "额外参考",
@@ -789,6 +817,13 @@
         "resolution": "分辨率",
         "cancel": "取消",
         "confirm": "生成 {count} 个"
+      },
+      "advice": {
+        "sheetOnly": "{model} 可能把多视图设定图识别为多个人。{names} 只有设定图。",
+        "sheetOnlyAction": "生成头像特写 + 全身（{count} 张图）",
+        "turnaround": "{model} 还会使用侧面和背面视图，让角色转身时外貌保持一致。{names} 尚缺这些视图。",
+        "turnaroundAction": "生成（{count} 张图）",
+        "dismiss": "关闭"
       }
     },
     "export": {

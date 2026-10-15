@@ -6,7 +6,7 @@
 
 ## Summary
 
-A reference image generation was requested for a character with a resolved prompt and image service.
+A reference view generation was requested for a character with a resolved prompt and image service; the views still to come after it travel with the task (adr-0018).
 
 
 ## Fields
@@ -15,6 +15,7 @@ A reference image generation was requested for a character with a resolved promp
 |------|------|-------------|
 | `characterId` | `ID` | — |
 | `dramaId` | `ID` | — |
+| `view` | `string` | — |
 | `prompt` | `string` | — |
 | `imageServiceId` | `ID` | — |
 | `model` | `string` | — |
@@ -29,4 +30,6 @@ A reference image generation was requested for a character with a resolved promp
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |

@@ -1,8 +1,7 @@
-/**
- * The `@[Name]` mention grammar (Plan 1 §6): brackets allow multi-word names. The browser only writes and highlights
- * mentions; the API resolves them to reference slots on generation.
- */
-export const MENTION = /@\[([^\]\n]+)\]/g;
+import { MENTION } from '@open-drama/contracts';
+
+// The `@[Name]` mention grammar (Plan 1 §6) is the contracts' MENTION. The browser only writes and highlights
+// mentions; the API resolves them to reference slots on generation.
 
 export const mentionOf = (name: string) => `@[${name}]`;
 

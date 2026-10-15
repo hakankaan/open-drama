@@ -43,6 +43,7 @@
 | Beat | [storyboard](storyboard/index.md) | A story unit such as the setup, the inciting moment, the climax or a reversal. Two beats never share a shot, so a beat change is always a place where one shot ends and the next begins. |
 | Beat sheet | [production](production/index.md) | A planned episode's raw content as written by the episode planner: the beats of the episode in order, 200 to 6000 characters, ending on the hook into the next episode. The episode writer expands it into the formatted script; the creator may edit it first. |
 | Breakdown | [storyboard](storyboard/index.md) | The storyboard-breaker agent run that replaces the episode's shots from the current script, saving in batches of at most 8 with idempotent upsert by shot number. |
+| Character view | [assets](assets/index.md) | One of a character's reference images (adr-0018): the headshot, a close-up of the head generated first, and the full body, side and back views drawn from it. A video call sends the views its model uses; the cover (headshot, else body, sheet, side, back) stands for the character where one image is shown. |
 | Content language | [configuration](configuration/index.md) | The language every agent must write in (scripts, extracted fields, prompts). Changes the prompt and skill variants loaded and appends a highest-priority language directive. |
 | Data directory | [media](media/index.md) | The root holding the database, static media and the writable agent workspace; overridable by environment. |
 | Episode link | [assets](assets/index.md) | The many-to-many association saying an asset appears in an episode. Assets belong to the drama; links scope them to episodes. |
@@ -67,7 +68,7 @@
 | Quick setup | [configuration](configuration/index.md) | Writing a recommended text, image and video service in one step from a single API key of a compatible gateway. |
 | Raw content | [production](production/index.md) | The source text the creator pastes (novel chapter, outline, shot list) before any rewrite. |
 | Recap | [production](production/index.md) | A short account (at most 2000 characters) of what happened in an episode, written for the writers of the next episodes, not for viewers: what changed, where things stand, objects that will matter, open threads. Written by the recap writer after every saved script of a serial drama and editable by the creator. |
-| Reference binding | [storyboard](storyboard/index.md) | The characters, scene and props whose reference images are sent with the shot's video request, at most four characters and five assets per call (adr-0017). Extra reference images, videos or audio can be uploaded per shot. |
+| Reference binding | [storyboard](storyboard/index.md) | The characters, scene and props whose reference images are sent with the shot's video request, at most four characters and five assets per call (adr-0017); which views of each character go depends on the video model (adr-0018). Extra reference images, videos or audio can be uploaded per shot. |
 | Reference image | [assets](assets/index.md) | The generated or uploaded image attached to an asset. Bound to shots and passed to the video provider so the asset looks the same in every clip. |
 | Reference normalisation | [generation](generation/index.md) | Turning local media paths into what a provider can consume — compressed data URLs for images, public URLs (via the configured public base URL) for videos and audio. |
 | Rendition | [media](media/index.md) | A derived file next to the original — a 400px WebP thumbnail for images, a 640px JPEG poster frame for videos — addressed by naming convention. |
@@ -81,13 +82,13 @@
 | Style preset | [configuration](configuration/index.md) | A named visual style (3d, anime, ghibli, …) with an English prompt fragment prepended to every image and video prompt of dramas that use it. Built-ins are seeded and upgraded without overwriting user edits. |
 | Sub-shot | [storyboard](storyboard/index.md) | One visual unit of two to six seconds inside a shot, marked as a [Shot N] block in the description. A shot may switch framing between its sub-shots, but all of them happen in the same scene. |
 | Text revision | [production](production/index.md) | An integer on the drama (outlineRevision) and the episode (beatsRevision, scriptRevision, recapRevision) that moves on every change of that text, whoever writes it. An assistant's save carries the revision it read (ifRevision) and is refused when the text changed since (adr-0016). |
-| Turnaround sheet | [assets](assets/index.md) | The character's reference image: one sheet that pairs a portrait of the face with the whole figure seen from several fixed angles, drawn to the same scale on a plain backdrop, so later shots can copy the look exactly. |
+| Turnaround sheet | [assets](assets/index.md) | One image that pairs a portrait of the face with the whole figure seen from several fixed angles. The character image made before views existed, kept as its sheet; sent only to models that read a sheet as one person, and composed from the headshot and full body when separate views do not fit. |
 | Video prompt | [storyboard](storyboard/index.md) | The generation prompt for a shot — one untimed Shot N line per sub-shot, each with one camera move, a mention on every appearance and dialogue in braces after its speaker. Assets are referenced with the delimited mention grammar @[Name] (brackets allow multi-word names); on generation the API turns each mention into an ordered reference-image slot, the video adapter renders it in the provider's own token syntax, and the API adds the style, a slot legend, the scene's lighting and the identity, clean-frame and dialogue-language sentences (adr-0017). |
 | Workspace | [agents](agents/index.md) | The writable directory holding prompts and skills. Shipped as a template and copied once into the data directory on first start, so edits survive upgrades. |
 
 ## Decisions
 
-16 accepted · 1 proposed
+16 accepted · 2 proposed
 
 | ADR | Title | Status |
 |-----|-------|--------|
@@ -108,6 +109,7 @@
 | [adr-0015](../adr/adr-0015.md) | Story development agents | accepted |
 | [adr-0016](../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
 | [adr-0017](../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |
+| [adr-0018](../adr/adr-0018.md) | Character reference views | proposed |
 
 → [Full decision log](adr/index.md)
 

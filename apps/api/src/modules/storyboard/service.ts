@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { and, asc, eq, inArray, isNull, max, ne, or, sum } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
+  coverOf,
   isNarrator,
   type AssetKind,
   type CreateShot,
@@ -34,6 +35,7 @@ import { latestTasks } from '../generation/tasks';
 import { getEpisodeJobs } from '../jobs/run-job';
 import { touchDrama } from '../production/dramas';
 import { getEpisodeRow } from '../production/episodes';
+import { viewsOf } from '../assets/views';
 
 type ShotRow = typeof shots.$inferSelect;
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -67,13 +69,17 @@ export function loadBindings(rows: ShotRow[]): Map<number, ShotBindings> {
   if (rows.length === 0) return map;
   const shotIds = rows.map((r) => r.id);
   const chars = db
-    .select({ shotId: shotCharacters.shotId, id: characters.id, name: characters.name, role: characters.role, imagePath: characters.imagePath })
+    .select({ shotId: shotCharacters.shotId, row: characters })
     .from(shotCharacters)
     .innerJoin(characters, eq(characters.id, shotCharacters.characterId))
     .where(and(inArray(shotCharacters.shotId, shotIds), isNull(characters.deletedAt)))
     .orderBy(asc(shotCharacters.sortOrder), asc(characters.id))
     .all();
-  for (const { shotId, role, ...ref } of chars) if (!isNarrator(ref.name, role)) map.get(shotId)?.characters.push(ref);
+  for (const { shotId, row } of chars) {
+    if (isNarrator(row.name, row.role)) continue;
+    const views = viewsOf(row);
+    map.get(shotId)?.characters.push({ id: row.id, name: row.name, imagePath: coverOf(views), views });
+  }
   const prps = db
     .select({ shotId: shotProps.shotId, id: props.id, name: props.name, imagePath: props.imagePath })
     .from(shotProps)
@@ -93,6 +99,13 @@ export function loadBindings(rows: ShotRow[]): Map<number, ShotBindings> {
     for (const r of rows) if (r.sceneId !== null) map.get(r.id)!.scene = byId.get(r.sceneId) ?? null;
   }
   return map;
+}
+
+/** What each character wears, as its asset states it, by id; video prompts carry it (adr-0018). */
+export function characterStyling(ids: number[]): Map<number, string> {
+  if (ids.length === 0) return new Map();
+  const rows = db.select({ id: characters.id, styling: characters.styling }).from(characters).where(inArray(characters.id, ids)).all();
+  return new Map(rows.map((r) => [r.id, r.styling.trim()]));
 }
 
 /** The lighting of a shot's scene, as the scene asset states it ('' without one); video prompts carry it verbatim (adr-0017). */

@@ -1,4 +1,13 @@
-import type { AssetKind, CharacterCard, PropCard, SceneCard, TaskSummary } from '@open-drama/contracts';
+import {
+  CharacterView,
+  type AssetKind,
+  type CharacterCard,
+  type CharacterViews,
+  type GeneratedView,
+  type PropCard,
+  type SceneCard,
+  type TaskSummary,
+} from '@open-drama/contracts';
 
 export type AnyAsset =
   | { kind: 'character'; asset: CharacterCard }
@@ -32,3 +41,18 @@ export function summaryOf(item: AnyAsset): string {
 }
 
 export const KIND_ORDER: AssetKind[] = ['character', 'scene', 'prop'];
+
+/**
+ * The views a character's Generate draws (adr-0018): a new headshot (from the sheet while there is no headshot), then
+ * the full body and every turnaround view the character has, drawn again from that headshot.
+ */
+export function regeneratedViews(views: CharacterViews): GeneratedView[] {
+  return ['headshot', 'body', ...(['side', 'back'] as const).filter((v) => views[v])];
+}
+
+/** The views a character has, in display order. */
+export const presentViews = (views: CharacterViews): CharacterView[] => CharacterView.options.filter((v) => views[v]);
+
+/** An image request's `views`: what a character draws (`regeneratedViews` unless given); scenes and props have none. */
+export const viewsBody = (item: AnyAsset, views?: GeneratedView[]) =>
+  item.kind === 'character' ? { views: views ?? regeneratedViews(item.asset.views) } : {};

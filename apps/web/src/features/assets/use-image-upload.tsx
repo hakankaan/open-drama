@@ -1,17 +1,18 @@
 'use client';
 
-import { IMAGE_UPLOAD_EXTENSIONS } from '@open-drama/contracts';
+import { IMAGE_UPLOAD_EXTENSIONS, type CharacterView } from '@open-drama/contracts';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useToastError } from '@/lib/errors';
 import { useUploadMedia } from '../media/api';
-import { useUpdateAsset } from './api';
+import { useUpdateAsset, type UpdateAssetInput } from './api';
 import type { AnyAsset } from './model';
 
 /**
- * Upload flow: POST /media/upload/image, then PATCH the asset's imagePath. Both are awaited; the card's state comes
- * from the refreshed library, not from a local flag.
+ * Upload flow: POST /media/upload/image, then PATCH the asset's imagePath, or for a character one of its views (the
+ * headshot unless another is picked, adr-0018). Both are awaited; the card's state comes from the refreshed library,
+ * not from a local flag.
  */
 export function useImageUpload(dramaId: number) {
   const t = useTranslations('assets');
@@ -19,17 +20,18 @@ export function useImageUpload(dramaId: number) {
   const upload = useUploadMedia('image');
   const update = useUpdateAsset(dramaId);
   const input = useRef<HTMLInputElement | null>(null);
-  const target = useRef<AnyAsset | null>(null);
+  const target = useRef<{ item: AnyAsset; view: CharacterView } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const onFile = useCallback(
     async (file: File | undefined) => {
-      const item = target.current;
-      if (!file || !item) return;
+      if (!file || !target.current) return;
+      const { item, view } = target.current;
       setBusyId(`${item.kind}:${item.asset.id}`);
       try {
         const media = await upload.mutateAsync(file);
-        await update.mutateAsync({ kind: item.kind, id: item.asset.id, body: { imagePath: media.path } });
+        const body = item.kind === 'character' ? { views: { [view]: media.path } } : { imagePath: media.path };
+        await update.mutateAsync({ kind: item.kind, id: item.asset.id, body } as UpdateAssetInput);
         toast.success(t('uploaded'));
       } catch (err) {
         toastError(err);
@@ -41,8 +43,8 @@ export function useImageUpload(dramaId: number) {
     [upload, update, toastError, t],
   );
 
-  const pick = useCallback((item: AnyAsset) => {
-    target.current = item;
+  const pick = useCallback((item: AnyAsset, view: CharacterView = 'headshot') => {
+    target.current = { item, view };
     input.current?.click();
   }, []);
 

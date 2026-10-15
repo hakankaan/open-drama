@@ -6,7 +6,7 @@
 
 ## Summary
 
-When an asset image is requested, submit an image generation task tagged with the asset id (generation.SubmitImageGeneration — cross-context, see flow AssetStage). Characters use a 16:9 canvas, props a square canvas, scenes the drama's aspect ratio.
+When an asset image is requested, submit an image generation task tagged with the asset id (generation.SubmitImageGeneration — cross-context, see flow AssetStage). A character's headshot uses a square canvas and its other views 9:16 with the headshot as reference image; props a square canvas, scenes the drama's aspect ratio.
 
 
 
@@ -22,4 +22,6 @@ When an asset image is requested, submit an image generation task tagged with th
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |

@@ -1,9 +1,14 @@
-# Domain event — something that happened in the domain.
 name: CharacterImageAttached
-description: A generated or uploaded image is now the character's reference image; the asset counts as ready.
+description: >-
+  A generated or uploaded image is now one of the character's views (adr-0018); an image requested before views
+  existed lands as its sheet. The asset counts as ready once it has any view.
 fields:
   - name: characterId
     type: ID
+  - name: view
+    type: string
   - name: imagePath
     type: string
 raised_by: Character
+adr_refs:
+  - adr-0018

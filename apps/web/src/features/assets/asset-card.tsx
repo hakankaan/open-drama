@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tag } from '@/components/ui/tag';
 import { Tooltip } from '@/components/ui/tooltip';
 import { mediaUrl, thumbOf } from '@/lib/media';
-import { readinessOf, summaryOf, titleOf, type AnyAsset } from './model';
+import { presentViews, readinessOf, summaryOf, titleOf, type AnyAsset } from './model';
 
 export function AssetCard({
   item,
@@ -29,7 +29,10 @@ export function AssetCard({
   onDelete?: () => void;
 }) {
   const t = useTranslations('assets.card');
+  const tv = useTranslations('assets.views');
   const { asset } = item;
+  // Which images a character has (adr-0018), so a sheet-only one stands out.
+  const views = item.kind === 'character' ? presentViews(item.asset.views) : [];
   const readiness = readinessOf(asset);
   const summary = summaryOf(item);
   return (
@@ -81,6 +84,7 @@ export function AssetCard({
           </span>
         </div>
         {summary ? <p className="line-clamp-2 text-[13px] text-ink-2">{summary}</p> : null}
+        {views.length ? <p className="truncate text-xs text-muted">{views.map((v) => tv(v)).join(' · ')}</p> : null}
         {asset.finalPrompt ? (
           <p className="flex items-center gap-1.5 text-xs text-muted">
             <span className="truncate font-mono">{asset.finalPrompt}</span>

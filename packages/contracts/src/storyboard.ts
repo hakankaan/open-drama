@@ -3,6 +3,8 @@ import { MediaPath, Timestamp } from './common';
 import { TaskSummary } from './generation';
 import { AgentJob, JobStarted } from './jobs';
 import { TextModelOverride } from './agents';
+import { SentView } from './references';
+import { CharacterViews } from './assets';
 
 /** Shot duration bounds (domain Shot invariant); agents target 8-15 s. */
 export const SHOT_DURATION_MIN = 2;
@@ -21,7 +23,10 @@ export type ReferenceMedia = z.infer<typeof ReferenceMedia>;
 export const ShotAssetRef = z.object({
   id: z.number().int(),
   name: z.string(),
+  /** A character's cover (`coverOf`). */
   imagePath: MediaPath.nullable(),
+  /** A character's images, from which a video call picks per model (adr-0018). */
+  views: CharacterViews.optional(),
 });
 export type ShotAssetRef = z.infer<typeof ShotAssetRef>;
 
@@ -179,6 +184,8 @@ export const ShotVideo = z.object({
   seed: z.number().int().nullable(),
   /** Bound assets and images this version left out: past the per-call caps (adr-0017) or the model's limit. */
   droppedReferences: z.array(z.string()),
+  /** The images each character was sent as, by name (adr-0018); empty for versions made before views. */
+  sentViews: z.record(z.string(), z.array(SentView)),
   createdAt: Timestamp,
   completedAt: Timestamp.nullable(),
   current: z.boolean(),

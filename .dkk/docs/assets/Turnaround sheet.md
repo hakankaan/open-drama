@@ -6,11 +6,11 @@
 
 ## Summary
 
-The character's reference image: one sheet that pairs a portrait of the face with the whole figure seen from several fixed angles, drawn to the same scale on a plain backdrop, so later shots can copy the look exactly.
+One image that pairs a portrait of the face with the whole figure seen from several fixed angles. The character image made before views existed, kept as its sheet; sent only to models that read a sheet as one person, and composed from the headshot and full body when separate views do not fit.
 
 ## Meaning
 
-The character's reference image: one sheet that pairs a portrait of the face with the whole figure seen from several fixed angles, drawn to the same scale on a plain backdrop, so later shots can copy the look exactly.
+One image that pairs a portrait of the face with the whole figure seen from several fixed angles. The character image made before views existed, kept as its sheet; sent only to models that read a sheet as one person, and composed from the headshot and full body when separate views do not fit.
 
 
 

@@ -12,6 +12,7 @@ import type {
   TaskOwner,
   TaskSummary,
 } from '@open-drama/contracts';
+import { SentView } from '@open-drama/contracts';
 import { db } from '../../db/client';
 import {
   characters,
@@ -104,6 +105,17 @@ export function deleteTask(id: number): { id: number } {
   return { id };
 }
 
+/** The images each character of a video was sent as, by name, from its recorded slots (adr-0018). */
+function sentViewsOf(slots: unknown): Record<string, SentView[]> {
+  const out: Record<string, SentView[]> = {};
+  if (!Array.isArray(slots)) return out;
+  for (const slot of slots as { name?: unknown; view?: unknown }[]) {
+    const view = SentView.safeParse(slot?.view);
+    if (view.success && typeof slot.name === 'string') (out[slot.name] ??= []).push(view.data);
+  }
+  return out;
+}
+
 /** Completed videos of a shot, newest first; `current` marks the one the shot plays. */
 export function shotVideos(shotId: number, currentPath: string | null): ShotVideo[] {
   return db
@@ -121,6 +133,7 @@ export function shotVideos(shotId: number, currentPath: string | null): ShotVide
       prompt: t.prompt,
       seed: typeof t.params.seed === 'number' ? t.params.seed : null,
       droppedReferences: Array.isArray(t.params.droppedReferences) ? t.params.droppedReferences.filter((n): n is string => typeof n === 'string') : [],
+      sentViews: sentViewsOf(t.params.slots),
       createdAt: t.createdAt,
       completedAt: t.completedAt,
       current: t.localPath === currentPath,

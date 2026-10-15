@@ -9,10 +9,14 @@ import { withStylePrefix } from '../../assets/extraction';
 import { getEpisodeRow } from '../../production/episodes';
 import { runAgentUntilSaved } from '../runtime/run-agent';
 
+/**
+ * What each kind's prompt is. A character's describes the person only: the studio frames it per view (adr-0018), and
+ * saying so here keeps a workspace skill edited before views from asking for a sheet.
+ */
 const FORMAT: Record<AssetKind, string> = {
-  character: 'turnaround-sheet',
-  scene: 'establishing-shot (nobody in it)',
-  prop: 'product-shot',
+  character: 'reference prompt, describing the person only (no layout, views, framing, background or lighting: the studio adds those per image),',
+  scene: 'establishing-shot prompt (nobody in it)',
+  prop: 'product-shot prompt',
 };
 
 export interface AssetPromptState {
@@ -63,7 +67,7 @@ export async function generateFinalPrompt(
   await runAgentUntilSaved(
     {
       agentType: 'prompt_generator',
-      message: `Write the ${FORMAT[kind]} prompt for the ${kind} "${asset.label}" (id ${id}): read it with read_${kind}s, then save the prompt with save_${kind}_final_prompt.`,
+      message: `Write the ${FORMAT[kind]} for the ${kind} "${asset.label}" (id ${id}): read it with read_${kind}s, then save the prompt with save_${kind}_final_prompt.`,
       episodeId: opts.episodeId,
       dramaId: asset.dramaId,
       model: opts.model,
@@ -75,12 +79,12 @@ export async function generateFinalPrompt(
   return loadAssetForPrompt(kind, id).finalPrompt ?? '';
 }
 
-/** Local prompt from the fields when the agent cannot run (style + fields + format constraints). */
+/** Local prompt from the fields when the agent cannot run (style + fields + format constraints; a character's view adds its framing). */
 export function fallbackPrompt(kind: AssetKind, asset: AssetPromptState): string {
   const fields = Object.values(asset.fields).filter((v) => v.trim()).join('. ');
   const body =
     kind === 'character'
-      ? `Character turnaround sheet of ${asset.label}: head-and-shoulders portrait with full-body front, side and back views at the same scale, neutral pose. ${fields}. Plain light background, even studio lighting, no text.`
+      ? `One person, ${asset.label}. ${fields}.`
       : kind === 'scene'
         ? `Wide establishing view of ${asset.label}, level and steady. ${fields}. No people, no characters, empty scene.`
         : `Product shot of ${asset.label}: ${fields}. Isolated on a plain neutral background, soft even lighting, no hands, no text.`;

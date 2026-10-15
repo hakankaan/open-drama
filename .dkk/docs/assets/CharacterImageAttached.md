@@ -6,7 +6,7 @@
 
 ## Summary
 
-A generated or uploaded image is now the character's reference image; the asset counts as ready.
+A generated or uploaded image is now one of the character's views (adr-0018); an image requested before views existed lands as its sheet. The asset counts as ready once it has any view.
 
 
 ## Fields
@@ -14,6 +14,7 @@ A generated or uploaded image is now the character's reference image; the asset 
 | Name | Type | Description |
 |------|------|-------------|
 | `characterId` | `ID` | — |
+| `view` | `string` | — |
 | `imagePath` | `string` | — |
 
 
@@ -26,4 +27,6 @@ A generated or uploaded image is now the character's reference image; the asset 
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |

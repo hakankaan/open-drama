@@ -368,7 +368,7 @@ function plan(options: CallOptions): Step {
         .join(', ');
       const lead =
         kind === 'character'
-          ? 'Character turnaround sheet, portrait and full body front, side and back'
+          ? 'One person'
           : kind === 'scene'
             ? 'Wide establishing view of an empty place, no people'
             : 'Product shot of a single object on a plain neutral background';

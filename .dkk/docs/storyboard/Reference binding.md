@@ -6,11 +6,11 @@
 
 ## Summary
 
-The characters, scene and props whose reference images are sent with the shot's video request, at most four characters and five assets per call (adr-0017). Extra reference images, videos or audio can be uploaded per shot.
+The characters, scene and props whose reference images are sent with the shot's video request, at most four characters and five assets per call (adr-0017); which views of each character go depends on the video model (adr-0018). Extra reference images, videos or audio can be uploaded per shot.
 
 ## Meaning
 
-The characters, scene and props whose reference images are sent with the shot's video request, at most four characters and five assets per call (adr-0017). Extra reference images, videos or audio can be uploaded per shot.
+The characters, scene and props whose reference images are sent with the shot's video request, at most four characters and five assets per call (adr-0017); which views of each character go depends on the video model (adr-0018). Extra reference images, videos or audio can be uploaded per shot.
 
 
 

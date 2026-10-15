@@ -106,14 +106,14 @@ export function AssetLibrary({ dramaId, episodeId }: { dramaId: number; episodeI
           item={openItem}
           dramaId={dramaId}
           onClose={() => setOpen(null)}
-          onUpload={() => upload.pick(openItem)}
+          onUpload={(view) => upload.pick(openItem, view)}
           uploading={upload.isBusy(openItem)}
           generation={
             episodeId
               ? {
                   onGeneratePrompt: () => generation.prompt(openItem),
                   promptPending: generation.isPromptPending(openItem),
-                  onGenerateImage: () => generation.image(openItem),
+                  onGenerateImage: (views) => generation.image(openItem, views),
                   imagePending: generation.isImagePending(openItem),
                 }
               : undefined

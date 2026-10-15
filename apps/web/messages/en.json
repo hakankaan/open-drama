@@ -465,6 +465,32 @@
     "batch": {
       "progress": "Starting image generation: {done} of {total}",
       "summary": "{started} started, {already} already generating, {failed} failed"
+    },
+    "views": {
+      "headshot": "Headshot",
+      "body": "Full body",
+      "side": "Side",
+      "back": "Back",
+      "sheet": "Sheet",
+      "composed": "Composed sheet",
+      "strip": "Reference images",
+      "empty": "No image for this view",
+      "upload": "Upload",
+      "remove": "Remove",
+      "generateOne": "Draw from headshot",
+      "needHeadshot": "Generate the headshot first: this view is drawn from it.",
+      "generate": "Generate {views}",
+      "regenerate": "Regenerate {views}",
+      "firstHint": "The headshot comes first; the other views are drawn from it, so the face stays the same.",
+      "fromSheetHint": "The headshot is drawn from the sheet, keeping the character's look; the other views follow from the headshot.",
+      "redrawHint": "A new headshot is a new face, so every view is drawn again from it.",
+      "hint": {
+        "headshot": "The face, close up. Every other view is drawn from it, and it is sent first.",
+        "body": "The whole figure and outfit, drawn from the headshot.",
+        "side": "A profile view, drawn from the headshot. Sent only to models that use turnaround views (Seedance 2.5), as one more image.",
+        "back": "A view from behind, drawn from the headshot. Sent only to models that use turnaround views (Seedance 2.5), as one more image.",
+        "sheet": "Several views in one image, made before characters had views. Most video models can read it as several people; once there is a headshot or full body, it is no longer sent."
+      }
     }
   },
   "project": {
@@ -734,7 +760,9 @@
         "none": "None in this episode",
         "noneBound": "Nothing bound to this shot.",
         "character": "Character",
-        "prop": "Prop"
+        "prop": "Prop",
+        "plan": "Sent to {model}: {list}",
+        "notSent": "Not sent: {names}. One call carries at most 4 people, 5 assets and {count, plural, one {# image} other {# images}} for this model; assets the prompt mentions go first."
       },
       "extra": {
         "title": "Extra references",
@@ -789,6 +817,13 @@
         "resolution": "Resolution",
         "cancel": "Cancel",
         "confirm": "Generate {count}"
+      },
+      "advice": {
+        "sheetOnly": "{model} can read a multi-view sheet as several people. {count, plural, one {{names} has} other {{names} have}} only a sheet.",
+        "sheetOnlyAction": "Generate headshot + full body ({count, plural, one {# image} other {# images}})",
+        "turnaround": "{model} also uses side and back views to keep a character's look as they turn. Missing for {names}.",
+        "turnaroundAction": "Generate them ({count, plural, one {# image} other {# images}})",
+        "dismiss": "Dismiss"
       }
     },
     "export": {

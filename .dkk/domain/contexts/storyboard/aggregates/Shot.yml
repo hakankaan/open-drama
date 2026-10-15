@@ -39,3 +39,4 @@ invariants:
   - Reference images beyond the video provider's limit are left out (bound assets first) and reported to the creator.
 adr_refs:
   - adr-0017
+  - adr-0018

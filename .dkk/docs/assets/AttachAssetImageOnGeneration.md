@@ -6,7 +6,7 @@
 
 ## Summary
 
-Triggered by generation.ImageGenerated (a cross-context event, see flow AssetStage) for a task tagged with a character, scene or prop — writes the local image path onto that asset. Failures leave the asset unchanged and are visible on the task.
+Triggered by generation.ImageGenerated (a cross-context event, see flow AssetStage) for a task tagged with a character, scene or prop — writes the local image path onto that asset (a character's onto the view the task names), and for a character requests the next view of its chain. Failures leave the asset unchanged and are visible on the task.
 
 
 
@@ -22,4 +22,6 @@ Triggered by generation.ImageGenerated (a cross-context event, see flow AssetSta
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |

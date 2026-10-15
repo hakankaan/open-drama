@@ -33,6 +33,7 @@ export function ShotInspector({
   config: { model: string | null; resolution: Resolution; clamp: (seconds: number) => number; seeds: boolean };
 }) {
   const t = useTranslations('studio.video');
+  const tv = useTranslations('assets.views');
   const toastError = useToastError();
   const state = shotStateOf(shot);
   const task = shot.latestVideoTask;
@@ -51,6 +52,8 @@ export function ShotInspector({
   const refs = [shot.bindings.scene, ...shot.bindings.characters, ...shot.bindings.props].filter((a) => a !== null);
   // Assets the playing version left out of its call (adr-0017).
   const notSent = new Set(shown?.droppedReferences ?? []);
+  // The images of each character the playing version was sent (adr-0018); versions made before views list none.
+  const sentAs = (name: string) => shown?.sentViews[name]?.map((v) => tv(v)).join(' + ');
   // A seed only means something to the model that drew it: the retake is offered while that model is the target (the
   // offline stub stands in for every model).
   const retakable = Boolean(config.seeds && shown && (shown.provider === 'stub' || shown.model === config.model));
@@ -212,6 +215,11 @@ export function ShotInspector({
                     {a.name}
                     {notSent.has(a.name) ? <span className="sr-only"> ({t('inspector.notSent')})</span> : null}
                   </span>
+                  {sentAs(a.name) ? (
+                    <span className="w-full truncate text-center text-[10px] text-muted" title={sentAs(a.name)}>
+                      {sentAs(a.name)}
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>

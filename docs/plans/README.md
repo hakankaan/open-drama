@@ -9,7 +9,7 @@ Six plans cover the sections of Open Drama. They are written against the domain 
 | [03-frontend.md](03-frontend.md) | Frontend (Next.js) | launcher, settings, project page, episode studio, design system, i18n, polling and state |
 | [04-story-development.md](04-story-development.md) | Story development (`adr-0015`) | story writer, episode planner and episode writer agents, the outline on the drama, drama-scoped jobs, the Story tab, the plan dialog and the Expand action — a cross-cutting change to all three sections |
 | [05-assistant-access.md](05-assistant-access.md) | Assistant access (`adr-0016`) | the MCP endpoint as a second presentation layer beside the studio, the server-issued token, the assistant skills in the workspace, the service rules both interfaces share (locks at first use, revision tokens, replace and force), the API-only deployment shape, the generated Claude Code plugin |
-| [06-consistency.md](06-consistency.md) | Consistency within and between episodes (`adr-0017`) | prompt discipline and reference caps, seeds and the negative prompt, the episode's pinned video model and the workspace template upgrade (done); headshot and body references, post conform, pinned voices, keyframes, chaining and QA (open) |
+| [06-consistency.md](06-consistency.md) | Consistency within and between episodes (`adr-0017`, `adr-0018`) | prompt discipline and reference caps, seeds and the negative prompt, the episode's pinned video model, the workspace template upgrade, and character views (headshot, body, side, back) sent per the video model's reference policy (done); per-episode outfits, post conform, pinned voices, keyframes, chaining and QA (open) |
 
 ## Milestones across the plans
 

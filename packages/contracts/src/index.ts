@@ -13,5 +13,6 @@ export * from './agents';
 export * from './compositing';
 export * from './storyboard';
 export * from './video-providers';
+export * from './references';
 export * from './hosts';
 export * from './mcp';

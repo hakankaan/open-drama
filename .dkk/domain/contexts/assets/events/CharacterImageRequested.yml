@@ -1,11 +1,14 @@
-# Domain event — something that happened in the domain.
 name: CharacterImageRequested
-description: A reference image generation was requested for a character with a resolved prompt and image service.
+description: >-
+  A reference view generation was requested for a character with a resolved prompt and image service; the views still
+  to come after it travel with the task (adr-0018).
 fields:
   - name: characterId
     type: ID
   - name: dramaId
     type: ID
+  - name: view
+    type: string
   - name: prompt
     type: string
   - name: imageServiceId
@@ -13,3 +16,5 @@ fields:
   - name: model
     type: string
 raised_by: Character
+adr_refs:
+  - adr-0018

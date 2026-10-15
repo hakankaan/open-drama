@@ -6,7 +6,7 @@
 
 ## Summary
 
-A turnaround-sheet final prompt (with style prefix) is stored for the character.
+A final prompt describing the person (with style prefix) is stored for the character.
 
 
 ## Fields

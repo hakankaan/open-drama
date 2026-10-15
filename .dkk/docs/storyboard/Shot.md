@@ -45,3 +45,4 @@ One storyboard segment of an episode. Owns its description, atmosphere, duration
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0017](../../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |

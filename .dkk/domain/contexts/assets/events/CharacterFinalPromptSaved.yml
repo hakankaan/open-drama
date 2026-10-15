@@ -1,6 +1,6 @@
 # Domain event — something that happened in the domain.
 name: CharacterFinalPromptSaved
-description: A turnaround-sheet final prompt (with style prefix) is stored for the character.
+description: A final prompt describing the person (with style prefix) is stored for the character.
 fields:
   - name: characterId
     type: ID

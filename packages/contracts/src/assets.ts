@@ -18,8 +18,42 @@ const base = {
   latestImageTask: TaskSummary.nullable(),
 };
 
+/**
+ * A character's reference images (adr-0018): separate views, the headshot first and the others drawn from it, plus a
+ * multi-view sheet (one generated before views existed, or uploaded).
+ */
+export const CharacterView = z.enum(['headshot', 'body', 'side', 'back', 'sheet']);
+export type CharacterView = z.infer<typeof CharacterView>;
+
+/** The views the studio generates; a sheet is only kept, uploaded, or composed for a video that needs one. */
+export const GeneratedView = z.enum(['headshot', 'body', 'side', 'back']);
+export type GeneratedView = z.infer<typeof GeneratedView>;
+
+export const CharacterViews = z.object({
+  headshot: MediaPath.nullable(),
+  body: MediaPath.nullable(),
+  side: MediaPath.nullable(),
+  back: MediaPath.nullable(),
+  sheet: MediaPath.nullable(),
+});
+export type CharacterViews = z.infer<typeof CharacterViews>;
+
+/**
+ * The view that stands for a character where a single image is shown (cards, shot strips, readiness) or sent (a video
+ * call with room for one image): its headshot, else its full body, its sheet, a side or a back view.
+ */
+export const coverViewOf = (v: CharacterViews): CharacterView | null =>
+  (['headshot', 'body', 'sheet', 'side', 'back'] as const).find((k) => v[k]) ?? null;
+
+export const coverOf = (v: CharacterViews): string | null => {
+  const view = coverViewOf(v);
+  return view ? v[view] : null;
+};
+
 export const CharacterCard = z.object({
   ...base,
+  /** The cover (`coverOf`); the images themselves are in `views`. */
+  views: CharacterViews,
   name: z.string(),
   role: z.string(),
   description: z.string(),
@@ -94,13 +128,14 @@ export type CreateProp = z.input<typeof CreateProp>;
 
 /**
  * Updates: describing-field edits keep finalPrompt and set finalPromptStale; an explicit finalPrompt in the same
- * request wins and clears the flag. imagePath attaches an uploaded or generated image (null detaches it).
+ * request wins and clears the flag. imagePath attaches an uploaded or generated image (null detaches it); a
+ * character's images are attached per view.
  */
 const common = {
   finalPrompt: text(8000).nullable().optional(),
-  imagePath: MediaPath.nullable().optional(),
   sortOrder: z.number().int().min(0).max(100_000).optional(),
 };
+const imagePath = MediaPath.nullable().optional();
 
 export const UpdateCharacter = z.strictObject({
   name: text(80).min(1).optional(),
@@ -108,6 +143,7 @@ export const UpdateCharacter = z.strictObject({
   description: text(4000).optional(),
   appearance: text(4000).optional(),
   styling: text(4000).optional(),
+  views: CharacterViews.partial().strict().optional(),
   ...common,
 });
 export type UpdateCharacter = z.input<typeof UpdateCharacter>;
@@ -117,6 +153,7 @@ export const UpdateScene = z.strictObject({
   time: text(60).optional(),
   prompt: text(4000).optional(),
   lighting: text(1000).optional(),
+  imagePath,
   ...common,
 });
 export type UpdateScene = z.input<typeof UpdateScene>;
@@ -125,6 +162,7 @@ export const UpdateProp = z.strictObject({
   name: text(80).min(1).optional(),
   type: text(60).optional(),
   description: text(4000).optional(),
+  imagePath,
   ...common,
 });
 export type UpdateProp = z.input<typeof UpdateProp>;
@@ -149,9 +187,18 @@ export type GenerateFinalPrompt = z.input<typeof GenerateFinalPrompt>;
 
 export const FinalPromptResult = z.object({ finalPrompt: z.string() });
 
-/** Request*Image: ensures the final prompt (text model), then submits an image task (image model). */
+/**
+ * Request*Image: ensures the final prompt (text model), then submits an image task (image model). A character
+ * generates the given views in order, the headshot first (adr-0018); default headshot and full body.
+ */
 export const RequestAssetImage = z.object({
   episodeId: z.number().int().positive(),
+  views: z
+    .array(GeneratedView)
+    .min(1)
+    .max(4)
+    .refine((v) => new Set(v).size === v.length, 'Each view at most once')
+    .optional(),
   model: z.string().trim().max(200).optional(),
   imageServiceId: z.number().int().positive().optional(),
   textModel: z.string().trim().max(200).optional(),

@@ -4,13 +4,16 @@ import { Copy, ImageOff, Sparkles, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import type { CharacterView, GeneratedView } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Field, Input, Textarea } from '@/components/ui/input';
 import { Tag } from '@/components/ui/tag';
+import { cn } from '@/lib/cn';
 import { useToastError } from '@/lib/errors';
 import { mediaUrl } from '@/lib/media';
 import { useUpdateAsset, type UpdateAssetInput } from './api';
+import { CharacterViewsPanel } from './character-views';
 import { ASSET_FIELDS } from './fields';
 import { titleOf, type AnyAsset } from './model';
 
@@ -29,13 +32,15 @@ export function AssetDetailDialog({
   item: AnyAsset;
   dramaId: number;
   onClose: () => void;
-  onUpload: () => void;
+  /** A character's upload goes to the view given (adr-0018). */
+  onUpload: (view?: CharacterView) => void;
   uploading: boolean;
   /** Prompt and image generation, available when an episode gives the agent its context. */
   generation?: {
     onGeneratePrompt: () => Promise<string | null>;
     promptPending: boolean;
-    onGenerateImage: () => void;
+    /** A character draws the views given, else its headshot and the views drawn from it. */
+    onGenerateImage: (views?: GeneratedView[]) => void;
     imagePending: boolean;
   };
 }) {
@@ -43,6 +48,7 @@ export function AssetDetailDialog({
   const tc = useTranslations('common');
   const toastError = useToastError();
   const update = useUpdateAsset(dramaId);
+  const detach = useUpdateAsset(dramaId);
   const record = item.asset as unknown as Record<string, string>;
   const fields = ASSET_FIELDS[item.kind];
   const [values, setValues] = useState<Record<string, string>>(() =>
@@ -75,36 +81,57 @@ export function AssetDetailDialog({
   return (
     <Dialog open onOpenChange={(o) => !o && !update.isPending && onClose()}>
       <DialogContent title={titleOf(item)} description={t(`kind.${item.kind}`)} wide>
-        <form onSubmit={save} className="grid gap-6 md:grid-cols-[220px_1fr]" noValidate>
-          <div className="flex flex-col gap-3">
-            <div className="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-md bg-surface-2">
-              {item.asset.imagePath ? (
-                <a href={mediaUrl(item.asset.imagePath)} target="_blank" rel="noreferrer" className="h-full w-full">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- media is served by the API through the proxy */}
-                  <img src={mediaUrl(item.asset.imagePath)} alt={titleOf(item)} className="h-full w-full object-contain" />
-                </a>
-              ) : (
-                <ImageOff className="h-8 w-8 text-muted" aria-hidden />
-              )}
-            </div>
-            <Button size="sm" onClick={onUpload} loading={uploading}>
-              <Upload className="h-3.5 w-3.5" aria-hidden />
-              {item.asset.imagePath ? t('card.replaceImage') : t('card.uploadImage')}
-            </Button>
-            {generation ? (
-              <Button
-                size="sm"
-                variant="quiet"
-                onClick={generation.onGenerateImage}
-                loading={generation.imagePending}
-                disabled={dirty || item.asset.latestImageTask?.status === 'processing'}
-                title={dirty ? t('saveFirst') : undefined}
-              >
-                <Sparkles className="h-3.5 w-3.5" aria-hidden />
-                {item.asset.imagePath ? t('card.regenerate') : t('card.generate')}
+        <form
+          onSubmit={save}
+          className={cn('grid gap-6', item.kind === 'character' ? 'md:grid-cols-[260px_1fr]' : 'md:grid-cols-[220px_1fr]')}
+          noValidate
+        >
+          {item.kind === 'character' ? (
+            <CharacterViewsPanel
+              character={item.asset}
+              onUpload={onUpload}
+              uploading={uploading}
+              onRemove={(view) =>
+                detach.mutate({ kind: 'character', id: item.asset.id, body: { views: { [view]: null } } }, { onError: (err) => toastError(err) })
+              }
+              removing={detach.isPending}
+              generation={
+                generation
+                  ? { onGenerate: generation.onGenerateImage, pending: generation.imagePending, blocked: dirty ? t('saveFirst') : undefined }
+                  : undefined
+              }
+            />
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-md bg-surface-2">
+                {item.asset.imagePath ? (
+                  <a href={mediaUrl(item.asset.imagePath)} target="_blank" rel="noreferrer" className="h-full w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- media is served by the API through the proxy */}
+                    <img src={mediaUrl(item.asset.imagePath)} alt={titleOf(item)} className="h-full w-full object-contain" />
+                  </a>
+                ) : (
+                  <ImageOff className="h-8 w-8 text-muted" aria-hidden />
+                )}
+              </div>
+              <Button size="sm" onClick={() => onUpload()} loading={uploading}>
+                <Upload className="h-3.5 w-3.5" aria-hidden />
+                {item.asset.imagePath ? t('card.replaceImage') : t('card.uploadImage')}
               </Button>
-            ) : null}
-          </div>
+              {generation ? (
+                <Button
+                  size="sm"
+                  variant="quiet"
+                  onClick={() => generation.onGenerateImage()}
+                  loading={generation.imagePending}
+                  disabled={dirty || item.asset.latestImageTask?.status === 'processing'}
+                  title={dirty ? t('saveFirst') : undefined}
+                >
+                  <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                  {item.asset.imagePath ? t('card.regenerate') : t('card.generate')}
+                </Button>
+              ) : null}
+            </div>
+          )}
           <div className="flex min-w-0 flex-col gap-4">
             {fields.map((f) => {
               const id = `asset-${f.key}`;

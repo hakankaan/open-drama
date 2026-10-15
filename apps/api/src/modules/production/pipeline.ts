@@ -1,7 +1,8 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
-import { isNarrator, type EpisodePipelineStatus, type StepStatus } from '@open-drama/contracts';
+import { coverOf, isNarrator, type EpisodePipelineStatus, type StepStatus } from '@open-drama/contracts';
 import { db } from '../../db/client';
 import { characters, episodeCharacters, episodeProps, episodeScenes, films, props, scenes, shots } from '../../db/schema';
+import { viewsOf } from '../assets/views';
 import { getEpisodeRow } from './episodes';
 
 const progress = (done: number, total: number): StepStatus => ({
@@ -19,12 +20,13 @@ export function getPipelineStatus(episodeId: number): EpisodePipelineStatus {
   const ep = getEpisodeRow(episodeId);
 
   const linkedCharacters = db
-    .select({ name: characters.name, role: characters.role, imagePath: characters.imagePath })
+    .select({ row: characters })
     .from(episodeCharacters)
     .innerJoin(characters, eq(characters.id, episodeCharacters.characterId))
     .where(and(eq(episodeCharacters.episodeId, episodeId), isNull(characters.deletedAt)))
     .all()
-    .filter((c) => !isNarrator(c.name, c.role));
+    .filter(({ row }) => !isNarrator(row.name, row.role))
+    .map(({ row }) => ({ imagePath: coverOf(viewsOf(row)) }));
   const linkedScenes = db
     .select({ imagePath: scenes.imagePath })
     .from(episodeScenes)

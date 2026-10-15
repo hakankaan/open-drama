@@ -6,7 +6,7 @@
 
 ## Summary
 
-Run the prompt-generator agent to write the turnaround-sheet final prompt for a character (force regenerates even if one exists). The agent persists through SaveCharacterFinalPrompt; the command waits for the run.
+Run the prompt-generator agent to write the final prompt for a character, describing the person only: the studio frames it per view (adr-0018). Force regenerates even if one exists. The agent persists through SaveCharacterFinalPrompt; the command waits for the run.
 
 
 ## Fields
@@ -33,4 +33,6 @@ Run the prompt-generator agent to write the turnaround-sheet final prompt for a 
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |

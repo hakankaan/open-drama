@@ -51,7 +51,7 @@ const prompt = z.string().min(10).max(8000);
 /** Save*FinalPrompt: the style fragment is prepended here, never by the model; the stale flag is cleared. */
 export const saveCharacterFinalPrompt = defineTool({
   id: 'save_character_final_prompt',
-  description: 'Save the turnaround-sheet prompt of one character.',
+  description: 'Save the reference prompt of one character: a description of the person only (the studio frames it per image).',
   input: z.object({ characterId: z.number().int(), prompt }),
   execute: ({ characterId, prompt: text }, ctx) => {
     if (ctx.target && (ctx.target.kind !== 'character' || ctx.target.id !== characterId)) {

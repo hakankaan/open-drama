@@ -6,7 +6,7 @@
 
 ## Summary
 
-A person in the drama with appearance and styling descriptions, an optional role, a final turnaround-sheet prompt and a reference image. Shared across the drama's episodes through episode links.
+A person in the drama with appearance and styling descriptions, an optional role, a final prompt describing the person, and reference views: a headshot, a full body, optional side and back views, and a multi-view sheet kept from before views or uploaded (adr-0018). Shared across the drama's episodes through episode links.
 
 
 
@@ -16,6 +16,7 @@ A person in the drama with appearance and styling descriptions, an optional role
 - Changing appearance or styling keeps finalPrompt but sets finalPromptStale; an explicit finalPrompt in an update always wins and clears the flag.
 - The saved final prompt always starts with the drama's style prompt fragment.
 - Deletion is a soft delete and removes the character from every episode of the drama.
+- Body, side and back views are generated from the headshot as their reference image; a generated headshot of a character without one is drawn from its sheet.
 
 
 ## Relationships
@@ -39,4 +40,6 @@ A person in the drama with appearance and styling descriptions, an optional role
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |

@@ -30,6 +30,7 @@ import { useBatchVideos } from '../use-batch-videos';
 import { useVideoTarget } from '../use-video-target';
 import { ShotEditor } from './editor';
 import { ShotInspector } from './inspector';
+import { ReferenceAdvice } from './reference-advice';
 import { TaskList, type ShotFilter } from './task-list';
 
 const DEFAULT_WIDTHS: [number, number] = [300, 380];
@@ -320,6 +321,7 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
           {t('promptsFailed', { error: promptJob.error })}
         </p>
       ) : null}
+      <ReferenceAdvice episode={episode} shots={shots} characters={assets.data?.characters ?? []} model={target.model} />
 
       {/* At 1080 px and below the three columns stack (list, editor, player) and the resize handles go away. */}
       <div className="flex min-h-0 flex-1 max-[1080px]:flex-col">
@@ -355,6 +357,7 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
               onGeneratePrompt={() => void generatePrompt(selected)}
               promptPending={promptingId === selected.id}
               onToAssets={onAssets}
+              target={target}
             />
           ) : null}
         </div>

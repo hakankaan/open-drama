@@ -2,10 +2,14 @@ name: RequestShotVideo
 description: >-
   Generate a video for the shot. Builds the ordered reference list — bound characters (at most four), then the bound
   scene, then bound props, at most five bound assets with the ones the prompt mentions chosen first (assets without an
-  image skipped), then the shot's uploaded and the request's extra images — deduplicated and capped by the provider's
-  limit, reporting what was left out; rewrites each @[Name] mention in the prompt into the matching reference slot (the
+  image skipped), each sending its cover image, then the shot's uploaded and the request's extra images, then further
+  views of each character as the model's reference policy and image limit allow (a full body, or a sheet composed from
+  headshot and body where the model reads sheets; side and back views for a turnaround model, adr-0018) —
+  deduplicated and capped by the provider's limit, reporting what was left out and recording each character's views;
+  rewrites each @[Name] mention in the prompt into the matching reference slot (the
   adapter renders the provider's token syntax, or plain text when the provider has none) and timed lines into untimed
-  Shot N lines; frames the prompt with the drama's style, a legend of the slots, the scene's lighting and the identity,
+  Shot N lines; frames the prompt with the drama's style, a legend of the slots and the view each shows, a headcount
+  and a wardrobe line for the characters sent, the scene's lighting and the identity,
   clean-frame and dialogue-language sentences (adr-0017); draws a seed when the model takes one and none was given;
   applies the episode resolution and the drama aspect ratio; uses the episode's locked video service and pinned model
   unless a service or model override is given. Batch generation and retry-failed issue this once per shot, so a shot
@@ -49,3 +53,4 @@ adr_refs:
   - adr-0005
   - adr-0009
   - adr-0017
+  - adr-0018

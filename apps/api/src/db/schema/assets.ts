@@ -16,7 +16,12 @@ export const characters = sqliteTable(
     styling: text().notNull().default(''),
     finalPrompt: text(),
     finalPromptStale: bool().notNull().default(false),
-    imagePath: text(),
+    /** The multi-view sheet (adr-0018): generated before views existed, or uploaded. */
+    sheetPath: text('image_path'),
+    headshotPath: text(),
+    bodyPath: text(),
+    sidePath: text(),
+    backPath: text(),
     sortOrder: integer().notNull().default(0),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
