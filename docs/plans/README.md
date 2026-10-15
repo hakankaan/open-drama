@@ -1,6 +1,6 @@
 # Implementation plans
 
-Five plans cover five sections of Open Drama. They are written against the domain model in `.dkk/domain/` and the decisions in `.dkk/adr/`; item names in the plans (commands, read models, aggregates) are the model's names, and the enum vocabulary is the one in `adr-0007`.
+Six plans cover the sections of Open Drama. They are written against the domain model in `.dkk/domain/` and the decisions in `.dkk/adr/`; item names in the plans (commands, read models, aggregates) are the model's names, and the enum vocabulary is the one in `adr-0007`.
 
 | Plan | Section | Owns |
 |---|---|---|
@@ -9,6 +9,7 @@ Five plans cover five sections of Open Drama. They are written against the domai
 | [03-frontend.md](03-frontend.md) | Frontend (Next.js) | launcher, settings, project page, episode studio, design system, i18n, polling and state |
 | [04-story-development.md](04-story-development.md) | Story development (`adr-0015`) | story writer, episode planner and episode writer agents, the outline on the drama, drama-scoped jobs, the Story tab, the plan dialog and the Expand action — a cross-cutting change to all three sections |
 | [05-assistant-access.md](05-assistant-access.md) | Assistant access (`adr-0016`) | the MCP endpoint as a second presentation layer beside the studio, the server-issued token, the assistant skills in the workspace, the service rules both interfaces share (locks at first use, revision tokens, replace and force), the API-only deployment shape, the generated Claude Code plugin |
+| [06-consistency.md](06-consistency.md) | Consistency within and between episodes (`adr-0017`) | prompt discipline and reference caps, seeds and the negative prompt, the episode's pinned video model and the workspace template upgrade (done); headshot and body references, post conform, pinned voices, keyframes, chaining and QA (open) |
 
 ## Milestones across the plans
 
@@ -69,7 +70,7 @@ Every command and query of the domain model, its REST route and its MCP tool. A 
 | agents | SaveAgentPrompt / ResetAgentPrompt / CreateSkill / UpdateSkill / DeleteSkill | `PUT`/`DELETE /agents/:type/prompt`, `/skills` | it. 2 `update_agent_prompt`, `update_agent_skill`, … |
 | agents | RunAgent (chat) | `POST /agents/:type/chat` | it. 2 |
 | assets | EpisodeAssets, DramaAssetLibrary; Create/Update/Delete Character, Prop, Scene; StartExtraction; Generate…FinalPrompt; Request…Image (paid) | assets routes | it. 2 `list_assets`, `extract_assets`, `create_asset`, `update_asset`, `delete_asset`, `write_final_prompt`, `generate_asset_image` |
-| storyboard | EpisodeShotList, VideoPromptBatchStatus; BreakdownStoryboard; Create/Update/Delete Shot; GenerateShotVideoPrompt, StartVideoPromptBatch; RequestShotVideo (paid) | storyboard routes | it. 2 `breakdown_storyboard`, `list_shots`, `create_shot`, `update_shot`, `delete_shot`, `generate_video_prompts`, `generate_shot_videos` |
+| storyboard | EpisodeShotList, VideoPromptBatchStatus; BreakdownStoryboard; Create/Update/Delete Shot; GenerateShotVideoPrompt, StartVideoPromptBatch; RequestShotVideo (paid; `seed` for retakes, `adr-0017`) | storyboard routes | it. 2 `breakdown_storyboard`, `list_shots`, `create_shot`, `update_shot`, `delete_shot`, `generate_video_prompts`, `generate_shot_videos` |
 | generation | EpisodeGenerationTasks, GenerationTaskStatus, DeleteGenerationTask | generation routes | it. 2 `list_generation_tasks` |
 | compositing | MergeShots, EpisodeFilms, LatestMergeStatus | compositing routes | it. 2 `merge_episode`, `get_films` (URLs under `/static`) |
 | media | UploadMedia | `POST /media` | B — the REST upload route, documented with a `curl` |

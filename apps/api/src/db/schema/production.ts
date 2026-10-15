@@ -50,6 +50,8 @@ export const episodes = sqliteTable(
     // Locked services are plain ids: services are hard-deleted and episodes then fall back to the active one.
     imageServiceId: integer(),
     videoServiceId: integer(),
+    // The video model the episode is pinned to (adr-0017): claimed with its first video, kept while the service lists it.
+    videoModel: text(),
     filmPath: text(),
     filmDurationSeconds: real(),
     durationSeconds: real().notNull().default(0),

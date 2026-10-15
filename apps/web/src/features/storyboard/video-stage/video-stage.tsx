@@ -165,10 +165,10 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
   const fillPrompts = () => promptBatch.mutate(textOverride(picks), { onError: (err) => toastError(err) });
 
   const save = (shotId: number) => (patch: UpdateShot) => update.mutateAsync({ id: shotId, ...patch });
-  const generateOne = async (shot: ShotCard) => {
+  const generateOne = async (shot: ShotCard, seed?: number) => {
     setRequesting((s) => new Set(s).add(shot.id));
     try {
-      const started = await requestVideo.mutateAsync({ id: shot.id, ...override });
+      const started = await requestVideo.mutateAsync({ id: shot.id, ...override, ...(seed !== undefined ? { seed } : {}) });
       if (started.unmatchedMentions.length) toast.warning(t('unmatched', { names: started.unmatchedMentions.join(', ') }));
       if (started.droppedReferences.length) toast.warning(t('dropped', { names: started.droppedReferences.join(', ') }));
     } catch (err) {
@@ -373,9 +373,9 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
               shot={selected}
               episodeId={episode.id}
               save={save(selected.id)}
-              onGenerate={() => void generateOne(selected)}
+              onGenerate={(seed) => void generateOne(selected, seed)}
               requesting={requesting.has(selected.id)}
-              config={{ model: target.model, resolution: episode.resolution, clamp: target.clamp }}
+              config={{ model: target.model, resolution: episode.resolution, clamp: target.clamp, seeds: target.caps.seed }}
             />
           ) : null}
         </div>

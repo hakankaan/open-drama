@@ -6,7 +6,7 @@
 
 ## Summary
 
-Generate a video for the shot. Builds the ordered reference list — the bound scene, then bound characters, then bound props (assets without an image skipped), then any extra images supplied in the request — deduplicated and capped by the provider's limit; rewrites each @[Name] mention in the prompt into the matching reference slot (the adapter renders the provider's token syntax, or plain text when the provider has none); prepends the drama's style prompt; applies the episode resolution and the drama aspect ratio; uses the episode's locked video service unless a service or model override is given. Batch generation and retry-failed issue this once per shot, so a shot whose latest video task is still processing is rejected.
+Generate a video for the shot. Builds the ordered reference list — bound characters (at most four), then the bound scene, then bound props, at most five bound assets with the ones the prompt mentions chosen first (assets without an image skipped), then the shot's uploaded and the request's extra images — deduplicated and capped by the provider's limit, reporting what was left out; rewrites each @[Name] mention in the prompt into the matching reference slot (the adapter renders the provider's token syntax, or plain text when the provider has none) and timed lines into untimed Shot N lines; frames the prompt with the drama's style, a legend of the slots, the scene's lighting and the identity, clean-frame and dialogue-language sentences (adr-0017); draws a seed when the model takes one and none was given; applies the episode resolution and the drama aspect ratio; uses the episode's locked video service and pinned model unless a service or model override is given. Batch generation and retry-failed issue this once per shot, so a shot whose latest video task is still processing is rejected.
 
 
 ## Fields
@@ -22,6 +22,7 @@ Generate a video for the shot. Builds the ordered reference list — the bound s
 | `referenceVideoUrls` | `string[]` | — |
 | `referenceAudioUrls` | `string[]` | — |
 | `generateAudio` | `boolean` | — |
+| `seed` | `number` | Retake seed; drawn when omitted and the model takes one |
 
 ## Rules & Invariants
 
@@ -31,6 +32,7 @@ Generate a video for the shot. Builds the ordered reference list — the bound s
 - Reference audio without any reference image or video
 - Reference material over the provider's limits
 - A video task for this shot is still processing
+- A seed for a model that takes none
 
 
 ## Relationships
@@ -46,3 +48,4 @@ Generate a video for the shot. Builds the ordered reference list — the bound s
 |-----|-------|--------|
 | [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |
 | [adr-0009](../../adr/adr-0009.md) | Local immutable media storage with derived renditions | accepted |
+| [adr-0017](../../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |

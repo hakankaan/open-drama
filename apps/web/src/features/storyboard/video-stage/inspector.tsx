@@ -27,9 +27,10 @@ export function ShotInspector({
   shot: ShotCard;
   episodeId: number;
   save: (patch: UpdateShot) => Promise<unknown>;
-  onGenerate: () => void;
+  /** A seed retakes a version with the seed it was made with (adr-0017). */
+  onGenerate: (seed?: number) => void;
   requesting: boolean;
-  config: { model: string | null; resolution: Resolution; clamp: (seconds: number) => number };
+  config: { model: string | null; resolution: Resolution; clamp: (seconds: number) => number; seeds: boolean };
 }) {
   const t = useTranslations('studio.video');
   const toastError = useToastError();
@@ -46,7 +47,13 @@ export function ShotInspector({
   }
   const playing = preview ?? shot.videoPath;
   const previewingOther = !!preview && preview !== shot.videoPath;
+  const shown = history.data?.find((v) => v.videoPath === playing);
   const refs = [shot.bindings.scene, ...shot.bindings.characters, ...shot.bindings.props].filter((a) => a !== null);
+  // Assets the playing version left out of its call (adr-0017).
+  const notSent = new Set(shown?.droppedReferences ?? []);
+  // A seed only means something to the model that drew it: the retake is offered while that model is the target (the
+  // offline stub stands in for every model).
+  const retakable = Boolean(config.seeds && shown && (shown.provider === 'stub' || shown.model === config.model));
 
   const commitDuration = () => {
     const n = Number(duration);
@@ -162,6 +169,25 @@ export function ShotInspector({
           ) : (
             <p className="text-xs text-muted">{t('inspector.noHistory')}</p>
           )}
+          {shown?.seed != null ? (
+            <div className="flex items-center gap-2">
+              <span className="min-w-0 truncate font-mono text-xs text-muted" title={shown.model}>
+                {t('inspector.seed', { model: shown.model, seed: shown.seed })}
+              </span>
+              {retakable ? (
+                <Button
+                  size="sm"
+                  variant="quiet"
+                  className="ml-auto shrink-0"
+                  onClick={() => onGenerate(shown.seed!)}
+                  disabled={requesting || state === 'generating'}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                  {t('inspector.retakeSeed')}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </section>
 
         <section className="flex flex-col gap-2 px-4 py-4">
@@ -169,7 +195,11 @@ export function ShotInspector({
           {refs.length ? (
             <ul className="flex flex-wrap gap-2">
               {refs.map((a) => (
-                <li key={`${a.id}:${a.name}`} className="flex w-16 flex-col items-center gap-1">
+                <li
+                  key={`${a.id}:${a.name}`}
+                  className={cn('flex w-16 flex-col items-center gap-1', notSent.has(a.name) && 'opacity-40')}
+                  title={notSent.has(a.name) ? t('inspector.notSent') : undefined}
+                >
                   <span className="flex h-12 w-16 items-center justify-center overflow-hidden rounded bg-surface-2">
                     {a.imagePath ? (
                       // eslint-disable-next-line @next/next/no-img-element -- media is served by the API through the proxy
@@ -178,7 +208,10 @@ export function ShotInspector({
                       <span className="text-[10px] text-warning">{t('refs.notGenerated')}</span>
                     )}
                   </span>
-                  <span className="w-full truncate text-center text-[11px] text-ink-2">{a.name}</span>
+                  <span className="w-full truncate text-center text-[11px] text-ink-2">
+                    {a.name}
+                    {notSent.has(a.name) ? <span className="sr-only"> ({t('inspector.notSent')})</span> : null}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -213,7 +246,7 @@ export function ShotInspector({
             })}
           </span>
         </div>
-        <Button variant="primary" onClick={onGenerate} loading={requesting} disabled={state === 'generating'}>
+        <Button variant="primary" onClick={() => onGenerate()} loading={requesting} disabled={state === 'generating'}>
           {state === 'generating' ? null : shot.videoPath ? <RotateCcw className="h-4 w-4" aria-hidden /> : <Play className="h-4 w-4" aria-hidden />}
           {state === 'generating' ? t('state.generating') : shot.videoPath ? t('inspector.regenerate') : t('inspector.generate')}
         </Button>

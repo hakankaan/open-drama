@@ -74,3 +74,4 @@ _No policies._
 | [adr-0014](../../adr/adr-0014.md) | Series continuity through episode recaps | accepted |
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |
 | [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
+| [adr-0017](../../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |

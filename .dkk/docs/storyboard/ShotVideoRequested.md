@@ -24,6 +24,8 @@ A video generation was requested for a shot with the fully resolved prompt, refe
 | `referenceImageUrls` | `string[]` | — |
 | `referenceVideoUrls` | `string[]` | — |
 | `referenceAudioUrls` | `string[]` | — |
+| `seed` | `number` | — |
+| `droppedReferences` | `string[]` | — |
 
 
 
@@ -35,4 +37,6 @@ A video generation was requested for a shot with the fully resolved prompt, refe
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0017](../../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |

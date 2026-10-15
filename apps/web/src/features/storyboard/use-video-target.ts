@@ -7,7 +7,7 @@ import type { ModelPicks } from '../configuration/model-picks';
 
 /**
  * The video model a generation will use, as the API resolves it: the creator's pick, else the episode's locked
- * service with its first model. Carries that model's caps (durations, resolution tiers) for the pickers.
+ * service with its pinned model (adr-0017). Carries that model's caps (durations, resolution tiers, seed) for the pickers.
  */
 export function useVideoTarget(episode: EpisodeView, picks: ModelPicks) {
   const services = useModelServices('video', true);

@@ -6,7 +6,7 @@
 
 ## Summary
 
-One storyboard segment of an episode. Owns its description, atmosphere, duration, bindings, prompts (image and video) with the video prompt's staleness, reference media and the current video plus its generation history.
+One storyboard segment of an episode. Owns its description, atmosphere, duration, bindings, prompts (image and video) with the video prompt's staleness, reference media and the current video plus its generation history (each version with its model, seed and the references it left out).
 
 
 
@@ -42,4 +42,6 @@ One storyboard segment of an episode. Owns its description, atmosphere, duration
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0017](../../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |

@@ -6,7 +6,7 @@
 
 ## Summary
 
-One episode of a drama. Holds the raw content and the formatted script with its revision, the recap for the writers of later episodes, the locked image/video services and resolution, the target length, the production status and, once merged, the film.
+One episode of a drama. Holds the raw content and the formatted script with its revision, the recap for the writers of later episodes, the locked image/video services, the pinned video model and the resolution, the target length, the production status and, once merged, the film.
 
 
 
@@ -16,6 +16,7 @@ One episode of a drama. Holds the raw content and the formatted script with its 
 - An episode is planned when the planner created it: its description is the synopsis and its raw content the beat sheet. The planner only appends; an episode the creator added keeps its title, status, resolution, target and locks. Deleting a planned episode is the way to reject it.
 - The script has one agent at a time: a rewrite (RewriteScript) and a write (WriteEpisodeScript) refuse each other while running, and a breakdown, the skip, the creator's content edit and the creator's script edit are refused while either runs.
 - imageServiceId and videoServiceId are each taken from the highest-priority usable model service of the type at creation when one exists, else left empty and written at the first generation of that type (adr-0016); from then on the episode uses that one service per type. Creation needs no image or video service.
+- videoModel is empty until the first generation on the locked video service without an explicit model writes the model it used; later generations use it while the service lists it, and move to the service's first model, written back, when it no longer does. An explicit model overrides it for one call (adr-0017).
 - beatsRevision increments on every change of the raw content (the beat sheet), whoever writes it; with scriptRevision and recapRevision it is the freshness token an assistant's save must carry (ifRevision).
 - An episode that holds a script, shots or a film is deleted only with force; no episode is deleted while one of its jobs runs.
 - resolution is one of 480p, 720p or 1080p and applies to every video generated for the episode; adapters map it to the provider's nearest tier.
@@ -61,3 +62,4 @@ One episode of a drama. Holds the raw content and the formatted script with its 
 | [adr-0014](../../adr/adr-0014.md) | Series continuity through episode recaps | accepted |
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |
 | [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
+| [adr-0017](../../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |

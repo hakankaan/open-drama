@@ -50,6 +50,13 @@
       "when": 1791741760937,
       "tag": "0006_text_revisions",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1792006894670,
+      "tag": "0007_video_model_pin",
+      "breakpoints": true
     }
   ]
 }

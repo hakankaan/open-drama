@@ -119,6 +119,8 @@ export function shotVideos(shotId: number, currentPath: string | null): ShotVide
       provider: t.provider,
       model: t.model,
       prompt: t.prompt,
+      seed: typeof t.params.seed === 'number' ? t.params.seed : null,
+      droppedReferences: Array.isArray(t.params.droppedReferences) ? t.params.droppedReferences.filter((n): n is string => typeof n === 'string') : [],
       createdAt: t.createdAt,
       completedAt: t.completedAt,
       current: t.localPath === currentPath,

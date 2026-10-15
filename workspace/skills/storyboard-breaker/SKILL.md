@@ -13,7 +13,7 @@ An ordered list of shots covering the whole script. Each shot has:
 - `sceneId`: the one scene it happens in.
 - `characterIds`, `propIds`: only the assets that are visible in this shot.
 - `shotType`, `angle`, `movement`: the dominant framing (for example "medium", "eye level", "slow push in").
-- `description`: 2 to 4 sub-shot blocks, each starting with `[Shot N]` (N counting from 1 inside the shot), describing framing, action and any dialogue spoken in it, in quotation marks with the speaker's name.
+- `description`: 2 to 4 sub-shot blocks, each starting with `[Shot N]` (N counting from 1 inside the shot), describing framing, one camera movement, action and any dialogue spoken in it, in quotation marks with the speaker's name.
 - `atmosphere`: light, weather, sound and mood.
 - `videoPrompt`: follow the video-prompt skill of the prompt generator.
 
@@ -22,8 +22,9 @@ An ordered list of shots covering the whole script. Each shot has:
 - First find the beats: setup, turns, climax, reversals. A beat change always starts a new shot; two beats never share one.
 - A shot never crosses scenes. A new location or time of day starts a new shot.
 - Each sub-shot lasts 2 to 6 seconds, and the sub-shots add up to the shot's duration.
+- Each sub-shot has one camera movement, slow and gentle, or none; a second move starts a new sub-shot.
 - Dialogue needs time: allow at least 1 second per 3 words spoken (1 second per 5 characters for Chinese, Japanese or Korean), plus a second of reaction. If the lines do not fit in 15 seconds, split the shot.
-- Every character named in a sub-shot is in `characterIds`; nobody else is.
+- Every character named in a sub-shot is in `characterIds`; nobody else is. A shot holds at most four characters (video models lose faces past four): when more people matter, split the shot; a crowd stays unnamed.
 - The whole script is covered, in order, with nothing added.
 - With a target length, the shots' durations add up to it. When the script holds more than fits, condense: merge sub-shots, shorten the action, and drop only minor moments, never a beat.
 

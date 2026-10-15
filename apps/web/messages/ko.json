@@ -772,7 +772,10 @@
         "config": "{model} · {resolution} · {seconds}초",
         "defaultModel": "기본 모델",
         "generate": "영상 생성",
-        "regenerate": "다시 생성"
+        "regenerate": "다시 생성",
+        "seed": "{model} · 시드 {seed}",
+        "retakeSeed": "이 시드로 다시 생성",
+        "notSent": "이 버전에는 보내지 않음: 호출당 한도 초과"
       },
       "batch": {
         "progress": "영상 요청 중 {done}/{total}",

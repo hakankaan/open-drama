@@ -137,6 +137,9 @@ export type VideoPromptBatchStarted = z.infer<typeof VideoPromptBatchStarted>;
 
 export const VideoPromptResult = z.object({ videoPrompt: z.string() });
 
+/** A video seed every provider that takes one accepts (Wan stops at 2^31 - 1). */
+export const VideoSeed = z.number().int().min(0).max(2_147_483_647);
+
 /** RequestShotVideo. Media references are stored paths (`static/…`) or http(s) URLs. */
 export const RequestShotVideo = z.object({
   prompt: text(8000).optional(),
@@ -147,6 +150,8 @@ export const RequestShotVideo = z.object({
   referenceVideoUrls: z.array(z.string().max(2000)).max(5).optional(),
   referenceAudioUrls: z.array(z.string().max(2000)).max(5).optional(),
   generateAudio: z.boolean().optional(),
+  /** For a model that takes one (adr-0017); without it a seed is drawn and recorded, so a retake can reuse it. */
+  seed: VideoSeed.optional(),
 });
 export type RequestShotVideo = z.input<typeof RequestShotVideo>;
 
@@ -154,7 +159,10 @@ export const ShotVideoStarted = z.object({
   taskId: z.number().int(),
   /** `@[Name]` mentions that matched no bound asset; they were sent as plain text. */
   unmatchedMentions: z.array(z.string()),
-  /** References left out because the provider's limit was reached (asset names, or paths for uploads). */
+  /**
+   * References left out (asset names, or paths for uploads): bound characters past four and bound assets past five per
+   * call (adr-0017), then anything past the provider's limit.
+   */
   droppedReferences: z.array(z.string()),
 });
 export type ShotVideoStarted = z.infer<typeof ShotVideoStarted>;
@@ -167,6 +175,10 @@ export const ShotVideo = z.object({
   provider: z.string(),
   model: z.string(),
   prompt: z.string(),
+  /** The seed it was made with; null when the model takes none (adr-0017). */
+  seed: z.number().int().nullable(),
+  /** Bound assets and images this version left out: past the per-call caps (adr-0017) or the model's limit. */
+  droppedReferences: z.array(z.string()),
   createdAt: Timestamp,
   completedAt: Timestamp.nullable(),
   current: z.boolean(),

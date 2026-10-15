@@ -37,11 +37,18 @@ export function getEpisodeRow(id: number): Row {
   return row;
 }
 
-function lockedService(type: ServiceType, lockedId: number | null): LockedService | null {
+/**
+ * The model an episode's requests use without a model pick: the pinned one while the episode's locked service still
+ * lists it, else the service's first (adr-0017). A fallback service never takes the pin.
+ */
+export const pinnedOr = (models: string[], pinned: string | null, onLock: boolean): string | undefined =>
+  onLock && pinned && models.includes(pinned) ? pinned : models[0];
+
+function lockedService(type: ServiceType, lockedId: number | null, pinned: string | null): LockedService | null {
   const resolved = resolveService(type, { lockedId });
   if (!resolved) return null;
   const { row, locked } = resolved;
-  return { id: row.id, name: row.name, provider: row.provider, defaultModel: row.models[0] ?? null, locked };
+  return { id: row.id, name: row.name, provider: row.provider, defaultModel: pinnedOr(row.models, pinned, locked) ?? null, locked };
 }
 
 export function getEpisodeView(id: number): EpisodeView {
@@ -49,8 +56,8 @@ export function getEpisodeView(id: number): EpisodeView {
   return {
     ...toEpisode(row),
     services: {
-      image: lockedService('image', row.imageServiceId),
-      video: lockedService('video', row.videoServiceId),
+      image: lockedService('image', row.imageServiceId, null),
+      video: lockedService('video', row.videoServiceId, row.videoModel),
     },
   };
 }
@@ -108,6 +115,21 @@ export function claimServiceLock(episodeId: number, type: 'image' | 'video', ser
     const row = tx.select({ locked: column }).from(episodes).where(eq(episodes.id, episodeId)).get();
     if (!row) throw notFound('Episode');
     return row.locked ?? serviceId;
+  });
+}
+
+/**
+ * The video model of a request without a model pick, in the episode's locked service (adr-0017): the pin while the
+ * service lists it; else the service's first model, which becomes the pin. One transaction, so racing first videos
+ * share one model. A pin the service no longer lists (the creator removed it) moves to the first model.
+ */
+export function claimVideoModel(episodeId: number, models: string[]): string | undefined {
+  return db.transaction((tx) => {
+    const row = tx.select({ pinned: episodes.videoModel }).from(episodes).where(eq(episodes.id, episodeId)).get();
+    if (!row) throw notFound('Episode');
+    const model = pinnedOr(models, row.pinned, true);
+    if (model && model !== row.pinned) tx.update(episodes).set({ videoModel: model }).where(eq(episodes.id, episodeId)).run();
+    return model;
   });
 }
 

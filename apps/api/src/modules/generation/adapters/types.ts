@@ -40,6 +40,10 @@ export interface VideoRecord {
   aspectRatio: AspectRatio;
   resolution: Resolution;
   generateAudio: boolean;
+  /** Set only for a model whose caps say it takes one (adr-0017). */
+  seed?: number;
+  /** What the video must not show; adapters send it where the model takes one (adr-0017). */
+  negativePrompt: string;
 }
 
 /** A provider result: an URL to download, inline base64 bytes, or a file an offline adapter already stored. */

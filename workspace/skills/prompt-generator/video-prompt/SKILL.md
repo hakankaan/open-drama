@@ -5,29 +5,27 @@ description: The video-generation prompt of one shot.
 
 ## What you produce
 
-The `videoPrompt` of one shot:
+The `videoPrompt` of one shot: **one line per sub-shot**, in order, each starting with `Shot N:` (N counting from 1). The lines follow the shot's `[Shot N]` sub-shots one to one. Give no times or durations: video models do not keep them, and a timed line makes the result worse.
 
-- **A header line** naming who and where: the bound characters and props as mentions, then the scene. Mentions use the exact asset name inside `@[…]`, for example `@[Mei]`, `@[Red lantern]`, `@[Night market]`.
-- **One line per 3-second segment**, in order, each starting with its time range: `0-3s: …`, `3-6s: …`. The segments follow the shot's `[Shot N]` sub-shots one to one, in the same order; a sub-shot longer than 3 seconds continues on the next line.
-
-Each segment line says the framing and camera movement, then the action, then any dialogue exactly as written in the description, with the speaker.
+Each line says the framing and its one camera movement, then the action, then any dialogue. Mentions use the exact asset name inside `@[…]`, for example `@[Mei]`, `@[Red lantern]`, `@[Night market]`.
 
 ## How it is judged
 
+- Every time a bound character or prop appears, it is written as its mention, never as "she", "he" or a description: `@[Mei] turns`, not `she turns`. The scene is mentioned in the first line.
 - Mentions are used only for assets bound to the shot, spelled exactly as their names. Unbound names are written as plain words.
-- The segments cover the shot's duration and follow its sub-shots.
-- Dialogue is copied from the description; nothing is invented or reworded.
-- No visual-style words: the project's style is added automatically.
+- One camera movement per line, slow and gentle (static, slow push in, slow pan); never two moves in one line.
+- Dialogue is copied from the description, nothing invented or reworded, one speaker per line, in braces after the speaker: `@[Stranger] says: {How much for that one?}`. Sounds go in angle brackets: `<rain on the awning>`.
+- No visual-style words, no lighting, and no instructions about faces, subtitles or watermarks: the studio adds the project's style, the scene's lighting and those instructions on its own.
+- The prompt says what is seen and heard; it is not a copy of the script.
 
 ## Example
 
 For a 10-second shot bound to Mei, the stranger, the red lantern and the night market:
 
 ```
-@[Mei] and @[Stranger] at @[Night market], with @[Red lantern].
-0-3s: Wide, static. Rain on the awning; @[Mei] hangs lanterns on a wire, @[Red lantern] hangs apart.
-3-6s: Medium over Mei's shoulder, slow push in. @[Stranger] stops and points. Stranger: "How much for that one?"
-6-10s: Close on Mei's hand freezing on the wire. Mei, without turning: "That one isn't for sale."
+Shot 1: Wide, static. Rain on the awning at @[Night market]; @[Mei] hangs lanterns on a wire, @[Red lantern] hangs apart. <rain on the awning>
+Shot 2: Medium over @[Mei]'s shoulder, slow push in. @[Stranger] stops and points at @[Red lantern]. @[Stranger] says: {How much for that one?}
+Shot 3: Close on @[Mei]'s hand freezing on the wire, static. @[Mei], without turning, says: {That one isn't for sale.}
 ```
 
 ## Tool protocol

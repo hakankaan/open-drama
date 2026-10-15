@@ -51,6 +51,7 @@ adr_refs:
   - adr-0012
   - adr-0015
   - adr-0016
+  - adr-0017
 code_refs:
   - apps/api/src/modules/agents/**
   - workspace/**

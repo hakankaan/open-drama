@@ -95,6 +95,13 @@ export function loadBindings(rows: ShotRow[]): Map<number, ShotBindings> {
   return map;
 }
 
+/** The lighting of a shot's scene, as the scene asset states it ('' without one); video prompts carry it verbatim (adr-0017). */
+export function sceneLighting(sceneId: number | null): string {
+  if (sceneId === null) return '';
+  const row = db.select({ lighting: scenes.lighting }).from(scenes).where(and(eq(scenes.id, sceneId), isNull(scenes.deletedAt))).get();
+  return row?.lighting.trim() ?? '';
+}
+
 export interface BindingInput {
   sceneId?: number | null;
   characterIds?: number[];

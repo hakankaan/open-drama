@@ -772,7 +772,10 @@
         "config": "{model} · {resolution} · {seconds} s",
         "defaultModel": "default model",
         "generate": "Generate video",
-        "regenerate": "Regenerate"
+        "regenerate": "Regenerate",
+        "seed": "{model} · seed {seed}",
+        "retakeSeed": "Retake with this seed",
+        "notSent": "Not sent with this version: past the per-call limit"
       },
       "batch": {
         "progress": "Requesting videos {done}/{total}",

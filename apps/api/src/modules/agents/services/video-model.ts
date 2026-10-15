@@ -2,16 +2,27 @@ import { clampDuration, targetTolerance, videoCapsFor, type VideoProviderCaps } 
 import { logger } from '../../../http/logger';
 import { resolveService } from '../../configuration/services';
 import { videoCapsOf } from '../../generation/engine/videos';
+import { pinnedOr } from '../../production/episodes';
 
 /** Shots aim for 8-15 s; a model that cannot render that gets the lengths nearest it. */
 const PREFERRED = { min: 8, max: 15 };
 
-const serviceOf = (lockedVideoServiceId: number | null) => resolveService('video', { lockedId: lockedVideoServiceId })?.row;
+/** The episode's lock and pinned model, as its row holds them. */
+export interface EpisodeVideo {
+  videoServiceId: number | null;
+  videoModel: string | null;
+}
+
+/** The video service an episode's shots go to and the model they run without a pick (its pin, adr-0017). */
+function videoOf(ep: EpisodeVideo) {
+  const resolved = resolveService('video', { lockedId: ep.videoServiceId });
+  return resolved && { service: resolved.row, model: pinnedOr(resolved.row.models, ep.videoModel, resolved.locked) };
+}
 
 /** How agent messages name the episode's video model. */
-export function videoModelLabel(lockedVideoServiceId: number | null): string {
-  const service = serviceOf(lockedVideoServiceId);
-  return service ? `${service.models[0] ?? service.name} (${service.provider})` : 'the default video model';
+export function videoModelLabel(ep: EpisodeVideo): string {
+  const video = videoOf(ep);
+  return video ? `${video.model ?? video.service.name} (${video.service.provider})` : 'the default video model';
 }
 
 /** The preferred shot lengths narrowed to what the model renders. */
@@ -57,16 +68,17 @@ export interface VideoModelBrief {
  * VideoPromptBatch invariant). A storyboard needs only a text model, so a video model whose limits cannot be read,
  * or that cannot be driven, falls back to the caps table here instead of blocking it.
  */
-export async function describeVideoModel(lockedVideoServiceId: number | null): Promise<VideoModelBrief> {
-  const service = serviceOf(lockedVideoServiceId);
-  const model = service?.models[0];
+export async function describeVideoModel(ep: EpisodeVideo): Promise<VideoModelBrief> {
+  const video = videoOf(ep);
+  const service = video?.service;
+  const model = video?.model;
   const caps = service
     ? await videoCapsOf(service.provider, model).catch((err: unknown) => {
         logger.warn({ provider: service.provider, model, err: (err as Error).message }, 'video model limits unavailable for the storyboard');
         return videoCapsFor(service.provider, model);
       })
     : videoCapsFor(null);
-  return { label: videoModelLabel(lockedVideoServiceId), lengths: phraseOf(caps, lengthsWithin(caps, preferredRange(caps))), caps };
+  return { label: videoModelLabel(ep), lengths: phraseOf(caps, lengthsWithin(caps, preferredRange(caps))), caps };
 }
 
 export interface TargetFit {

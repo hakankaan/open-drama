@@ -10,7 +10,7 @@ import { logger } from '../../../http/logger';
 import { rememberSecret } from '../../../lib/secrets';
 import { isShuttingDown } from '../../../lib/shutdown';
 import { resolveService } from '../../configuration/services';
-import { claimServiceLock } from '../../production/episodes';
+import { claimServiceLock, claimVideoModel } from '../../production/episodes';
 import { ProviderError, type Dialect, type ProviderRequest, type ResultMedia, type ServiceConfig } from '../adapters/types';
 import { classify, messageOf } from './errors';
 
@@ -42,7 +42,9 @@ export interface ResolvedGeneration<A> {
  * The adapter and credentials for a task: explicit service → the episode's lock → the highest-priority active one.
  * When the episode's lock for the type is still empty (`lockFor`), the resolved service claims it here, before any
  * work is dispatched, and a request that lost that claim to a concurrent one goes on with the winner (adr-0016).
- * With OPEN_DRAMA_STUB_PROVIDERS=1 the offline adapter serves every request and nothing is locked.
+ * A video request without a model pick in the episode's locked service runs the episode's pinned model, claiming
+ * the pin on first use (adr-0017). With OPEN_DRAMA_STUB_PROVIDERS=1 the offline adapter serves every request and
+ * nothing is locked or pinned.
  */
 export function resolveGeneration<A>(
   type: Exclude<ServiceType, 'text'>,
@@ -56,14 +58,16 @@ export function resolveGeneration<A>(
   }
   let resolved = resolveService(type, { explicitId: opts.explicitId, lockedId: opts.lockedId });
   if (!resolved) throw precondition(`Add an active ${type} service with an API key in Settings before generating ${type}s`);
-  if (opts.lockFor !== undefined && opts.lockedId == null) {
-    const winner = claimServiceLock(opts.lockFor, type, resolved.row.id);
-    if (winner !== resolved.row.id) resolved = resolveService(type, { lockedId: winner }) ?? resolved;
+  let lockedId = opts.lockedId;
+  if (opts.lockFor !== undefined && lockedId == null) {
+    lockedId = claimServiceLock(opts.lockFor, type, resolved.row.id);
+    if (lockedId !== resolved.row.id) resolved = resolveService(type, { lockedId }) ?? resolved;
   }
   const { row } = resolved;
   const adapter = adapterFor(row.provider);
   if (!adapter) throw precondition(`${type === 'image' ? 'Image' : 'Video'} generation through ${row.provider} is not available yet`);
-  const model = opts.model || row.models[0] || '';
+  const pins = type === 'video' && opts.lockFor !== undefined && !opts.model && row.id === lockedId;
+  const model = opts.model || (pins ? claimVideoModel(opts.lockFor!, row.models) : row.models[0]) || '';
   if (!model) throw precondition(`The ${type} service ${row.name} lists no model; add one in Settings`);
   if (!row.apiKey) throw precondition(`The ${type} service ${row.name} has no API key`);
   rememberSecret(row.apiKey);

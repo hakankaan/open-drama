@@ -17,7 +17,8 @@ export const stubVideo: VideoAdapter = {
   formatMention: (slot, name) => `${name} [image ${slot}]`,
   async generateLocal(record) {
     await stubDelayOrFail(record.prompt);
-    const title = `STUB VIDEO, task ${record.taskId}, ${record.durationSeconds}s, ${record.resolution}, ${record.referenceImages.length} ref images`;
+    const seed = record.seed !== undefined ? `, seed ${record.seed}` : '';
+    const title = `STUB VIDEO, task ${record.taskId}, ${record.durationSeconds}s, ${record.resolution}, ${record.referenceImages.length} ref images${seed}`;
     const frame = join(env.storageRoot, 'temp', `${randomUUID()}.png`);
     const out = join(env.storageRoot, 'videos', `${randomUUID()}.mp4`);
     await writeFile(frame, await renderPlaceholder(title, record.prompt, record.aspectRatio, record.taskId));

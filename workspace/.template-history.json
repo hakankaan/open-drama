@@ -1,0 +1,94 @@
+{
+  "assistant/adapt-source/SKILL.md": [
+    "ed00f7654abbd4481d80128f7a67c9703da370a72dafe8a8d96668bbc7afcf45"
+  ],
+  "assistant/create-story/SKILL.md": [
+    "bedefd4a2c38ec36fb73327d512c6bae674d513c17fc7cc31217847c55851a76"
+  ],
+  "assistant/guide.md": [
+    "8100473ed0e018b71a1f112dadaa621c261100837fceaba6f69c54276fd284ad"
+  ],
+  "assistant/instructions.md": [
+    "c229a83c79e4188ddcd48bb45d6b6fe8c42e9c101329f3e1d551cc94201645ac"
+  ],
+  "assistant/review-story/SKILL.md": [
+    "5c23e2662775edb0da5213bc0ca0d3e6a98ad553990c270786960e2ab385c5f3"
+  ],
+  "assistant/set-up/SKILL.md": [
+    "df939bf67811880720f0e2fc2f2554f36b54869965e024f3294c6907b2794109"
+  ],
+  "assistant/write-episodes/SKILL.md": [
+    "25a818a3d10ae837f493dfc28cc506715e3f9d29fefac6ba59f42466a9ec060d"
+  ],
+  "prompts/episode_planner.md": [
+    "b1f81fd56cb39a22dd173bfddf08cb6e6f231be3dfdc8eeaace7db3ed87b0d92"
+  ],
+  "prompts/episode_writer.md": [
+    "57410189bc6783dfecd3274fd1ec2708451fbcf621f6d248e37e9de1283b1d84"
+  ],
+  "prompts/extractor.md": [
+    "0fcdde8ec3fd901d636661192b5468c7049c36200c5529fccdb617bc54720fde"
+  ],
+  "prompts/prompt_generator.md": [
+    "4ede2ab33fea0d3c6530db47fbcc13ed5b956d9abd506d7330b93e572c5f42fe"
+  ],
+  "prompts/recap_writer.md": [
+    "b76d936affa1e34cb5131fc324f534ec1042cc6169115bb37945ab8b5ac10d88"
+  ],
+  "prompts/script_rewriter.md": [
+    "30c21a6358276340726a7e9459dee765047adbe474b1b429e44735f9b3b0388b",
+    "3f95d682cce38141a4e6fdbff6f63a3fbe48f6fa9ff190ffbd0fd771b8de6c1d",
+    "559b6bb5e9aa4025440ac0c38628e86cae7e0631c9f06f282a03c65051d14a1a"
+  ],
+  "prompts/story_writer.md": [
+    "c91cb986f07d5e15693aeb19c51967a1b344ee90f005c4871761a35282a79982"
+  ],
+  "prompts/storyboard_breaker.md": [
+    "1ddae2b1fb99d9ab9d7d739a22bfe1d3efdf2e956484fc25f55039d57e6263a4",
+    "9c0bfaf3ae19efd5bc8595cd0db51617f963cb0dadb4e401a8a5a99b7115a613",
+    "b1decd411eb3635c8a24eff9a021a96273f8adc4c948d197899c9a86f58f329b",
+    "bde8d88c36e021d637cbde4be2ae8103b09d08f035103636e8dd8333e750e93c"
+  ],
+  "skills/episode-planner/SKILL.md": [
+    "fa99d4475a3b3111f0c31d9a8d6c2e6c80b0a3bbb3e1ffa1c44251159f11bdf8"
+  ],
+  "skills/episode-writer/SKILL.md": [
+    "42e796ee32e4cc966180172f30f0aa04d4c32680b338ca6c3e700be50bd7b8e6"
+  ],
+  "skills/extractor/SKILL.md": [
+    "de42682358557da5d4e88dd26027b9f5ef2ae3a2d75f47935b846988d7f7e882"
+  ],
+  "skills/prompt-generator/character-prompt/SKILL.md": [
+    "4528401d7fd94e889a8af447b479dbd49a08a3ffb80deff6190636a1b531acb3"
+  ],
+  "skills/prompt-generator/prop-prompt/SKILL.md": [
+    "9cbf1992910c2294e10976b58c8fc108d00fb5c6702675b61b8f818f98a6f545"
+  ],
+  "skills/prompt-generator/scene-prompt/SKILL.md": [
+    "e58ffdb7a31aac74318d8787c2be582f40c1ee97d0fe1ca3f555308735a40119"
+  ],
+  "skills/prompt-generator/video-prompt/SKILL.md": [
+    "531eafa1a0e4dbb772d7a50ef605458e1331c139935e26a6711632ef38c1f44e",
+    "7451bbcae80d272536d52f23e20e2d1eb5ca8d6857e8d9a549449c5b101a74f8",
+    "8f1b6077f4a38f711406df2cf65089a752e6033196bb740d5442add5c39bd24e"
+  ],
+  "skills/recap-writer/SKILL.md": [
+    "add840029160d494bd1b2cdec26ffa27b92c6c79de7f25c3b4cb0e44d10086f3"
+  ],
+  "skills/script-rewriter/SKILL.md": [
+    "62a46f25914ceb4b2211b5791a76868a107501ae8e83346c75d3672cb5a8676f",
+    "69186d3eefd96b0b4df34e48e078f3ab325c0cf5604e722f7dda344bc64cb8f5"
+  ],
+  "skills/script-rewriter/format/SKILL.md": [
+    "d285fce48020f1a845ad4ee3843f563dc660bce7c53f1406419aea2a5106fad2"
+  ],
+  "skills/story-writer/SKILL.md": [
+    "6b5d73f8da1f86dee112294b250b85a3e606c7c53e38d417d4607a473d212a58"
+  ],
+  "skills/storyboard-breaker/SKILL.md": [
+    "5664d70341fd214d5adc05f363817d5979e3649d04417ef67815b6273c310df8",
+    "ba3b288531cd83071eb27baabade7b66f849ecb588ec7a1470a0d216b19f667c",
+    "cd604111127685a8672bda7b31d4b2962e81f81d76763f43df5d56b88e112ccf",
+    "f838863ad54410933150d33e109ae08c01a3ea5e3371bebc6c6e2d980c6c6092"
+  ]
+}

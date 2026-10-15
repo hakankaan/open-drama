@@ -772,7 +772,10 @@
         "config": "{model} · {resolution} · {seconds} 秒",
         "defaultModel": "默认模型",
         "generate": "生成视频",
-        "regenerate": "重新生成"
+        "regenerate": "重新生成",
+        "seed": "{model} · 种子 {seed}",
+        "retakeSeed": "用此种子重新生成",
+        "notSent": "此版本未发送：超出单次调用上限"
       },
       "batch": {
         "progress": "正在提交视频 {done}/{total}",

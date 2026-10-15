@@ -111,6 +111,11 @@ export const Episode = z.object({
   resolution: Resolution,
   imageServiceId: z.number().int().nullable(),
   videoServiceId: z.number().int().nullable(),
+  /**
+   * The video model the episode is pinned to (adr-0017): claimed by its first video made without a model pick, kept
+   * while its locked service still lists it. Null until then.
+   */
+  videoModel: z.string().nullable(),
   filmPath: MediaPath.nullable(),
   filmDurationSeconds: z.number().nullable(),
   /** The sum of the live shots' durations. */
@@ -127,6 +132,7 @@ export const LockedService = z.object({
   id: z.number().int(),
   name: z.string(),
   provider: ProviderName,
+  /** The model a request without a model pick uses: the episode's pinned video model, else the service's first (adr-0017). */
   defaultModel: z.string().nullable(),
   /** false when the locked service is gone or inactive and this is the fallback. */
   locked: z.boolean(),

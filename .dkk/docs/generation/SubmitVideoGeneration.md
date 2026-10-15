@@ -6,7 +6,7 @@
 
 ## Summary
 
-Create a video generation task for a shot with the prompt, reference images/videos/audio, duration, aspect ratio, resolution and audio flag. Validated against the resolved provider's reference limits before the row is created.
+Create a video generation task for a shot with the prompt, reference images/videos/audio, duration, aspect ratio, resolution, audio flag and seed; adapters add the fixed negative prompt and turn prompt rewriting off where the model takes them (adr-0017). Validated against the resolved provider's reference limits before the row is created.
 
 
 ## Fields
@@ -45,4 +45,6 @@ Create a video generation task for a shot with the prompt, reference images/vide
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0017](../../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |

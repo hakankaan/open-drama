@@ -70,6 +70,9 @@ export interface SubmitVideoInput {
   aspectRatio: AspectRatio;
   resolution: Resolution;
   generateAudio: boolean;
+  /** Only for a model that takes one; recorded on the task so a retake can reuse it (adr-0017). */
+  seed?: number;
+  negativePrompt: string;
   /** Recorded on the task for the UI (slots, unmatched mentions). */
   params: Record<string, unknown>;
 }
@@ -116,6 +119,8 @@ async function run(taskId: number, resolved: ResolvedVideo, input: SubmitVideoIn
     aspectRatio: input.aspectRatio,
     resolution: input.resolution,
     generateAudio: input.generateAudio,
+    seed: input.seed,
+    negativePrompt: input.negativePrompt,
   };
   // Preparing the references can take a while too: check once more right before the provider is paid.
   if (!stillWanted(taskId, input.shotId)) return;
@@ -142,6 +147,7 @@ export function submitShotVideo(resolved: ResolvedVideo, input: SubmitVideoInput
         aspectRatio: input.aspectRatio,
         resolution: input.resolution,
         generateAudio: input.generateAudio,
+        ...(input.seed !== undefined ? { seed: input.seed } : {}),
         references: { images: input.referenceImages.length, videos: input.referenceVideos.length, audios: input.referenceAudios.length },
       },
     },

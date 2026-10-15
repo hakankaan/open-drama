@@ -39,7 +39,7 @@ function hasAssetCandidates(episodeId: number): boolean {
  */
 export async function startBreakdown(episodeId: number, opts: z.input<typeof TextModelOverride> = {}) {
   // Reading the video model's limits can take seconds: everything checked below is read after it.
-  const video = await describeVideoModel(getEpisodeRow(episodeId).videoServiceId);
+  const video = await describeVideoModel(getEpisodeRow(episodeId));
   const ep = getEpisodeRow(episodeId);
   const jobs = getEpisodeJobs(ep.id);
   // The length is fixed for the job: the final batch is checked against what the agent was told.

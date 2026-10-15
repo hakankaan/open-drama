@@ -772,7 +772,10 @@
         "config": "{model} · {resolution} · {seconds}秒",
         "defaultModel": "デフォルトモデル",
         "generate": "動画を生成",
-        "regenerate": "再生成"
+        "regenerate": "再生成",
+        "seed": "{model} · シード {seed}",
+        "retakeSeed": "このシードで再生成",
+        "notSent": "このバージョンでは未送信：1回の呼び出しの上限を超えています"
       },
       "batch": {
         "progress": "動画をリクエスト中 {done}/{total}",

@@ -103,7 +103,7 @@ Raw content  ──►  Script  ──►  Assets  ──►  Storyboard & Video
 apps/web         Next.js (App Router, TypeScript, Tailwind) — launcher, settings, project page, episode studio
 apps/api         Node.js API (Hono) — SQLite via Drizzle, agent runtime on the AI SDK, generation engine, FFmpeg
 packages/contracts  zod schemas + types shared by web and api (the API contract)
-workspace/       agent prompt + skill templates and the assistant skills (copied once into the data directory, then editable)
+workspace/       agent prompt + skill templates and the assistant skills (copied into the data directory, then editable; unedited files follow template updates)
 data/            runtime data: open-drama.sqlite3, static media, writable workspace (git-ignored)
 docs/plans/      the implementation plans
 .dkk/            domain model (8 bounded contexts, 7 flows) and ADRs

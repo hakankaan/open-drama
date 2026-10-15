@@ -25,6 +25,9 @@ const IMAGE_LIST = ['reference_images', 'reference_image_urls', 'image_urls', 'i
 const IMAGE_SLOT = /^reference_image_(\d+)$/;
 const AUDIO_LIST = ['reference_audios', 'reference_audio_urls', 'audio_urls'];
 const SIZE = ['size', 'image_size'];
+const NEGATIVE = ['negative_prompt'];
+/** Prompt rewriting switches, turned off: a rewrite differs per shot and drifts the style and identity wording (adr-0017). */
+const EXPANSION = ['enable_prompt_expansion', 'prompt_extend', 'prompt_optimizer', 'enhance_prompt', 'expand_prompt'];
 
 interface Endpoint {
   id: string;
@@ -33,6 +36,10 @@ interface Endpoint {
   aspect?: Field;
   audioFlag?: Field;
   size?: Field;
+  seed?: Field;
+  negative?: Field;
+  /** Boolean prompt-expansion switches it has. */
+  expansion: Field[];
   /** Reference images: one list field, or single-image fields in slot order (`reference_image_1`, `_2`…). */
   images?: { list: Field } | { slots: Field[] };
   /** How many reference images it takes, when its schema says. */
@@ -74,13 +81,20 @@ function endpointOf(inputs: EndpointInputs): Endpoint {
     aspect: pick(inputs, ASPECT),
     audioFlag: pick(inputs, AUDIO_FLAG, 'boolean'),
     size: pick(inputs, SIZE),
+    seed: pick(inputs, ['seed'], 'integer'),
+    negative: pick(inputs, NEGATIVE, 'string'),
   };
-  const filled = new Set(['prompt', ...[...Object.values(roles), list, audios, ...slots].flatMap((f) => (f ? [f.name] : []))]);
+  const expansion = EXPANSION.flatMap((n) => {
+    const f = inputs.fields.get(n);
+    return f?.types.includes('boolean') ? [f] : [];
+  });
+  const filled = new Set(['prompt', ...[...Object.values(roles), list, audios, ...slots, ...expansion].flatMap((f) => (f ? [f.name] : []))]);
   const imageFields = list ? [list] : slots;
   const prose = [inputs.fields.get('prompt'), ...imageFields].map((f) => f?.description ?? '').join(' ');
   return {
     id: inputs.endpoint,
     ...roles,
+    expansion,
     images,
     imageMax: list ? maxOf(list) : slots.length || undefined,
     imagesRequired: imageFields.some((f) => f.required),
@@ -472,6 +486,8 @@ async function describeVideo(model: string) {
     // A model without a resolution input renders one tier, so there is nothing to pick.
     resolutions: both((e) => e.resolution && tiersOf(e.resolution)) ?? [],
     aspectRatios: both((e) => e.aspect && aspectsOf(e.aspect)),
+    // Whichever endpoint a request goes to must take it, or the recorded seed would be one the model never saw.
+    seed: [plain, referenced].every((e) => !e || Boolean(e.seed)),
   };
   const seconds = both((e) => e.duration && secondsOf(e.duration));
   if (seconds) {
@@ -503,6 +519,9 @@ export const modelrunnerVideo: VideoAdapter = {
     set(body, target.resolution, target.resolution && resolutionValue(target.resolution, record.resolution));
     set(body, target.aspect, target.aspect && videoAspect(target.aspect, record.aspectRatio));
     set(body, target.audioFlag, record.generateAudio);
+    set(body, target.seed, record.seed);
+    set(body, target.negative, record.negativePrompt);
+    for (const field of target.expansion) body[field.name] = false;
     placeImages(body, target, record.referenceImages);
     if (record.referenceAudios.length > 0) set(body, target.audios, record.referenceAudios);
     return submit(config, target.id, body);

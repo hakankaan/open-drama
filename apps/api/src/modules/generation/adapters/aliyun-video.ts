@@ -21,7 +21,8 @@ const reason = (res: WanResponse, fallback: string) => ({
 
 /**
  * Alibaba Bailian Wan 3.x: an async video-synthesis task with `input.media[]` (typed references) and
- * `parameters`, polled through /tasks/{id}. Reference images are addressed in the prompt as 图N.
+ * `parameters`, polled through /tasks/{id}. Reference images are addressed in the prompt as 图N. Prompt expansion is
+ * off; the seed and negative prompt are sent when given.
  */
 export const aliyunVideo: VideoAdapter = {
   provider: 'aliyun',
@@ -40,14 +41,20 @@ export const aliyunVideo: VideoAdapter = {
       headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json', 'X-DashScope-Async': 'enable' },
       body: JSON.stringify({
         model: config.model,
-        input: { ...(record.prompt ? { prompt: record.prompt.slice(0, 20_000) } : {}), ...(media.length ? { media } : {}) },
+        input: {
+          ...(record.prompt ? { prompt: record.prompt.slice(0, 20_000) } : {}),
+          ...(record.negativePrompt ? { negative_prompt: record.negativePrompt.slice(0, 500) } : {}),
+          ...(media.length ? { media } : {}),
+        },
         parameters: {
           resolution: record.resolution.toUpperCase(),
           ratio: record.aspectRatio,
           duration: record.durationSeconds,
           audio: record.generateAudio,
-          prompt_extend: true,
+          // Expansion would rewrite the prompt differently for every shot, style and identity wording included (adr-0017).
+          prompt_extend: false,
           watermark: false,
+          ...(record.seed !== undefined ? { seed: record.seed } : {}),
         },
       }),
     };

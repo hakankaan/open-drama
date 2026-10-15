@@ -35,4 +35,6 @@ Ask the storyboard-breaker agent to split the episode's script into shots with d
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0017](../../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |

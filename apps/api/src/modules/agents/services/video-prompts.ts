@@ -29,7 +29,7 @@ export async function generateShotVideoPrompt(
   const shot = getShotRow(shotId);
   const ep = getEpisodeRow(shot.episodeId);
   assertNoBreakdown(ep.id);
-  const videoModel = videoModelLabel(ep.videoServiceId);
+  const videoModel = videoModelLabel(ep);
   const checkSources = watchPromptSources(shotId);
   promptRuns.set(ep.id, (promptRuns.get(ep.id) ?? 0) + 1);
   try {

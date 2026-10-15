@@ -22,6 +22,8 @@ export const VideoProviderCaps = z.object({
   resolutions: z.array(Resolution),
   /** The shapes the model renders, when it states them; a video of any other shape is refused rather than reshaped. */
   aspectRatios: z.array(AspectRatio).optional(),
+  /** Whether the model takes a seed, so a retake can reuse the one a video was made with (adr-0017). */
+  seed: z.boolean(),
 });
 export type VideoProviderCaps = z.infer<typeof VideoProviderCaps>;
 
@@ -34,13 +36,13 @@ export const VideoCapsQuery = z.object({
 /** A provider's defaults; `VIDEO_MODEL_CAPS` refines them for the models of a family that differ. */
 export const VIDEO_PROVIDER_CAPS: Partial<Record<ProviderName, VideoProviderCaps>> = {
   // Ark Seedance 2.0 (Volcengine and BytePlus ModelArk publish the same limits).
-  volcengine: { images: 9, videos: 3, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'] },
-  byteplus: { images: 9, videos: 3, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'] },
+  volcengine: { images: 9, videos: 3, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'], seed: true },
+  byteplus: { images: 9, videos: 3, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'], seed: true },
   // ModelRunner's Seedance 2.0 reference-to-video endpoint. Each model's own limits are read from its endpoints'
   // input schemas (adr-0013 amendment 5); these apply only while they cannot be read.
-  modelrunner: { images: 9, videos: 0, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'] },
-  minimax: { images: 9, videos: 3, audios: 3, total: 12, audioNeedsVisual: false, durationRange: [4, 15], resolutions: ['720p', '1080p'] },
-  aliyun: { images: 10, videos: 5, audios: 5, total: 20, audioNeedsVisual: false, durationRange: [2, 30], resolutions: ['480p', '720p', '1080p'] },
+  modelrunner: { images: 9, videos: 0, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'], seed: false },
+  minimax: { images: 9, videos: 3, audios: 3, total: 12, audioNeedsVisual: false, durationRange: [4, 15], resolutions: ['720p', '1080p'], seed: false },
+  aliyun: { images: 10, videos: 5, audios: 5, total: 20, audioNeedsVisual: false, durationRange: [2, 30], resolutions: ['480p', '720p', '1080p'], seed: true },
 };
 
 const ARK_SEEDANCE_25: Partial<VideoProviderCaps> = {
@@ -76,6 +78,7 @@ export const DEFAULT_VIDEO_CAPS: VideoProviderCaps = {
   audioNeedsVisual: true,
   durationRange: [2, 15],
   resolutions: ['480p', '720p', '1080p'],
+  seed: true,
 };
 
 /** A model id as configured, without surrounding whitespace or leading and trailing slashes. */

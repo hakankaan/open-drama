@@ -50,6 +50,7 @@ export const volcengineVideo: VideoAdapter = {
         resolution: record.resolution,
         generate_audio: record.generateAudio,
         watermark: false,
+        ...(record.seed !== undefined ? { seed: record.seed } : {}),
         ...taskType,
       }),
     };
