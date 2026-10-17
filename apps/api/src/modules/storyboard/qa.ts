@@ -15,6 +15,7 @@ import { askAboutImages, isApiCallError } from '../agents/runtime/sdk';
 import { getAppSettings } from '../configuration/settings';
 import { getEpisodeRow } from '../production/episodes';
 import { loadBindings, getShotRow, toShot } from './service';
+import { wardrobeOf } from './video';
 
 /** Each picture of a contact sheet fits this box; three frames of a 16:9 clip make a 1536 x 288 sheet. */
 const TILE = 512;
@@ -107,10 +108,12 @@ export async function checkShot(shotId: number, body: z.output<typeof CheckShot>
   const bindings = loadBindings([shot]).get(shot.id)!;
   // Everyone bound may appear (narrators are not bound); only the first four are pictured, as in a video's references.
   const cast = bindings.characters;
+  // In an episode where a character wears another outfit, its full body is that outfit's picture (adr-0023).
   const pictured = cast.slice(0, 4).flatMap((c) => {
     const body = c.views?.body ?? null;
     const path = body ?? c.imagePath;
-    return path && existsSync(toAbsolute(path)) ? [{ name: c.name, kind: body ? 'full body' : 'cover', path }] : [];
+    const kind = body ? (c.outfit ? "full body in this episode's outfit" : 'full body') : 'cover';
+    return path && existsSync(toAbsolute(path)) ? [{ name: c.name, kind, path }] : [];
   });
   const scene = bindings.scene?.imagePath && existsSync(toAbsolute(bindings.scene.imagePath)) ? bindings.scene : null;
   const references = [...pictured, ...(scene ? [{ name: scene.name, kind: 'scene', path: scene.imagePath! }] : [])];
@@ -123,9 +126,12 @@ export async function checkShot(shotId: number, body: z.output<typeof CheckShot>
     references.length > 0
       ? `Reference strip, left to right: ${references.map((r, i) => `${i + 1}. ${r.name} (${r.kind})`).join('; ')}.`
       : 'There is no reference strip.',
+    wardrobeOf(cast),
     `What the shot shows: ${shot.description.trim().slice(0, 1200) || '(no description)'}`,
     `Write the notes in ${language}.`,
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   let answer: z.infer<typeof Answer> | null;
   try {

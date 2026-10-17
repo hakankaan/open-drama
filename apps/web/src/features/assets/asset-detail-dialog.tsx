@@ -4,7 +4,7 @@ import { Copy, ImageOff, Sparkles, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import type { CharacterView, GeneratedView } from '@open-drama/contracts';
+import type { CharacterView, EpisodeCharacterCard, GeneratedView } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Field, Input, Textarea } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { cn } from '@/lib/cn';
 import { useToastError } from '@/lib/errors';
 import { mediaUrl } from '@/lib/media';
 import { useUpdateAsset, type UpdateAssetInput } from './api';
+import { CharacterOutfit } from './character-outfit';
 import { CharacterViewsPanel } from './character-views';
 import { CharacterVoice } from './character-voice';
 import { ASSET_FIELDS } from './fields';
@@ -29,6 +30,7 @@ export function AssetDetailDialog({
   onUpload,
   uploading,
   generation,
+  outfit,
 }: {
   item: AnyAsset;
   dramaId: number;
@@ -44,6 +46,8 @@ export function AssetDetailDialog({
     onGenerateImage: (views?: GeneratedView[]) => void;
     imagePending: boolean;
   };
+  /** Opened from an episode: the character as that episode dresses it (adr-0023). */
+  outfit?: { character: EpisodeCharacterCard; episodeId: number };
 }) {
   const t = useTranslations('assets');
   const tc = useTranslations('common');
@@ -158,6 +162,9 @@ export function AssetDetailDialog({
                 </Field>
               );
             })}
+            {item.kind === 'character' && outfit ? (
+              <CharacterOutfit character={outfit.character} episodeId={outfit.episodeId} dramaId={dramaId} />
+            ) : null}
             {item.kind === 'character' ? <CharacterVoice character={item.asset} dramaId={dramaId} /> : null}
             <Field label={t('fields.finalPrompt')} htmlFor="asset-final-prompt" hint={t('finalPromptHint')}>
               <div className="flex flex-col gap-1.5">

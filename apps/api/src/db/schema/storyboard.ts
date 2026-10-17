@@ -42,6 +42,10 @@ export const shots = sqliteTable(
     videoDurationSeconds: real(),
     // The still the shot's video starts from, where the video model takes a first frame.
     keyframePath: text(),
+    // Counts changes to what a keyframe is drawn from (cast, framing, its prompt, the bound assets' pictures, an
+    // outfit); the keyframe is stale while it was drawn (or kept) at an earlier count (adr-0019).
+    keyframeRevision: integer().notNull().default(0),
+    keyframeDrawnRevision: integer().notNull().default(0),
     // One unbroken take with the previous shot: the video starts from that shot's last frame.
     continuesPrevious: bool().notNull().default(false),
     // Who speaks the shot's line (one speaker per shot), and the line itself (adr-0021).

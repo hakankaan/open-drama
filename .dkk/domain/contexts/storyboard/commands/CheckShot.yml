@@ -24,3 +24,4 @@ rejections:
   - The vision model's answer is not the check (nothing is stored)
 adr_refs:
   - adr-0022
+  - adr-0023

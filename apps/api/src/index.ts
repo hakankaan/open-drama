@@ -52,6 +52,10 @@ logger.info(failInterrupted(), 'interrupted work failed');
 const { resumeInterrupted } = await import('./modules/generation/engine/resume');
 logger.info(resumeInterrupted(), 'accepted generations resumed');
 
+// After the resume, so the video each one waits for is either generating again or already failed (adr-0020).
+const { resumeWaitingContinuations } = await import('./modules/storyboard/video');
+logger.info(resumeWaitingContinuations(), 'videos waiting to continue a shot picked up');
+
 const { createApp } = await import('./app');
 const server = serve({ fetch: createApp().fetch, hostname: env.HOST, port: env.PORT }, (info) =>
   logger.info({ url: `http://${info.address}:${info.port}` }, 'listening'),

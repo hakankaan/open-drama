@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   clampDuration,
@@ -9,23 +9,29 @@ import {
   imageLimitOf,
   MENTION,
   planShotReferences,
+  videoCapsFor,
+  type AspectRatio,
   type ContentLanguage,
   type ReferenceKind,
+  type Resolution,
   type RequestShotVideo,
   type SentView,
   type ShotVideoStarted,
 } from '@open-drama/contracts';
 import { db } from '../../db/client';
-import { characters } from '../../db/schema';
+import { characters, episodes, generationTasks, shots } from '../../db/schema';
 import { env } from '../../env';
 import { invalid, precondition } from '../../http/errors';
+import { logger } from '../../http/logger';
 import { toAbsolute } from '../../lib/paths';
 import { withStylePrefix } from '../assets/extraction';
 import { composeSheet } from '../assets/views';
 import { getAppSettings } from '../configuration/settings';
-import type { FormatMention } from '../generation/adapters/types';
+import type { FormatMention, VideoAdapter } from '../generation/adapters/types';
 import { resolveLipSync } from '../generation/engine/lipsync';
-import { resolveVideo, submitShotVideo } from '../generation/engine/videos';
+import { videoAdapterFor } from '../generation/adapters/registry';
+import { failTask, resolveGeneration } from '../generation/engine/lifecycle';
+import { dispatchShotVideo, resolveVideo, submitShotVideo, WAITING_TO_CONTINUE } from '../generation/engine/videos';
 import { getDramaRow, touchDrama } from '../production/dramas';
 import { getEpisodeRow } from '../production/episodes';
 import { chainSource, continuedByNext, firstFrameFrom } from './chain';
@@ -38,6 +44,8 @@ const DIALOGUE = /\{[^{}\n]+\}|"[^"\n]+"|“[^”\n]+”|「[^」\n]+」|『[^�
 
 const SPOKEN: Record<ContentLanguage, string> = { en: 'English', zh: 'Mandarin Chinese', ja: 'Japanese', ko: 'Korean' };
 const IDENTITY = 'Each character keeps the face, hair and outfit of their reference images throughout; faces stay stable without deformation, and movements are natural and smooth.';
+/** An episode outfit not pictured yet (adr-0023): the references show the usual clothes, the wardrobe line the outfit. */
+const IDENTITY_OUTFIT = 'Each character keeps the face and hair of their reference images and wears what is described above throughout; faces stay stable without deformation, and movements are natural and smooth.';
 /** The same, for a video that starts from the shot's keyframe and gets no reference images. */
 const IDENTITY_FROM_FRAME = 'Each character keeps the face, hair and outfit they have in the first frame throughout; faces stay stable without deformation, and movements are natural and smooth.';
 /** Opens the prompt of a shot that continues the previous one from its last frame (adr-0020). */
@@ -122,11 +130,14 @@ export function clip(text: string, max: number): string {
   return flat.slice(0, flat.lastIndexOf(' ', max) > 0 ? flat.lastIndexOf(' ', max) : max).replace(/[,;:.\s]+$/, '');
 }
 
-/** What the people sent wear, as one line (`Wardrobe: Mei: red coat; Jun: grey suit.`); '' when nobody's outfit is stated. */
-export function wardrobeOf(people: { id: number; name: string }[]): string {
-  const styling = characterStyling(people.map((c) => c.id));
+/**
+ * What the people sent wear, as one line (`Wardrobe: Mei: red coat; Jun: grey suit.`): the episode's outfit where the
+ * binding carries one (adr-0023), else the character's styling; '' when nobody's outfit is stated.
+ */
+export function wardrobeOf(people: { id: number; name: string; outfit?: string }[]): string {
+  const styling = characterStyling(people.filter((c) => !c.outfit).map((c) => c.id));
   const outfits = people.flatMap((c) => {
-    const text = clip(styling.get(c.id) ?? '', WARDROBE_CHARS);
+    const text = clip(c.outfit || (styling.get(c.id) ?? ''), WARDROBE_CHARS);
     return text ? [`${c.name}: ${text}`] : [];
   });
   return outfits.length ? `Wardrobe: ${outfits.join('; ')}.` : '';
@@ -280,16 +291,17 @@ export async function requestShotVideo(shotId: number, body: z.output<typeof Req
   ) {
     audios.push(sample);
   }
+  const people = bindings.characters.filter((c) => cast.includes(c.name));
   // A prompt left empty for references alone is still framed around them.
   const framed = (rendered || slots.length > 0 || fromFrame) && [
     chain ? CONTINUES : '',
     legendOf(slots, formatMention),
     headcountOf(cast),
-    wardrobeOf(bindings.characters.filter((c) => cast.includes(c.name))),
+    wardrobeOf(people),
     rendered,
     lighting && `Lighting: ${lighting}.`,
     [
-      cast.length === 0 ? '' : fromFrame ? IDENTITY_FROM_FRAME : IDENTITY,
+      cast.length === 0 ? '' : fromFrame ? IDENTITY_FROM_FRAME : people.some((c) => c.outfit && !c.views?.body) ? IDENTITY_OUTFIT : IDENTITY,
       continuedByNext(shot) ? ENDS_STEADY : '',
       lipSync && speaker ? speaksOf(speaker.name) : '',
       drama.pinnedVoices && !spoken ? NOBODY_SPEAKS : '',
@@ -331,8 +343,9 @@ export async function requestShotVideo(shotId: number, body: z.output<typeof Req
       ...(unmatchedMentions.length ? { unmatchedMentions } : {}),
       ...(dropped.length ? { droppedReferences: dropped } : {}),
       ...(firstFrame ? { firstFrame } : {}),
-      // Completed with the frame, its time and the video it came from once that is ready (firstFrameFrom).
-      ...(chain ? { chainedFrom: { shotId: chain.shotId, shotNumber: chain.shotNumber } } : {}),
+      // Completed with the frame, its time and the video it came from once that is ready (firstFrameFrom); until then
+      // the task it waits for lets a restart pick it up again (resumeWaitingContinuations).
+      ...(chain ? { chainedFrom: { shotId: chain.shotId, shotNumber: chain.shotNumber, waitingFor: chain.waitingFor } } : {}),
       // The line audio the video's length was fitted to: only that one is lip-synced to it once it is done.
       ...(lipSync ? { autoLipSync: shot.lineAudioPath } : {}),
       ...(audios.includes(sample ?? '') ? { voiceSample: sample } : {}),
@@ -347,6 +360,86 @@ export async function requestShotVideo(shotId: number, body: z.output<typeof Req
     continues: chain ? { shotNumber: chain.shotNumber, waiting: chain.waitingFor !== null } : null,
     lipSync,
   };
+}
+
+/**
+ * After a restart, picks up the videos that were still waiting to continue the shot before them (adr-0020): nothing
+ * of them was sent, so each is dispatched again as it was recorded, in its service and model, and waits again for the
+ * video it waited for. That video's task decides: still generating (resumed after the restart), it is waited for;
+ * failed (also when the restart failed it), this one fails too; done, its frame is taken. The shot must still continue
+ * the same shot (firstFrameFrom checks). A task that cannot be rebuilt (its service gone or changed, its shot deleted,
+ * or recorded before restarts could pick it up) fails as an interrupted task did before.
+ */
+export function resumeWaitingContinuations(): { redispatched: number } {
+  const tasks = db.select().from(generationTasks).where(and(eq(generationTasks.status, 'processing'), WAITING_TO_CONTINUE)).all();
+  let redispatched = 0;
+  for (const task of tasks) {
+    try {
+      redispatch(task);
+      redispatched++;
+    } catch (err) {
+      failTask(task.id, err, 'video');
+    }
+  }
+  return { redispatched };
+}
+
+function redispatch(task: typeof generationTasks.$inferSelect) {
+  const interrupted = (why: string) => new Error(`Interrupted by a server restart while waiting for the shot it continues, and ${why}; nothing was sent to the provider`);
+  const p = task.params;
+  const from = p.chainedFrom as { shotId?: unknown; shotNumber?: unknown; waitingFor?: unknown };
+  if (typeof from.shotId !== 'number' || typeof from.shotNumber !== 'number' || !('waitingFor' in from)) {
+    throw interrupted('it was recorded before a restart could pick it up again');
+  }
+  const refs = (p.references ?? {}) as { images?: number; videos?: number; audios?: number };
+  if ((refs.images ?? 0) + (refs.videos ?? 0) + (refs.audios ?? 0) > 0) throw interrupted('it cannot be rebuilt');
+  if (typeof p.durationSeconds !== 'number' || typeof p.aspectRatio !== 'string' || typeof p.resolution !== 'string') {
+    throw interrupted('it cannot be rebuilt');
+  }
+  const owner =
+    task.shotId === null
+      ? undefined
+      : db
+          .select({ episodeId: shots.episodeId, dramaId: episodes.dramaId, deletedAt: episodes.deletedAt })
+          .from(shots)
+          .innerJoin(episodes, eq(episodes.id, shots.episodeId))
+          .where(eq(shots.id, task.shotId))
+          .get();
+  if (!owner || owner.deletedAt) throw interrupted('its shot was deleted');
+  if (!env.OPEN_DRAMA_STUB_PROVIDERS && task.serviceId === null) throw interrupted('it has no service to go to');
+  let resolved: ReturnType<typeof resolveGeneration<VideoAdapter>> | null = null;
+  try {
+    resolved = resolveGeneration('video', videoAdapterFor, { explicitId: task.serviceId ?? undefined, model: task.model });
+  } catch {
+    // Deleted, disabled, retyped or keyless: reported below like a service that moved.
+  }
+  if (!resolved || resolved.provider !== task.provider || resolved.model !== task.model) {
+    throw interrupted('its service was removed or changed meanwhile');
+  }
+  const waitingFor = typeof from.waitingFor === 'number' ? from.waitingFor : null;
+  const source = { shotId: from.shotId, shotNumber: from.shotNumber, waitingFor };
+  logger.info({ taskId: task.id, shotId: task.shotId, waitingFor }, 'video task waiting to continue a shot picked up after restart');
+  dispatchShotVideo(
+    task.id,
+    // The model's limits from the table: it sends no reference image, so nothing is asked of the provider at boot.
+    { ...resolved, caps: videoCapsFor(resolved.provider, resolved.model), formatMention: resolved.adapter.formatMention },
+    {
+      shotId: task.shotId!,
+      episodeId: owner.episodeId,
+      dramaId: owner.dramaId,
+      prompt: task.prompt,
+      referenceImages: [],
+      referenceVideos: [],
+      referenceAudios: [],
+      durationSeconds: p.durationSeconds,
+      aspectRatio: p.aspectRatio as AspectRatio,
+      resolution: p.resolution as Resolution,
+      generateAudio: p.generateAudio !== false,
+      seed: typeof p.seed === 'number' ? p.seed : undefined,
+      negativePrompt: NEGATIVE_PROMPT,
+      firstFrameFrom: (taskId) => firstFrameFrom(taskId, source),
+    },
+  );
 }
 
 /** A character's stored voice sample, or null. */

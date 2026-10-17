@@ -38,3 +38,4 @@ Have the vision service look over the shot's current video: three frames (at a s
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0022](../../adr/adr-0022.md) | Shot checks by a vision model | proposed |
+| [adr-0023](../../adr/adr-0023.md) | Per-episode outfits | proposed |

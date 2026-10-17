@@ -39,3 +39,4 @@ Draw the shot's keyframe: a still of its opening moment in the drama's aspect ra
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0019](../../adr/adr-0019.md) | Shot keyframes and the finishing pass | proposed |
+| [adr-0023](../../adr/adr-0023.md) | Per-episode outfits | proposed |

@@ -1,6 +1,6 @@
 'use client';
 
-import { Clapperboard, Link2, Loader2, Play, ScanEye, TriangleAlert } from 'lucide-react';
+import { Clapperboard, Link2, Loader2, Play, ScanEye, TriangleAlert, Unlink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ShotCard } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
@@ -128,11 +128,19 @@ export function TaskList({
                         {t(`state.${state}`)}
                       </Tag>
                       <span className="tabular-nums">{t('seconds', { seconds: shot.durationSeconds })}</span>
+                      {/* A video that no longer joins the shot before is cut to in the merge (adr-0020). */}
                       {shot.continuesPrevious && before.has(shot.id) ? (
-                        <span className="inline-flex items-center gap-0.5">
-                          <Link2 className="h-3 w-3" aria-hidden />
-                          {t('continuity.short', { number: before.get(shot.id)! })}
-                        </span>
+                        shot.continuationStale ? (
+                          <span className="inline-flex items-center gap-0.5 text-warning" title={t('continuity.stale', { number: before.get(shot.id)! })}>
+                            <Unlink className="h-3 w-3" aria-hidden />
+                            {t('continuity.cut', { number: before.get(shot.id)! })}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-0.5">
+                            <Link2 className="h-3 w-3" aria-hidden />
+                            {t('continuity.short', { number: before.get(shot.id)! })}
+                          </span>
+                        )
                       ) : null}
                       {/* The check of the current video (adr-0022); a fine one is only an icon. */}
                       {shot.qa?.verdict === 'check' ? (

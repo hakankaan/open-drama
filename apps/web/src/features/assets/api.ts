@@ -6,6 +6,7 @@ import {
   CharacterCard,
   DramaAssetLibrary,
   EpisodeAssets,
+  EpisodeCharacterCard,
   FinalPromptResult,
   JobStarted,
   TaskStarted,
@@ -18,8 +19,10 @@ import {
   type ExtractionTarget,
   type GenerateFinalPrompt,
   type RequestAssetImage,
+  type RequestOutfitImage,
   type TextModelOverride,
   type UpdateCharacter,
+  type UpdateEpisodeOutfit,
   type UpdateProp,
   type UpdateScene,
 } from '@open-drama/contracts';
@@ -27,9 +30,13 @@ import { request } from '@/lib/api';
 import { productionKeys } from '../production/api';
 
 const generating = (d: { characters: AnyCard[]; scenes: AnyCard[]; props: AnyCard[] } | undefined) =>
-  !!d && [...d.characters, ...d.scenes, ...d.props].some((a) => a.latestImageTask?.status === 'processing');
+  !!d &&
+  [...d.characters, ...d.scenes, ...d.props].some(
+    (a) => a.latestImageTask?.status === 'processing' || a.latestOutfitTask?.status === 'processing',
+  );
 
-type AnyCard = { latestImageTask: { status: string } | null };
+/** An episode's characters also carry their outfit picture's task (adr-0023). */
+type AnyCard = { latestImageTask: { status: string } | null; latestOutfitTask?: { status: string } | null };
 
 export const assetKeys = {
   library: (dramaId: number) => ['assets', 'library', dramaId] as const,
@@ -85,6 +92,8 @@ export function useInvalidateAssets(dramaId: number) {
     void qc.invalidateQueries({ queryKey: ['production', 'pipeline'] });
     // The task drawer's badge only polls while it knows of running work.
     void qc.invalidateQueries({ queryKey: ['generation', 'episode-tasks'] });
+    // Keyframes drawn from an asset's old picture or outfit show as stale (adr-0019).
+    void qc.invalidateQueries({ queryKey: ['storyboard', 'shots'] });
   };
 }
 
@@ -118,3 +127,15 @@ export const requestAssetImage = ({ kind, id, body }: { kind: AssetKind; id: num
 
 /** Request*Image: returns the task id; the card follows the task through the polled asset lists. */
 export const useRequestAssetImage = (dramaId: number) => useAssetMutation(dramaId, requestAssetImage);
+
+/** SetEpisodeOutfit (adr-0023): what a character wears in one episode, and its picture. */
+export const useUpdateEpisodeOutfit = (dramaId: number) =>
+  useAssetMutation(dramaId, ({ id, body }: { id: number; body: UpdateEpisodeOutfit }) =>
+    request(EpisodeCharacterCard, 'PATCH', `/characters/${id}/outfit`, body),
+  );
+
+/** RequestOutfitImage (adr-0023): the outfit's full-body picture, drawn from the character's headshot. */
+export const useRequestOutfitImage = (dramaId: number) =>
+  useAssetMutation(dramaId, ({ id, body }: { id: number; body: RequestOutfitImage }) =>
+    request(TaskStarted, 'POST', `/characters/${id}/outfit/image`, body),
+  );

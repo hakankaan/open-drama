@@ -37,7 +37,7 @@ const linked = <T extends { id: number }>(rows: T[], links: { id: number }[], de
 export const readStoryboardContext = defineTool({
   id: 'read_storyboard_context',
   description:
-    "Without shotId: the episode's script, its target length in seconds (null: follow the script), a `series` block (the project's premise and, for a serial drama, the earlier episodes' recaps), the project's characters, scenes and props with their ids (appearance and description only for those in this episode), and the current shots with their total length. With shotId: that shot's description, atmosphere, duration, spoken line and its speaker, and bound asset names.",
+    "Without shotId: the episode's script, its target length in seconds (null: follow the script), a `series` block (the project's premise and, for a serial drama, the earlier episodes' recaps), the project's characters, scenes and props with their ids (appearance and description only for those in this episode, and `outfit` for a character who wears something other than usual in this episode), and the current shots with their total length. With shotId: that shot's description, atmosphere, duration, spoken line and its speaker, bound asset names, and `outfits` (by character name) for bound characters who wear something other than usual in this episode.",
   input: z.object({ shotId: z.number().int().optional().describe('Read one shot of this episode') }),
   execute: ({ shotId }, ctx) => {
     if (shotId !== undefined) {
@@ -64,6 +64,8 @@ export const readStoryboardContext = defineTool({
         // A continued shot starts on the last frame of the one before: its prompt picks up where that one ends.
         ...(shot.continuesPrevious ? { previousShot: previousShotOf(shot) } : {}),
         mentionable: { scene: b.scene?.name ?? null, characters: b.characters.map((c) => c.name), props: b.props.map((p) => p.name) },
+        // What a bound character wears in this episode instead of its usual styling (adr-0023).
+        ...(b.characters.some((c) => c.outfit) ? { outfits: Object.fromEntries(b.characters.flatMap((c) => (c.outfit ? [[c.name, c.outfit]] : []))) } : {}),
       };
     }
     const ep = db.select().from(episodes).where(eq(episodes.id, ctx.episodeId)).get();
@@ -78,7 +80,13 @@ export const readStoryboardContext = defineTool({
       .filter((c) => !isNarrator(c.name, c.role));
     const scs = db.select({ id: scenes.id, location: scenes.location, time: scenes.time }).from(scenes).where(live(scenes)).all();
     const prs = db.select({ id: props.id, name: props.name, description: props.description }).from(props).where(live(props)).all();
-    const linkedChars = db.select({ id: episodeCharacters.characterId }).from(episodeCharacters).where(eq(episodeCharacters.episodeId, ctx.episodeId)).all();
+    const linkedChars = db
+      .select({ id: episodeCharacters.characterId, outfit: episodeCharacters.outfit })
+      .from(episodeCharacters)
+      .where(eq(episodeCharacters.episodeId, ctx.episodeId))
+      .all();
+    // What a character wears in this episode instead of its usual styling (adr-0023).
+    const outfits = new Map(linkedChars.filter((c) => c.outfit.trim()).map((c) => [c.id, c.outfit.trim()]));
     const linkedScenes = db.select({ id: episodeScenes.sceneId }).from(episodeScenes).where(eq(episodeScenes.episodeId, ctx.episodeId)).all();
     const linkedProps = db.select({ id: episodeProps.propId }).from(episodeProps).where(eq(episodeProps.episodeId, ctx.episodeId)).all();
     return {
@@ -87,7 +95,10 @@ export const readStoryboardContext = defineTool({
       targetDurationSeconds: ctx.jobId && targets.has(ctx.jobId) ? (targets.get(ctx.jobId)?.seconds ?? null) : ep.targetDurationSeconds,
       series: seriesContext({ dramaId: ctx.dramaId, beforeEpisodeNumber: ep.episodeNumber }, ctx.log),
       script: ep.scriptContent?.trim() || ep.content,
-      characters: linked(chars, linkedChars, ['appearance']),
+      characters: linked(chars, linkedChars, ['appearance']).map((c) => {
+        const outfit = c.id === undefined ? undefined : outfits.get(c.id);
+        return outfit ? { ...c, outfit } : c;
+      }),
       scenes: linked(scs, linkedScenes),
       props: linked(prs, linkedProps, ['description']),
       shotsTotalSeconds: ep.durationSeconds,

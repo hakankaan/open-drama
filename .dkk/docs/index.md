@@ -50,7 +50,7 @@
 | Content language | [configuration](configuration/index.md) | The language every agent must write in (scripts, extracted fields, prompts). Changes the prompt and skill variants loaded and appends a highest-priority language directive. |
 | Continuous take | [storyboard](storyboard/index.md) | Shots joined without a cut: a shot marked as continuing the previous one starts its video on that shot's last frame, so the action carries on, and the merge joins the two clips on that frame. At most two shots in a row continue the one before, since they see no reference image and faces drift. |
 | Data directory | [media](media/index.md) | The root holding the database, static media and the writable agent workspace; overridable by environment. |
-| Episode link | [assets](assets/index.md) | The many-to-many association saying an asset appears in an episode. Assets belong to the drama; links scope them to episodes. |
+| Episode link | [assets](assets/index.md) | The many-to-many association saying an asset appears in an episode. Assets belong to the drama; links scope them to episodes. A character's link also holds what it wears in that episode, if not its usual styling, and the full-body picture of that outfit (adr-0023). |
 | Establishing shot | [assets](assets/index.md) | The scene's reference image: a single wide, steady view of the place with nobody in it, laid out so the depth of the room, where people can enter, and the main furnishings are all readable at once. |
 | Extraction | [assets](assets/index.md) | An agent run that reads the episode script and upserts characters, scenes or props, deduplicating against what the drama already has and linking the results to the episode. |
 | Final prompt | [assets](assets/index.md) | The complete image prompt for an asset, written by the prompt generator agent from the asset's fields, with the drama's style prompt prepended on save. Editing the describing fields keeps the prompt but marks it stale until it is regenerated or edited by hand. |
@@ -95,7 +95,7 @@
 
 ## Decisions
 
-17 accepted · 5 proposed
+17 accepted · 6 proposed
 
 | ADR | Title | Status |
 |-----|-------|--------|
@@ -121,6 +121,7 @@
 | [adr-0020](../adr/adr-0020.md) | Continuous takes between shots | proposed |
 | [adr-0021](../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |
 | [adr-0022](../adr/adr-0022.md) | Shot checks by a vision model | proposed |
+| [adr-0023](../adr/adr-0023.md) | Per-episode outfits | proposed |
 
 → [Full decision log](adr/index.md)
 

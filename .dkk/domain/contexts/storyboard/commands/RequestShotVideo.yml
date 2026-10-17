@@ -17,18 +17,17 @@ description: >-
   asks them to keep their look from the first frame, and the shot's uploaded images are reported as not sent; the
   response says whether the keyframe was sent, turned off or not supported. A shot that continues the previous one
   starts from that shot's last frame instead (adr-0020): the task is claimed at once and, while the previous shot's
-  video is generating, waits for it before taking an episode slot, and fails unsent when the shot no longer continues
-  it after the wait; the frame is taken a quarter second before the end of
-  what the film shows of that clip and recorded on the task with its time and source video; the prompt opens with an
-  unbroken-take sentence, sends no reference images and asks the people to keep their look from the first frame; the
-  response names the shot it continues and whether it is waiting. A shot the next one continues is asked to end on a
-  steady moment. In a drama with pinned voices (adr-0021) a shot with a spoken line needs its line audio first: the
-  length grows to hold the half-second lead-in and the line, the video is made without sound, the prompt keeps the
-  speaker's face in view, and the stored video goes on to its lip sync (LipSyncPinnedVideo); a shot without a line is
-  told nobody speaks. Without pinned voices, the speaker's voice sample goes as reference audio where the model takes
-  one and the provider can fetch it. Batch generation and retry-failed issue this once per shot, in story order, a
-  continuing shot after the request for the shot before it, so a shot whose latest video or lip-sync task is still
-  processing is rejected.
+  video is generating, waits for it before taking an episode slot (also after a server restart, which picks the waiting
+  request up again), and fails unsent when the shot no longer continues it after the wait; the frame is taken a quarter second before the end of what the film shows of that clip and recorded on
+  the task with its time and source video; the prompt opens with an unbroken-take sentence, sends no reference images
+  and asks the people to keep their look from the first frame; the response names the shot it continues and whether it
+  is waiting. A shot the next one continues is asked to end on a steady moment. In a drama with pinned voices (adr-0021)
+  a shot with a spoken line needs its line audio first: the length grows to hold the half-second lead-in and the line,
+  the video is made without sound, the prompt keeps the speaker's face in view, and the stored video goes on to its lip
+  sync (LipSyncPinnedVideo); a shot without a line is told nobody speaks. Without pinned voices, the speaker's voice
+  sample goes as reference audio where the model takes one and the provider can fetch it. Batch generation and
+  retry-failed issue this once per shot, in story order, a continuing shot after the request for the shot before it, so
+  a shot whose latest video or lip-sync task is still processing is rejected.
 fields:
   - name: shotId
     type: ID
@@ -84,3 +83,4 @@ adr_refs:
   - adr-0019
   - adr-0020
   - adr-0021
+  - adr-0023

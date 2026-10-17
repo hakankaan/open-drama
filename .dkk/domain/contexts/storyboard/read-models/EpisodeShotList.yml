@@ -2,8 +2,8 @@ name: EpisodeShotList
 description: >-
   The video-production stage — every shot of the episode in order with description, atmosphere, duration, bound
   scene/characters/props (with their reference images and readiness), speaker, line and line audio, video prompt,
-  current video (with poster) and its check, generation, keyframe, line-audio and lip-sync status and history, plus the
-  breakdown job state.
+  current video (with poster) and its check, generation, keyframe (and whether it is stale), line-audio and lip-sync
+  status and history, whether a continued video still joins the shot before, plus the breakdown job state.
 fields:
   - name: episodeId
     type: ID
@@ -37,5 +37,7 @@ subscribes_to:
 used_by:
   - Creator
 adr_refs:
+  - adr-0019
+  - adr-0020
   - adr-0021
   - adr-0022

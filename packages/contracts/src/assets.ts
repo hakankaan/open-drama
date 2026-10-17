@@ -50,6 +50,20 @@ export const coverOf = (v: CharacterViews): string | null => {
   return view ? v[view] : null;
 };
 
+/**
+ * A character's views in an episode where it wears another outfit (adr-0023): the face, and the outfit's picture as
+ * the full body (none until one is drawn or uploaded). Its own full body, side and back show its usual clothes and are
+ * left out; so is the sheet, unless it is the only picture of the face (identity before clothing). The API sends these,
+ * and the studio previews them.
+ */
+export const outfitViews = (views: CharacterViews, outfitPath: string | null): CharacterViews => ({
+  headshot: views.headshot,
+  body: outfitPath,
+  side: null,
+  back: null,
+  sheet: views.headshot ? null : views.sheet,
+});
+
 export const CharacterCard = z.object({
   ...base,
   /** The cover (`coverOf`); the images themselves are in `views`. */
@@ -91,9 +105,20 @@ export const DramaAssetLibrary = z.object({
 });
 export type DramaAssetLibrary = z.infer<typeof DramaAssetLibrary>;
 
+/** A character as an episode shows it: its card, and what it wears in this episode when that differs (adr-0023). */
+export const EpisodeCharacterCard = CharacterCard.extend({
+  /** What the character wears in this episode; '' wears the character's own styling. */
+  outfit: z.string(),
+  /** A full-body picture in the outfit: sent as the character's full body in this episode; cleared when the outfit changes. */
+  outfitPath: MediaPath.nullable(),
+  /** The latest request for that picture. */
+  latestOutfitTask: TaskSummary.nullable(),
+});
+export type EpisodeCharacterCard = z.infer<typeof EpisodeCharacterCard>;
+
 export const EpisodeAssets = z.object({
   episodeId: z.number().int(),
-  characters: z.array(CharacterCard),
+  characters: z.array(EpisodeCharacterCard),
   scenes: z.array(SceneCard),
   props: z.array(PropCard),
   extraction: z.record(ExtractionTarget, AgentJob.nullable()),
@@ -212,6 +237,25 @@ export const RequestAssetImage = z.object({
   textServiceId: z.number().int().positive().optional(),
 });
 export type RequestAssetImage = z.input<typeof RequestAssetImage>;
+
+/**
+ * SetEpisodeOutfit (adr-0023): what the character wears in one episode of its drama ('' wears its own styling), and a
+ * full-body picture of it (an upload, or null). A new outfit clears the picture unless the same request gives one.
+ */
+export const UpdateEpisodeOutfit = z.strictObject({
+  episodeId: z.number().int().positive(),
+  outfit: text(2000).optional(),
+  outfitPath: MediaPath.nullable().optional(),
+});
+export type UpdateEpisodeOutfit = z.input<typeof UpdateEpisodeOutfit>;
+
+/** RequestOutfitImage (adr-0023): the full-body picture of the episode's outfit, drawn from the character's headshot. */
+export const RequestOutfitImage = z.object({
+  episodeId: z.number().int().positive(),
+  model: z.string().trim().max(200).optional(),
+  imageServiceId: z.number().int().positive().optional(),
+});
+export type RequestOutfitImage = z.input<typeof RequestOutfitImage>;
 
 export const TaskStarted = z.object({ taskId: z.number().int() });
 export type TaskStarted = z.infer<typeof TaskStarted>;

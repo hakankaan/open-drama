@@ -1,8 +1,8 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, exists, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { GeneratedView, type AspectRatio, type AssetKind } from '@open-drama/contracts';
 import { db } from '../../../db/client';
-import { characters, episodes, generationTasks, props, scenes, shots } from '../../../db/schema';
+import { characters, episodeCharacters, episodes, generationTasks, props, scenes, shots } from '../../../db/schema';
 import { logger } from '../../../http/logger';
 import { assertImage, deriveRenditions, storeInlineImage, storeRemoteFile } from '../../media/store';
 import { imageAdapterFor } from '../adapters/registry';
@@ -11,6 +11,7 @@ import { ProviderError, type ImageAdapter, type ResultMedia } from '../adapters/
 import { ConfigError } from './errors';
 import { claimTask, completeTask, detach, generate, recordResultUrl, resolveGeneration, type ResolvedGeneration } from './lifecycle';
 import { normalizeReferenceImages } from './references';
+import { boundShots, markKeyframesStale } from '../../storyboard/staleness';
 
 /** Image polling profile (adr-0005): every 5 s, at most 120 attempts, within 10 minutes. */
 export const IMAGE_POLL = { intervalMs: 5000, attempts: 120, maxMs: 10 * 60_000 };
@@ -47,6 +48,10 @@ export interface SubmitImageInput {
   view?: GeneratedView;
   /** Views generated after this one, in order, each from the character's headshot (adr-0018). */
   then?: ViewChain;
+  /** A character's picture in an episode's outfit (adr-0023): it lands on that episode, not on the character's views. */
+  outfit?: OutfitTarget;
+  /** For a keyframe, the shot's keyframe revision it is drawn at (adr-0019): an edit meanwhile leaves it stale. */
+  keyframeRevision?: number;
   /**
    * Why the image must be drawn from its reference: a model that takes no reference image fails the task with this,
    * before anything is paid, instead of drawing someone else.
@@ -58,6 +63,15 @@ export interface SubmitImageInput {
    */
   legend?: string[];
 }
+
+/** The episode and the outfit text a character's outfit picture was drawn for (adr-0023). */
+const OutfitTarget = z.object({ episodeId: z.number().int(), outfit: z.string() });
+type OutfitTarget = z.infer<typeof OutfitTarget>;
+
+/** Image tasks drawing a character's outfit for the episode. */
+export const outfitTasksOf = (episodeId: number) => sql`json_extract(${generationTasks.params}, '$.outfit.episodeId') = ${episodeId}`;
+/** Image tasks other than outfit pictures: a character's own. */
+export const notOutfitTasks = sql`json_extract(${generationTasks.params}, '$.outfit') IS NULL`;
 
 /** The rest of a character's view request, kept on the task so a restart continues it; `finalPrompt` describes the person. */
 const ViewChain = z.object({ views: z.array(GeneratedView).min(1), finalPrompt: z.string() });
@@ -89,24 +103,44 @@ export async function completeImage(taskId: number, owner: ImageOwner, media: Re
   await assertImage(path);
   await deriveRenditions(path, 'image');
   const task = db.select().from(generationTasks).where(eq(generationTasks.id, taskId)).get();
-  // A character image lands on its view; one requested before views existed was a sheet (adr-0018).
+  // A character image lands on its view; one requested before views existed was a sheet (adr-0018). An outfit
+  // picture lands on its episode, and only while the outfit is still the one it was drawn for (adr-0023).
+  const outfit = OutfitTarget.safeParse(task?.params.outfit).data;
   const view = GeneratedView.safeParse(task?.params.view).data;
+  const revision = task?.params.keyframeRevision;
   const written = completeTask(taskId, { localPath: path }, (tx) => {
     if (owner.kind === 'shot') {
-      tx.update(shots).set({ keyframePath: path }).where(eq(shots.id, owner.id)).run();
+      const drawnAt = typeof revision === 'number' ? revision : sql`${shots.keyframeRevision}`;
+      tx.update(shots).set({ keyframePath: path, keyframeDrawnRevision: drawnAt }).where(eq(shots.id, owner.id)).run();
       return;
     }
-    if (owner.kind === 'character') {
-      tx.update(characters)
-        .set({ [VIEW_COLUMN[view ?? 'sheet']]: path })
-        .where(and(eq(characters.id, owner.id), isNull(characters.deletedAt)))
+    // The keyframes drawn from the asset's old picture are stale (adr-0019).
+    if (owner.kind === 'character' && outfit) {
+      const landed = tx
+        .update(episodeCharacters)
+        .set({ outfitPath: path })
+        .where(
+          and(
+            eq(episodeCharacters.episodeId, outfit.episodeId),
+            eq(episodeCharacters.characterId, owner.id),
+            eq(episodeCharacters.outfit, outfit.outfit),
+            exists(tx.select({ id: episodes.id }).from(episodes).where(and(eq(episodes.id, outfit.episodeId), isNull(episodes.deletedAt)))),
+          ),
+        )
         .run();
+      if (landed.changes > 0) markKeyframesStale(tx, boundShots(tx, { kind: 'character', id: owner.id }, outfit.episodeId));
       return;
     }
-    const { table } = ASSET_TASK_OWNER[owner.kind];
-    tx.update(table).set({ imagePath: path }).where(and(eq(table.id, owner.id), isNull(table.deletedAt))).run();
+    const table = owner.kind === 'character' ? characters : ASSET_TASK_OWNER[owner.kind].table;
+    const column = owner.kind === 'character' ? VIEW_COLUMN[view ?? 'sheet'] : 'imagePath';
+    const landed = tx
+      .update(table)
+      .set({ [column]: path })
+      .where(and(eq(table.id, owner.id), isNull(table.deletedAt)))
+      .run();
+    if (landed.changes > 0) markKeyframesStale(tx, boundShots(tx, { kind: owner.kind, id: owner.id }));
   });
-  logger.info({ taskId, owner, view, path }, 'image task completed');
+  logger.info({ taskId, owner, view, outfit: outfit?.episodeId, path }, 'image task completed');
   // Only the completion that wrote continues the chain, so a view is never requested twice.
   const chain = ViewChain.safeParse(task?.params.then);
   if (written && task && owner.kind === 'character' && chain.success) continueViews(task, owner.id, chain.data);
@@ -150,7 +184,7 @@ function continueViews(task: typeof generationTasks.$inferSelect, characterId: n
  * Right before the provider is paid, the task re-checks that it is still wanted: false when it no longer runs,
  * throws when its asset (or shot, or the shot's episode) was deleted while the references were being prepared.
  */
-function stillWanted(taskId: number, owner: ImageOwner): boolean {
+function stillWanted(taskId: number, owner: ImageOwner, outfit?: OutfitTarget): boolean {
   const task = db.select({ status: generationTasks.status }).from(generationTasks).where(eq(generationTasks.id, taskId)).get();
   if (task?.status !== 'processing') return false;
   if (owner.kind === 'shot') {
@@ -166,6 +200,17 @@ function stillWanted(taskId: number, owner: ImageOwner): boolean {
   const { table } = ASSET_TASK_OWNER[owner.kind];
   const asset = db.select({ deletedAt: table.deletedAt }).from(table).where(eq(table.id, owner.id)).get();
   if (!asset || asset.deletedAt) throw new Error(`The ${owner.kind} was deleted before its image was requested; nothing was sent to the provider`);
+  if (outfit) {
+    const worn = db
+      .select({ outfit: episodeCharacters.outfit })
+      .from(episodeCharacters)
+      .innerJoin(episodes, eq(episodes.id, episodeCharacters.episodeId))
+      .where(and(eq(episodeCharacters.episodeId, outfit.episodeId), eq(episodeCharacters.characterId, owner.id), isNull(episodes.deletedAt)))
+      .get();
+    if (worn?.outfit !== outfit.outfit) {
+      throw new Error('The outfit changed, or left the episode, before its picture was requested; nothing was sent to the provider');
+    }
+  }
   return true;
 }
 
@@ -181,7 +226,7 @@ async function run(taskId: number, resolved: ResolvedGeneration<ImageAdapter>, i
   const legend = input.legend?.slice(0, referenceImages.length).map((entry, i) => `${i + 1} ${entry}`) ?? [];
   const prompt = legend.length ? `Reference images in order: ${legend.join('; ')}.\n${input.prompt}` : input.prompt;
   const record = { taskId, prompt, referenceImages, aspectRatio: input.aspectRatio };
-  if (!stillWanted(taskId, input.owner)) return;
+  if (!stillWanted(taskId, input.owner, input.outfit)) return;
   await completeImage(taskId, input.owner, await generate(taskId, resolved, record, IMAGE_POLL, 'image'), resolved.config?.baseUrl);
 }
 
@@ -211,6 +256,8 @@ export function submitImage(input: SubmitImageInput): { taskId: number; serviceI
         references: (input.referenceImages ?? []).length,
         ...(input.view ? { view: input.view } : {}),
         ...(input.then ? { then: input.then } : {}),
+        ...(input.outfit ? { outfit: input.outfit } : {}),
+        ...(input.keyframeRevision !== undefined ? { keyframeRevision: input.keyframeRevision } : {}),
       },
     },
     {

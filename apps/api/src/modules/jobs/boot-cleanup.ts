@@ -1,8 +1,9 @@
-import { and, eq, isNull, ne, type SQL } from 'drizzle-orm';
+import { and, eq, isNull, ne, not, type SQL } from 'drizzle-orm';
 import { db } from '../../db/client';
 import { agentJobs, films, generationTasks } from '../../db/schema';
 import { nowIso } from '../../db/schema/columns';
 import { env } from '../../env';
+import { WAITING_TO_CONTINUE } from '../generation/engine/videos';
 import { restoreParkedShots } from '../storyboard/service';
 
 const RESTART_MESSAGE = 'Interrupted by a server restart';
@@ -20,7 +21,8 @@ export interface BootCleanupResult {
 /**
  * FailInterruptedTasks: nothing can still be running right after boot, so every in-flight row is failed, except a
  * generation the provider had already accepted (it has a provider task id): that one is paid for and is left
- * processing for ResumeInterruptedTasks (adr-0005). Offline mode resumes nothing.
+ * processing for ResumeInterruptedTasks (adr-0005). Offline mode resumes nothing. A video still waiting to continue
+ * the shot before it sent nothing, in either mode, and is left for resumeWaitingContinuations (adr-0020).
  */
 export function failInterrupted(): BootCleanupResult {
   const now = nowIso();
@@ -28,7 +30,7 @@ export function failInterrupted(): BootCleanupResult {
     db
       .update(generationTasks)
       .set({ status: 'failed', error, errorClass: 'timeout', completedAt: now })
-      .where(and(eq(generationTasks.status, 'processing'), where))
+      .where(and(eq(generationTasks.status, 'processing'), not(WAITING_TO_CONTINUE), where))
       .run().changes;
   const tasks =
     failTasks(and(isNull(generationTasks.providerTaskId), ne(generationTasks.provider, 'stub')), UNANSWERED_MESSAGE) +

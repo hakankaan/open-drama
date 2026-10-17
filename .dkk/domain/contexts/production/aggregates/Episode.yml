@@ -44,7 +44,9 @@ invariants:
   - >-
     imageServiceId and videoServiceId are each taken from the highest-priority usable model service of the type at
     creation when one exists, else left empty and written at the first generation of that type (adr-0016); from then on
-    the episode uses that one service per type. Creation needs no image or video service.
+    the episode uses that one service per type. Creation needs no image or video service. A lock whose service was
+    deleted, disabled or given another type is replaced the same way at the next generation of that type, and the
+    pinned video model moves with it; enabling the old service again does not bring the lock back.
   - >-
     videoModel is empty until the first generation on the locked video service without an explicit model writes the
     model it used; later generations use it while the service lists it, and move to the service's first model, written

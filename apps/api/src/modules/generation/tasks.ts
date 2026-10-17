@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, isNotNull, max, or, type SQL } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNotNull, max, or, sql, type SQL } from 'drizzle-orm';
 import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
 import type { z } from 'zod';
 import type {
@@ -34,14 +34,14 @@ type TaskRow = typeof generationTasks.$inferSelect;
 export const toGenerationTask = ({ providerTaskId: _p, resultUrl: _r, ...row }: TaskRow): GenerationTask => row;
 
 /** The latest task of a type per owner id (the owner column is characterId, sceneId, propId or shotId). */
-export function latestTasks(type: GenerationType, column: SQLiteColumn, ids: number[]): Map<number, TaskSummary> {
+export function latestTasks(type: GenerationType, column: SQLiteColumn, ids: number[], only?: SQL): Map<number, TaskSummary> {
   const map = new Map<number, TaskSummary>();
   if (ids.length === 0) return map;
   // Only each owner's newest row is read, not its whole history.
   const newest = db
     .select({ id: max(generationTasks.id) })
     .from(generationTasks)
-    .where(and(eq(generationTasks.type, type), inArray(column, ids)))
+    .where(and(eq(generationTasks.type, type), inArray(column, ids), only))
     .groupBy(column);
   const rows = db
     .select({
@@ -184,13 +184,15 @@ export function episodeGenerationTasks(episodeId: number, limit: number): Episod
     .where(eq(episodeProps.episodeId, episodeId))
     .all();
 
-  const owners: [SQLiteColumn, number[]][] = [
+  // A linked character's outfit pictures for another episode belong to that episode (adr-0023).
+  const notOtherOutfits = sql`coalesce(json_extract(${generationTasks.params}, '$.outfit.episodeId'), ${episodeId}) = ${episodeId}`;
+  const owners: [SQLiteColumn, number[], SQL?][] = [
     [generationTasks.shotId, ids(shotRows)],
-    [generationTasks.characterId, ids(charRows)],
+    [generationTasks.characterId, ids(charRows), notOtherOutfits],
     [generationTasks.sceneId, ids(sceneRows)],
     [generationTasks.propId, ids(propRows)],
   ];
-  const clauses = owners.filter(([, list]) => list.length > 0).map(([column, list]) => inArray(column, list)) as SQL[];
+  const clauses = owners.filter(([, list]) => list.length > 0).map(([column, list, only]) => and(inArray(column, list), only)) as SQL[];
   const taskRows = clauses.length
     ? db.select().from(generationTasks).where(or(...clauses)).orderBy(desc(generationTasks.id)).limit(limit).all()
     : [];

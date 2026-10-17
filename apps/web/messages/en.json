@@ -514,6 +514,23 @@
       "replaceSample": "Replace sample",
       "uploadSample": "Upload voice sample",
       "sampleHint": "A clean recording of the character speaking, 10 to 30 seconds (mp3, wav, m4a or aac). Changing the voice or the sample clears the line audio of the shots they speak in."
+    },
+    "outfit": {
+      "title": "Outfit in this episode",
+      "hint": "Leave it empty to wear the usual styling. In this episode the video prompts, keyframes and shot checks use this outfit, and its picture replaces the character's full body, side and back views.",
+      "placeholder": "What the character wears in this episode",
+      "draw": "Draw picture",
+      "redraw": "Redraw",
+      "drawing": "Drawing",
+      "upload": "Upload picture",
+      "replace": "Replace",
+      "remove": "Remove",
+      "alt": "{name} in this episode's outfit",
+      "noPicture": "No picture yet: shots send only the face, and the prompts describe the outfit.",
+      "describeFirst": "Describe the outfit first",
+      "headshotFirst": "Generate or upload the headshot first: the outfit is drawn on it",
+      "saveFirst": "Click outside the field to save the outfit first",
+      "alreadyDrawing": "An image of this character is already being drawn."
     }
   },
   "project": {
@@ -783,7 +800,9 @@
         "noFirstFrame": "{model} takes no first frame, so this shot cannot continue the one before. Pick a model that does, or turn this off.",
         "noMedia": "A shot that continues the one before takes no reference video or audio. Remove them, or turn this off.",
         "waiting": "Shot #{number}'s video is still generating; this shot starts from its last frame once it is ready.",
-        "short": "Continues #{number}"
+        "short": "Continues #{number}",
+        "stale": "This video does not continue shot #{number} as it is now: that shot was generated again or another version was picked, the shots moved, or this video was made before the shot was marked. The merge cuts here until this shot is generated again.",
+        "cut": "Cuts after #{number}"
       },
       "refs": {
         "title": "Reference assets",
@@ -896,7 +915,9 @@
           "progress": "Requesting keyframes {done}/{total}",
           "summary": "{started} started, {already} already drawing, {failed} failed"
         },
-        "continued": "This shot continues shot #{number}, so its video starts from that shot's last frame, not from the keyframe."
+        "continued": "This shot continues shot #{number}, so its video starts from that shot's last frame, not from the keyframe.",
+        "stale": "The shot changed since this keyframe was drawn: its cast, framing, prompt or a reference picture. The video still starts from it until you redraw it, remove it or keep it.",
+        "keep": "Still fits"
       },
       "voice": {
         "dialogue": "Dialogue",

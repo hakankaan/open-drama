@@ -9,7 +9,7 @@ import { conflict, precondition } from '../../../http/errors';
 import { logger } from '../../../http/logger';
 import { rememberSecret } from '../../../lib/secrets';
 import { isShuttingDown } from '../../../lib/shutdown';
-import { resolveService } from '../../configuration/services';
+import { liveLock, resolveService } from '../../configuration/services';
 import { claimServiceLock, claimVideoModel } from '../../production/episodes';
 import { ProviderError, type Dialect, type ProviderRequest, type ResultMedia, type ServiceConfig } from '../adapters/types';
 import { classify, messageOf } from './errors';
@@ -47,8 +47,9 @@ const LABEL: Record<GenerationType, { what: string; plural: string }> = {
 
 /**
  * The adapter and credentials for a task: explicit service → the episode's lock → the highest-priority active one.
- * When the episode's lock for the type is still empty (`lockFor`), the resolved service claims it here, before any
- * work is dispatched, and a request that lost that claim to a concurrent one goes on with the winner (adr-0016).
+ * When the episode's lock for the type is still empty (`lockFor`), or names a service that was deleted, disabled or
+ * retyped, the resolved service claims it here, before any work is dispatched, and a request that lost that claim to
+ * a concurrent one goes on with the winner (adr-0016).
  * A video request without a model pick in the episode's locked service runs the episode's pinned model, claiming
  * the pin on first use (adr-0017). Speech and lip sync are not locked per episode (adr-0021). With
  * OPEN_DRAMA_STUB_PROVIDERS=1 the offline adapter serves every request and nothing is locked or pinned.
@@ -65,18 +66,30 @@ export function resolveGeneration<A>(
   }
   let resolved = resolveService(type, { explicitId: opts.explicitId, lockedId: opts.lockedId });
   if (!resolved) throw precondition(`Add an active ${type} service with an API key in Settings before generating ${LABEL[type].plural}`);
+  // A service that cannot run the request is refused before it may claim the episode's lock.
+  const usable = (row: NonNullable<ReturnType<typeof resolveService>>['row']) => {
+    const adapter = adapterFor(row.provider);
+    if (!adapter) throw precondition(`${LABEL[type].what} generation through ${row.provider} is not available yet`);
+    if (!opts.model && row.models.length === 0) throw precondition(`The ${type} service ${row.name} lists no model; add one in Settings`);
+    if (!row.apiKey) throw precondition(`The ${type} service ${row.name} has no API key`);
+    return adapter;
+  };
   let lockedId = opts.lockedId;
-  if (opts.lockFor !== undefined && lockedId == null && (type === 'image' || type === 'video')) {
-    lockedId = claimServiceLock(opts.lockFor, type, resolved.row.id);
-    if (lockedId !== resolved.row.id) resolved = resolveService(type, { lockedId }) ?? resolved;
+  if (opts.lockFor !== undefined && (type === 'image' || type === 'video')) {
+    // A lock whose service was deleted, disabled or retyped is replaced like an empty one, so the episode's later
+    // requests stay on the service this one goes to (and a video pin moves with it) instead of each taking the first.
+    const dead = lockedId != null && !liveLock(type, lockedId);
+    if (lockedId == null || dead) {
+      usable(resolved.row);
+      lockedId = claimServiceLock(opts.lockFor, type, resolved.row.id, dead ? lockedId! : null);
+      if (lockedId !== resolved.row.id) resolved = resolveService(type, { lockedId }) ?? resolved;
+    }
   }
   const { row } = resolved;
-  const adapter = adapterFor(row.provider);
-  if (!adapter) throw precondition(`${LABEL[type].what} generation through ${row.provider} is not available yet`);
+  const adapter = usable(row);
   const pins = type === 'video' && opts.lockFor !== undefined && !opts.model && row.id === lockedId;
   const model = opts.model || (pins ? claimVideoModel(opts.lockFor!, row.models) : row.models[0]) || '';
   if (!model) throw precondition(`The ${type} service ${row.name} lists no model; add one in Settings`);
-  if (!row.apiKey) throw precondition(`The ${type} service ${row.name} has no API key`);
   rememberSecret(row.apiKey);
   return {
     adapter,

@@ -5,8 +5,10 @@ import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import {
   AUDIO_UPLOAD_EXTENSIONS,
+  coverOf,
   IMAGE_UPLOAD_EXTENSIONS,
   imageLimitOf,
+  outfitViews,
   planShotReferences,
   VIDEO_UPLOAD_EXTENSIONS,
   type EpisodeAssets,
@@ -193,7 +195,8 @@ function ExtraReferences({ shot, save }: { shot: ShotCard; save: Save }) {
 
 /**
  * The shot's bindings with each asset's images as its row has them now: the shot carries a copy as old as its last
- * fetch, asset changes do not refetch shots, and the API plans from the current images.
+ * fetch, asset changes do not refetch shots, and the API plans from the current images. A character in an episode
+ * outfit shows its face and the outfit's picture, as the API sends them (adr-0023).
  */
 function liveBindings(b: ShotCard['bindings'], assets: EpisodeAssets | undefined): ShotCard['bindings'] {
   if (!assets) return b;
@@ -205,7 +208,11 @@ function liveBindings(b: ShotCard['bindings'], assets: EpisodeAssets | undefined
     scene: b.scene && scene ? { ...b.scene, imagePath: scene.imagePath } : b.scene,
     characters: b.characters.map((c) => {
       const row = characters.get(c.id);
-      return row ? { ...c, imagePath: row.imagePath, views: row.views } : c;
+      if (!row) return c;
+      const outfit = row.outfit.trim();
+      const views = outfit ? outfitViews(row.views, row.outfitPath) : row.views;
+      const { outfit: _was, ...ref } = c;
+      return { ...ref, imagePath: coverOf(views), views, ...(outfit ? { outfit } : {}) };
     }),
     props: b.props.map((p) => {
       const row = props.get(p.id);
@@ -325,6 +332,12 @@ export function ShotEditor({
           <p className="text-xs text-muted">
             {!shot.continuesPrevious && continuity.capped ? t('continuity.capped') : t('continuity.hint', { number: continuity.previous })}
           </p>
+          {shot.continuesPrevious && shot.continuationStale ? (
+            <p className="flex items-start gap-2 rounded-md bg-warning-soft px-3 py-2 text-xs text-warning" role="status">
+              <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+              {t('continuity.stale', { number: continuity.previous })}
+            </p>
+          ) : null}
           {blocked ? (
             <p className="flex items-start gap-2 rounded-md bg-warning-soft px-3 py-2 text-xs text-warning" role="status">
               <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />

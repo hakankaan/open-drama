@@ -2,6 +2,7 @@ import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 import { db } from '../../db/client';
 import { characters, dramas, episodeCharacters, episodeProps, episodeScenes, props, scenes } from '../../db/schema';
 import { getDramaStylePrompt } from '../configuration/presets';
+import { boundShots, markKeyframesStale } from '../storyboard/staleness';
 import { normaliseName, sceneKey } from './names';
 
 export interface ExtractedCharacter {
@@ -79,6 +80,8 @@ export function saveExtractedCharacters(dramaId: number, episodeId: number, item
             .set({ ...patch, ...(describing && row.finalPrompt ? { finalPromptStale: true } : {}) })
             .where(eq(characters.id, row.id))
             .run();
+          // The keyframes' wardrobe line comes from the styling (adr-0019).
+          if ('styling' in patch) markKeyframesStale(tx, boundShots(tx, { kind: 'character', id: row.id }));
         }
         result.reused.push(row.name);
       } else {
@@ -138,6 +141,7 @@ export function saveExtractedScenes(dramaId: number, episodeId: number, items: E
             .set({ ...patch, ...(row.finalPrompt ? { finalPromptStale: true } : {}) })
             .where(eq(scenes.id, row.id))
             .run();
+          if ('lighting' in patch) markKeyframesStale(tx, boundShots(tx, { kind: 'scene', id: row.id }));
         }
         result.reused.push(label);
       } else {

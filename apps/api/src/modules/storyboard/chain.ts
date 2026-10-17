@@ -92,7 +92,7 @@ const statusOf = (taskId: number) =>
  * is generating, then takes its frame a quarter second before the end of what the film shows (the clip, cut to the
  * length it was asked for), stores it as an image and records it on the task with where it came from, which the merge
  * reads to join the two clips without a cut. Null when the task stopped meanwhile (cancelled, or the server stopping:
- * a task left waiting fails at the next boot); throws when the previous video failed or is gone, or when the creator
+ * a task left waiting is picked up again at the next boot, resumeWaitingContinuations); throws when the previous video failed or is gone, or when the creator
  * changed the take while it waited (the shot no longer continues, or another shot now comes before it).
  */
 export async function firstFrameFrom(taskId: number, source: ChainSource): Promise<string | null> {

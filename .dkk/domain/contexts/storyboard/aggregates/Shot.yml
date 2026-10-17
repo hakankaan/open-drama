@@ -59,11 +59,18 @@ invariants:
     otherwise or carries reference video or audio; such a request sends the keyframe alone, without reference images.
     The keyframe's own task cannot be deleted while it is the shot's keyframe, and only a stored file can be set as one.
   - >-
+    A keyframe is stale while what it is drawn from changed after it was drawn: the cast, the scene, the framing, the
+    image prompt (or, while that is empty, the fields a prompt is composed from), a bound asset's picture or lighting,
+    or a bound character's outfit in the episode. A keyframe drawn while such a change was made stays stale; a new
+    keyframe, an uploaded one or the creator's "still fits" makes it fresh. A stale keyframe is still used.
+  - >-
     A shot marked as continuing the previous one (the previous live shot by number) starts its video from that shot's
     last frame instead of its keyframe, on a model that takes a first frame and without reference video or audio; the
     first shot's mark means nothing, and at most two shots in a row continue the one before. Its request waits while the
     previous shot's video is generating and fails when that fails; one is refused while the previous shot has no video
-    and none generating.
+    and none generating. A request still waiting when the server restarts is picked up again and waits for the same
+    video. A continued video no longer joins once the shot before plays another video; the merge cuts there and the
+    studio says so.
   - >-
     A shot has at most one speaker, one of its bound characters other than a narrator, and one line (at most 1000
     characters, the words only). Unbinding the speaker, deleting it, or changing the line, the speaker or the speaker's

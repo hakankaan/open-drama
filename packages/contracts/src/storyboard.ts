@@ -25,8 +25,13 @@ export const ShotAssetRef = z.object({
   name: z.string(),
   /** A character's cover (`coverOf`). */
   imagePath: MediaPath.nullable(),
-  /** A character's images, from which a video call picks per model (adr-0018). */
+  /**
+   * A character's images, from which a video call picks per model (adr-0018). In an episode where it wears another
+   * outfit (adr-0023) the full body is that outfit's picture, and the views showing its own clothes are left out.
+   */
   views: CharacterViews.optional(),
+  /** What a character wears in the shot's episode, when that differs from its own styling (adr-0023). */
+  outfit: z.string().optional(),
 });
 export type ShotAssetRef = z.infer<typeof ShotAssetRef>;
 
@@ -89,6 +94,11 @@ export const Shot = z.object({
   videoDurationSeconds: z.number().nullable(),
   /** The still the shot's video starts from, on a model that takes a first frame. */
   keyframePath: MediaPath.nullable(),
+  /**
+   * Something the keyframe was drawn from changed since (the cast, the scene, its framing or prompt, an episode
+   * outfit): it still goes as the first frame until it is redrawn, removed or kept (adr-0019).
+   */
+  keyframeStale: z.boolean(),
   /** One unbroken take with the previous shot: its video starts from that shot's last frame (at most two in a row). */
   continuesPrevious: z.boolean(),
   /** The character who speaks the shot's line: one of its bound characters (adr-0021). */
@@ -119,6 +129,12 @@ export const ShotCard = Shot.extend({
   latestKeyframeTask: TaskSummary.nullable(),
   latestLineAudioTask: TaskSummary.nullable(),
   latestLipSyncTask: TaskSummary.nullable(),
+  /**
+   * Marked as continuing the previous shot, but its video does not start from that shot's current video (it was
+   * generated again, another version was picked, the shots were reordered, or the video predates the mark): the merge
+   * cuts there until this shot is generated again (adr-0020).
+   */
+  continuationStale: z.boolean(),
 });
 export type ShotCard = z.infer<typeof ShotCard>;
 
@@ -182,6 +198,8 @@ export const UpdateShot = z.strictObject({
   videoPath: MediaPath.optional(),
   /** An uploaded still to start the video from, or null to start without one. */
   keyframePath: MediaPath.nullable().optional(),
+  /** false keeps a keyframe marked stale as it is (the creator judged it still fits). */
+  keyframeStale: z.literal(false).optional(),
   continuesPrevious: z.boolean().optional(),
   speakerId,
 });

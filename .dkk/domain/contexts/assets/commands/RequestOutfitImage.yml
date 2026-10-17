@@ -1,0 +1,26 @@
+name: RequestOutfitImage
+description: >-
+  Draw the character's full body in the episode's outfit (adr-0023): 9:16, from its headshot, in the episode's locked
+  image service (claimed on first use), with a prompt made in code from the full-body framing, the appearance and the
+  outfit, prefixed with the drama's style; no agent runs. The picture lands on the episode link only while the episode
+  is live and the outfit is still the one it was drawn for.
+fields:
+  - name: characterId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: model
+    type: string
+  - name: imageServiceId
+    type: ID
+actor: Creator
+handled_by: Character
+preconditions:
+  - The character has an outfit in the episode and a headshot
+  - An image model service that takes reference images is available (locked or active)
+rejections:
+  - No outfit in the episode, or no headshot
+  - An image task for this character is still processing
+  - No image model service configured
+adr_refs:
+  - adr-0023

@@ -62,6 +62,8 @@ export function AssetsStage({ episode, onScript }: { episode: EpisodeView; onScr
   const total = KIND_ORDER.reduce((n, k) => n + groups[k].length, 0);
   const readyCount = KIND_ORDER.flatMap((k) => groups[k]).filter((i) => readinessOf(i.asset) === 'ready').length;
   const openItem = open ? groups[open.kind].find((i) => i.asset.id === open.id) : undefined;
+  // The open character as this episode dresses it (adr-0023).
+  const dressed = openItem?.kind === 'character' ? data.characters.find((c) => c.id === openItem.asset.id) : undefined;
 
   const startExtraction = async (kinds: AssetKind[]) => {
     for (const kind of kinds) {
@@ -198,6 +200,7 @@ export function AssetsStage({ episode, onScript }: { episode: EpisodeView; onScr
           onClose={() => setOpen(null)}
           onUpload={(view) => upload.pick(openItem, view)}
           uploading={upload.isBusy(openItem)}
+          outfit={dressed ? { character: dressed, episodeId: episode.id } : undefined}
           generation={{
             onGeneratePrompt: () => generation.prompt(openItem),
             promptPending: generation.isPromptPending(openItem),

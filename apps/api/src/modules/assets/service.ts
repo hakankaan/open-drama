@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   coverOf,
@@ -11,6 +11,7 @@ import {
   type CreateScene,
   type DramaAssetLibrary,
   type EpisodeAssets,
+  type EpisodeCharacterCard,
   type PropCard,
   type SceneCard,
   type UpdateCharacter,
@@ -23,6 +24,7 @@ import {
   episodeCharacters,
   episodeProps,
   episodeScenes,
+  generationTasks,
   props,
   scenes,
   shotCharacters,
@@ -31,14 +33,15 @@ import {
 } from '../../db/schema';
 import { assertSomething, conflict, invalid, notFound } from '../../http/errors';
 import { toAbsolute } from '../../lib/paths';
-import { ASSET_TASK_OWNER } from '../generation/engine/images';
+import { ASSET_TASK_OWNER, notOutfitTasks, outfitTasksOf } from '../generation/engine/images';
 import { latestTasks } from '../generation/tasks';
 import { latestExtractionJobs } from '../jobs/run-job';
 import { getDramaRow, touchDrama } from '../production/dramas';
 import { getEpisodeRow } from '../production/episodes';
 import { markAssetPromptsStale, type Tx } from '../storyboard/service';
+import { boundShots, markKeyframesStale } from '../storyboard/staleness';
 import { normaliseName, sceneKey } from './names';
-import { viewColumns, viewsOf } from './views';
+import { VIEW_COLUMN, viewColumns, viewsOf } from './views';
 
 type CharacterRow = typeof characters.$inferSelect;
 type SceneRow = typeof scenes.$inferSelect;
@@ -48,7 +51,12 @@ const now = () => new Date().toISOString();
 
 // Latest image task per asset (readiness is derived from it plus the image, never stored)
 
-const latestImageTasks = (kind: AssetKind, ids: number[]) => latestTasks('image', ASSET_TASK_OWNER[kind].column, ids);
+// A character's outfit pictures are the episode's, not its own (adr-0023).
+const latestImageTasks = (kind: AssetKind, ids: number[]) =>
+  latestTasks('image', ASSET_TASK_OWNER[kind].column, ids, kind === 'character' ? notOutfitTasks : undefined);
+
+/** The keyframes of the shots an asset is bound to were drawn from what it was (adr-0019). */
+const staleKeyframes = (tx: Tx, asset: { kind: AssetKind; id: number }) => markKeyframesStale(tx, boundShots(tx, asset));
 
 const strip = <T extends { deletedAt: string | null }>({ deletedAt: _d, ...row }: T) => row;
 
@@ -63,6 +71,21 @@ const characterCards = (rows: CharacterRow[]): CharacterCard[] => {
   const tasks = latestImageTasks('character', rows.map((r) => r.id));
   return rows.filter((r) => !isNarrator(r.name, r.role)).map((r) => characterCard(r, tasks.get(r.id)));
 };
+
+/** The characters of an episode, each with what it wears there and the latest request for that picture (adr-0023). */
+export function episodeCharacterCards(
+  episodeId: number,
+  rows: { row: CharacterRow; outfit: string; outfitPath: string | null }[],
+): EpisodeCharacterCard[] {
+  const worn = new Map(rows.map((r) => [r.row.id, r]));
+  const tasks = latestTasks('image', generationTasks.characterId, [...worn.keys()], outfitTasksOf(episodeId));
+  return characterCards(rows.map((r) => r.row)).map((card) => ({
+    ...card,
+    outfit: worn.get(card.id)!.outfit,
+    outfitPath: worn.get(card.id)!.outfitPath,
+    latestOutfitTask: tasks.get(card.id) ?? null,
+  }));
+}
 const sceneCards = (rows: SceneRow[]): SceneCard[] => {
   const tasks = latestImageTasks('scene', rows.map((r) => r.id));
   return rows.map((r) => ({ ...strip(r), latestImageTask: tasks.get(r.id) ?? null }));
@@ -93,13 +116,12 @@ export function getDramaAssets(dramaId: number): DramaAssetLibrary {
 export function getEpisodeAssets(episodeId: number): EpisodeAssets {
   getEpisodeRow(episodeId);
   const chars = db
-    .select({ row: characters })
+    .select({ row: characters, outfit: episodeCharacters.outfit, outfitPath: episodeCharacters.outfitPath })
     .from(episodeCharacters)
     .innerJoin(characters, eq(characters.id, episodeCharacters.characterId))
     .where(and(eq(episodeCharacters.episodeId, episodeId), isNull(characters.deletedAt)))
     .orderBy(asc(characters.sortOrder), asc(characters.id))
-    .all()
-    .map((r) => r.row);
+    .all();
   const scs = db
     .select({ row: scenes })
     .from(episodeScenes)
@@ -118,7 +140,7 @@ export function getEpisodeAssets(episodeId: number): EpisodeAssets {
     .map((r) => r.row);
   return {
     episodeId,
-    characters: characterCards(chars),
+    characters: episodeCharacterCards(episodeId, chars),
     scenes: sceneCards(scs),
     props: propCards(prs),
     extraction: latestExtractionJobs(episodeId),
@@ -202,8 +224,9 @@ export function updateCharacter(id: number, input: z.output<typeof UpdateCharact
   const { views, ...fields } = input;
   for (const path of Object.values(views ?? {})) checkImagePath(path);
   checkImagePath(input.voiceSamplePath);
-  // A running view chain draws its next views from the headshot and writes each result onto its view (adr-0018).
-  const running = views && latestImageTasks('character', [id]).get(id);
+  // A running view chain draws its next views from the headshot and writes each result onto its view (adr-0018); an
+  // outfit picture is drawn from the headshot too (adr-0023), so any image of the character counts here.
+  const running = views && latestTasks('image', ASSET_TASK_OWNER.character.column, [id]).get(id);
   if (running?.status === 'processing') {
     throw conflict("A character's views cannot change while one of its images is generating", { taskId: running.id });
   }
@@ -212,6 +235,9 @@ export function updateCharacter(id: number, input: z.output<typeof UpdateCharact
     if (input.name !== undefined && input.name !== current.name) markAssetPromptsStale(tx, { kind: 'character', id });
     // Lines spoken in the old voice no longer match the character (adr-0021).
     if (changed(current, input, ['voice', 'voiceSamplePath'])) clearSpokenLines(tx, id);
+    if (changed(current, { ...viewColumns(views), styling: input.styling }, [...Object.values(VIEW_COLUMN), 'styling'])) {
+      staleKeyframes(tx, { kind: 'character', id });
+    }
     return tx
       .update(characters)
       .set({ ...fields, ...viewColumns(views), ...promptPatch(current, input, changed(current, input, ['appearance', 'styling'])) })
@@ -228,6 +254,7 @@ export function deleteCharacter(id: number): { id: number } {
   const current = getCharacterRow(id);
   db.transaction((tx) => {
     markAssetPromptsStale(tx, { kind: 'character', id });
+    staleKeyframes(tx, { kind: 'character', id });
     tx.update(characters).set({ deletedAt: now() }).where(eq(characters.id, id)).run();
     tx.delete(episodeCharacters).where(eq(episodeCharacters.characterId, id)).run();
     tx.delete(shotCharacters).where(eq(shotCharacters.characterId, id)).run();
@@ -293,6 +320,16 @@ export function updateScene(id: number, input: z.output<typeof UpdateScene>): Sc
   const row = db.transaction((tx) => {
     // Shot prompts mention the scene by its location and time.
     if (changed(current, input, ['location', 'time'])) markAssetPromptsStale(tx, { kind: 'scene', id });
+    if (changed(current, input, ['imagePath', 'lighting'])) staleKeyframes(tx, { kind: 'scene', id });
+    // A keyframe composed for a shot without a location of its own names the scene's (adr-0019).
+    else if (changed(current, input, ['location'])) {
+      const composed = tx
+        .select({ id: shots.id })
+        .from(shots)
+        .where(and(eq(shots.sceneId, id), sql`trim(${shots.imagePrompt}) = ''`, sql`trim(${shots.location}) = ''`))
+        .all();
+      markKeyframesStale(tx, composed.map((s) => s.id));
+    }
     return tx
       .update(scenes)
       .set({ ...input, ...promptPatch(current, input, changed(current, input, ['prompt', 'lighting'])) })
@@ -309,6 +346,7 @@ export function deleteScene(id: number): { id: number } {
   const current = getSceneRow(id);
   db.transaction((tx) => {
     markAssetPromptsStale(tx, { kind: 'scene', id });
+    staleKeyframes(tx, { kind: 'scene', id });
     tx.update(scenes).set({ deletedAt: now() }).where(eq(scenes.id, id)).run();
     tx.delete(episodeScenes).where(eq(episodeScenes.sceneId, id)).run();
     tx.update(shots).set({ sceneId: null }).where(eq(shots.sceneId, id)).run();
@@ -362,6 +400,7 @@ export function updateProp(id: number, input: z.output<typeof UpdateProp>): Prop
   const row = db.transaction((tx) => {
     // Shot prompts mention the prop by name.
     if (input.name !== undefined && input.name !== current.name) markAssetPromptsStale(tx, { kind: 'prop', id });
+    if (changed(current, input, ['imagePath'])) staleKeyframes(tx, { kind: 'prop', id });
     return tx
       .update(props)
       .set({ ...input, ...promptPatch(current, input, changed(current, input, ['description'])) })
@@ -377,6 +416,7 @@ export function deleteProp(id: number): { id: number } {
   const current = getPropRow(id);
   db.transaction((tx) => {
     markAssetPromptsStale(tx, { kind: 'prop', id });
+    staleKeyframes(tx, { kind: 'prop', id });
     tx.update(props).set({ deletedAt: now() }).where(eq(props.id, id)).run();
     tx.delete(episodeProps).where(eq(episodeProps.propId, id)).run();
     tx.delete(shotProps).where(eq(shotProps.propId, id)).run();

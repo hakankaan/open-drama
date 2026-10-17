@@ -2,7 +2,8 @@ name: AttachAssetImageOnGeneration
 description: >-
   Triggered by generation.ImageGenerated (a cross-context event, see flow AssetStage) for a task tagged with a
   character, scene or prop — writes the local image path onto that asset (a character's onto the view the task names),
-  and for a character requests the next view of its chain. Failures leave the asset unchanged and are visible on the
+  and for a character requests the next view of its chain. A task drawn for an episode outfit lands on that episode
+  link instead, only while the outfit is unchanged (adr-0023). Failures leave the asset unchanged and are visible on the
   task.
 then:
   commands:
@@ -11,3 +12,4 @@ then:
     - UpdateProp
 adr_refs:
   - adr-0018
+  - adr-0023

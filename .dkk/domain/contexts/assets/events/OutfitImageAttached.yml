@@ -1,0 +1,14 @@
+name: OutfitImageAttached
+description: >-
+  A generated outfit picture is now the character's full body in that episode (adr-0023); the keyframes of the
+  episode's shots with the character are now stale.
+fields:
+  - name: characterId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: outfitPath
+    type: string
+raised_by: Character
+adr_refs:
+  - adr-0023

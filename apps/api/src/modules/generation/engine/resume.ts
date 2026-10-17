@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, not } from 'drizzle-orm';
 import { db } from '../../../db/client';
 import { generationTasks, modelServices, shots } from '../../../db/schema';
 import { logger } from '../../../http/logger';
@@ -10,7 +10,7 @@ import { completeImage, IMAGE_POLL, imageOwnerOf } from './images';
 import { detach, failTask, poll, type PollProfile } from './lifecycle';
 import { completeLipSync, LIPSYNC_POLL } from './lipsync';
 import { completeSpeech, SPEECH_POLL } from './speech';
-import { completeVideo, perEpisode, VIDEO_POLL } from './videos';
+import { completeVideo, perEpisode, VIDEO_POLL, WAITING_TO_CONTINUE } from './videos';
 
 type TaskRow = typeof generationTasks.$inferSelect;
 
@@ -22,7 +22,8 @@ type TaskRow = typeof generationTasks.$inferSelect;
  * runs from its submission, so restarts never extend it, and its owner gets the result only if it still exists.
  */
 export function resumeInterrupted(): { resumed: number } {
-  const tasks = db.select().from(generationTasks).where(eq(generationTasks.status, 'processing')).all();
+  // A video waiting to continue the shot before it was never sent: resumeWaitingContinuations dispatches it again.
+  const tasks = db.select().from(generationTasks).where(and(eq(generationTasks.status, 'processing'), not(WAITING_TO_CONTINUE))).all();
   for (const task of tasks) {
     try {
       resume(task);

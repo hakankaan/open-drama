@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { VIDEO_TASK_TYPES, videoCapsFor, type AspectRatio, type Resolution, type VideoProviderCaps } from '@open-drama/contracts';
 import { db } from '../../../db/client';
 import { episodes, generationTasks, shots } from '../../../db/schema';
@@ -120,7 +120,7 @@ function stillWanted(taskId: number, shotId: number): boolean {
   return true;
 }
 
-async function run(taskId: number, resolved: ResolvedVideo, input: SubmitVideoInput) {
+async function run(taskId: number, resolved: ResolvedVideo, input: Omit<SubmitVideoInput, 'params'>) {
   if (!stillWanted(taskId, input.shotId)) return;
   const record = {
     taskId,
@@ -173,6 +173,15 @@ export function submitShotVideo(resolved: ResolvedVideo, input: SubmitVideoInput
     },
   );
   logger.info({ taskId, provider: resolved.provider, model: resolved.model, shotId: input.shotId }, 'video task submitted');
+  dispatchShotVideo(taskId, resolved, input);
+  return taskId;
+}
+
+/**
+ * Runs a recorded video task detached: finds its first frame when it has to wait for one, then waits for an episode
+ * slot and sends it. Also how a task still waiting to continue the shot before it is picked up again after a restart.
+ */
+export function dispatchShotVideo(taskId: number, resolved: ResolvedVideo, input: Omit<SubmitVideoInput, 'params'>) {
   detach(taskId, 'video', async () => {
     const firstFrame = input.firstFrameFrom ? await input.firstFrameFrom(taskId) : input.firstFrame;
     if (input.firstFrameFrom && firstFrame === null) return;
@@ -180,5 +189,16 @@ export function submitShotVideo(resolved: ResolvedVideo, input: SubmitVideoInput
       logger.info({ taskId, episodeId: input.episodeId, limit: env.OPEN_DRAMA_VIDEO_CONCURRENCY }, 'video task waiting for a slot'),
     );
   });
-  return taskId;
 }
+
+/**
+ * A video task still waiting to continue the shot before it (adr-0020): it records the shot it continues, the frame is
+ * recorded before anything is sent, and the provider never answered. Nothing of it reached a provider, so a restart
+ * picks it up again instead of failing it (boot cleanup spares it, resume leaves it to resumeWaitingContinuations).
+ */
+export const WAITING_TO_CONTINUE = and(
+  eq(generationTasks.type, 'video'),
+  isNull(generationTasks.providerTaskId),
+  sql`json_extract(${generationTasks.params}, '$.chainedFrom') IS NOT NULL`,
+  sql`json_extract(${generationTasks.params}, '$.firstFrame') IS NULL`,
+)!;

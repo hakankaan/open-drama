@@ -2,7 +2,7 @@
 
 import { Info, Sparkles, TriangleAlert, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { coverViewOf, referencePolicyFor, type CharacterCard, type EpisodeView, type GeneratedView, type ShotCard } from '@open-drama/contracts';
+import { coverViewOf, referencePolicyFor, type CharacterCard, type EpisodeCharacterCard, type EpisodeView, type GeneratedView, type ShotCard } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
 import { usePersistedState } from '@/lib/persisted-state';
 import { useModelPicks } from '../../configuration/model-picks';
@@ -24,7 +24,7 @@ export function ReferenceAdvice({
 }: {
   episode: EpisodeView;
   shots: ShotCard[];
-  characters: CharacterCard[];
+  characters: EpisodeCharacterCard[];
   model: string | null;
 }) {
   const t = useTranslations('studio.video.advice');
@@ -38,8 +38,9 @@ export function ReferenceAdvice({
   const bound = new Set(shots.flatMap((s) => s.bindings.characters.map((c) => c.id)));
   const cast = characters.filter((c) => bound.has(c.id) && c.latestImageTask?.status !== 'processing');
   const sheetOnly = policy.sheets ? [] : cast.filter((c) => coverViewOf(c.views) === 'sheet');
+  // In an episode outfit only the face and the outfit's picture are sent (adr-0023): side and back views would not be.
   const turnaround = policy.turnaround
-    ? cast.flatMap((c) => {
+    ? cast.filter((c) => !c.outfit.trim()).flatMap((c) => {
         const missing = TURNAROUND.filter((v) => !c.views[v]);
         return c.views.headshot && missing.length ? [{ c, missing: missing as GeneratedView[] }] : [];
       })

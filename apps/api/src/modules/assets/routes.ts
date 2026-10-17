@@ -7,8 +7,10 @@ import {
   GenerateFinalPrompt,
   IdParam,
   RequestAssetImage,
+  RequestOutfitImage,
   StartExtraction,
   UpdateCharacter,
+  UpdateEpisodeOutfit,
   UpdateProp,
   UpdateScene,
 } from '@open-drama/contracts';
@@ -17,6 +19,7 @@ import { v } from '../../http/validate';
 import { startExtraction } from '../agents/services/extraction';
 import { generateFinalPrompt } from '../agents/services/final-prompt';
 import { requestAssetImage } from './generate';
+import { requestOutfitImage, updateEpisodeOutfit } from './outfits';
 import {
   createCharacter,
   createProp,
@@ -42,6 +45,13 @@ export const assetsRoutes = new Hono()
     ok(c, updateCharacter(c.req.valid('param').id, c.req.valid('json'))),
   )
   .delete('/characters/:id', id, (c) => ok(c, deleteCharacter(c.req.valid('param').id)))
+  // What a character wears in one episode, and its picture (adr-0023).
+  .patch('/characters/:id/outfit', id, v('json', UpdateEpisodeOutfit), (c) =>
+    ok(c, updateEpisodeOutfit(c.req.valid('param').id, c.req.valid('json'))),
+  )
+  .post('/characters/:id/outfit/image', id, v('json', RequestOutfitImage), (c) =>
+    ok(c, requestOutfitImage(c.req.valid('param').id, c.req.valid('json'))),
+  )
   .post('/scenes', v('json', CreateScene), (c) => created(c, createScene(c.req.valid('json'))))
   .patch('/scenes/:id', id, v('json', UpdateScene), (c) =>
     ok(c, updateScene(c.req.valid('param').id, c.req.valid('json'))),

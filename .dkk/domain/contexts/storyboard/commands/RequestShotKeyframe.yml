@@ -28,3 +28,4 @@ rejections:
   - Characters are bound and the image model takes no reference image (the task fails before anything is paid)
 adr_refs:
   - adr-0019
+  - adr-0023

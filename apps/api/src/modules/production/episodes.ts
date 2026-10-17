@@ -103,14 +103,15 @@ export function lockServices(input: { imageServiceId?: number; videoServiceId?: 
 /**
  * The first generation of a type claims the empty lock before it starts (adr-0016): compare-and-set on the empty
  * column, then the stored id is read back, so two first generations racing each other both go on with the one
- * service that won. Never written over a lock.
+ * service that won. A lock whose service was deleted, disabled or retyped is replaced the same way, compared with the
+ * dead id (`replacing`). Never written over a live lock.
  */
-export function claimServiceLock(episodeId: number, type: 'image' | 'video', serviceId: number): number {
+export function claimServiceLock(episodeId: number, type: 'image' | 'video', serviceId: number, replacing: number | null = null): number {
   const column = type === 'image' ? episodes.imageServiceId : episodes.videoServiceId;
   return db.transaction((tx) => {
     tx.update(episodes)
       .set(type === 'image' ? { imageServiceId: serviceId } : { videoServiceId: serviceId })
-      .where(and(eq(episodes.id, episodeId), isNull(column)))
+      .where(and(eq(episodes.id, episodeId), replacing === null ? isNull(column) : eq(column, replacing)))
       .run();
     const row = tx.select({ locked: column }).from(episodes).where(eq(episodes.id, episodeId)).get();
     if (!row) throw notFound('Episode');

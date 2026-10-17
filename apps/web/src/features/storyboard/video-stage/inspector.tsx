@@ -63,6 +63,16 @@ function Keyframe({
       ) : (
         <p className="text-xs text-muted">{t('none')}</p>
       )}
+      {shot.keyframePath && shot.keyframeStale && !drawing ? (
+        <div className="flex items-start gap-2 rounded-md bg-warning-soft px-3 py-2 text-xs text-warning" role="status">
+          <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span className="flex-1">{t('stale')}</span>
+          <Button size="sm" variant="quiet" onClick={() => void save({ keyframeStale: false }).catch((err) => toastError(err))}>
+            <Check className="h-3.5 w-3.5" aria-hidden />
+            {t('keep')}
+          </Button>
+        </div>
+      ) : null}
       {task?.status === 'failed' && task.error ? (
         <p className="text-xs text-danger" role="alert">
           {task.error}

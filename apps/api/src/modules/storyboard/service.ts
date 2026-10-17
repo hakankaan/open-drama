@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs';
-import { and, asc, eq, inArray, isNull, max, ne, or, sum } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, max, ne, or, sql, sum, type SQL } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   coverOf,
   isNarrator,
+  outfitViews,
   VIDEO_TASK_TYPES,
   type AssetKind,
   type CreateShot,
@@ -37,13 +38,18 @@ import { getEpisodeJobs } from '../jobs/run-job';
 import { touchDrama } from '../production/dramas';
 import { getEpisodeRow } from '../production/episodes';
 import { viewsOf } from '../assets/views';
+import { boundShots, continuationStale } from './staleness';
 
 type ShotRow = typeof shots.$inferSelect;
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-/** A check of an earlier video is not shown (adr-0022). */
-export const toShot = ({ parkedByJobId: _p, createdByJobId: _c, qa, ...row }: ShotRow): Shot => ({
+/**
+ * A check of an earlier video is not shown (adr-0022). A keyframe drawn or kept at an earlier revision than the
+ * shot's is stale (adr-0019).
+ */
+export const toShot = ({ parkedByJobId: _p, createdByJobId: _c, qa, keyframeRevision, keyframeDrawnRevision, ...row }: ShotRow): Shot => ({
   ...row,
+  keyframeStale: row.keyframePath !== null && keyframeDrawnRevision !== keyframeRevision,
   qa: qa && qa.videoPath === row.videoPath ? qa : null,
 });
 
@@ -73,17 +79,21 @@ export function loadBindings(rows: ShotRow[]): Map<number, ShotBindings> {
   const map = new Map<number, ShotBindings>(rows.map((r) => [r.id, { scene: null, characters: [], props: [] }]));
   if (rows.length === 0) return map;
   const shotIds = rows.map((r) => r.id);
+  // Each character as the shot's episode dresses it (adr-0023).
   const chars = db
-    .select({ shotId: shotCharacters.shotId, row: characters })
+    .select({ shotId: shotCharacters.shotId, row: characters, outfit: episodeCharacters.outfit, outfitPath: episodeCharacters.outfitPath })
     .from(shotCharacters)
     .innerJoin(characters, eq(characters.id, shotCharacters.characterId))
+    .innerJoin(shots, eq(shots.id, shotCharacters.shotId))
+    .leftJoin(episodeCharacters, and(eq(episodeCharacters.episodeId, shots.episodeId), eq(episodeCharacters.characterId, characters.id)))
     .where(and(inArray(shotCharacters.shotId, shotIds), isNull(characters.deletedAt)))
     .orderBy(asc(shotCharacters.sortOrder), asc(characters.id))
     .all();
-  for (const { shotId, row } of chars) {
+  for (const { shotId, row, outfit, outfitPath } of chars) {
     if (isNarrator(row.name, row.role)) continue;
-    const views = viewsOf(row);
-    map.get(shotId)?.characters.push({ id: row.id, name: row.name, imagePath: coverOf(views), views });
+    const worn = outfit?.trim() ?? '';
+    const views = worn ? outfitViews(viewsOf(row), outfitPath) : viewsOf(row);
+    map.get(shotId)?.characters.push({ id: row.id, name: row.name, imagePath: coverOf(views), views, ...(worn ? { outfit: worn } : {}) });
   }
   const prps = db
     .select({ shotId: shotProps.shotId, id: props.id, name: props.name, imagePath: props.imagePath })
@@ -106,7 +116,7 @@ export function loadBindings(rows: ShotRow[]): Map<number, ShotBindings> {
   return map;
 }
 
-/** What each character wears, as its asset states it, by id; video prompts carry it (adr-0018). */
+/** What each character wears as its asset states it, by id; prompts carry it unless an episode outfit replaces it (adr-0018, adr-0023). */
 export function characterStyling(ids: number[]): Map<number, string> {
   if (ids.length === 0) return new Map();
   const rows = db.select({ id: characters.id, styling: characters.styling }).from(characters).where(inArray(characters.id, ids)).all();
@@ -234,6 +244,29 @@ function promptStaleness(
   return changed && current.videoPrompt.trim() ? { videoPromptStale: true } : {};
 }
 
+/** The shot fields a keyframe is drawn from, besides the bound characters and props (adr-0019). */
+const KEYFRAME_SOURCES = ['imagePrompt', 'sceneId'] as const;
+/** What a keyframe is composed from while the shot has no keyframe prompt (`composedMoment`). */
+const KEYFRAME_COMPOSED_FROM = ['shotType', 'angle', 'location', 'time', 'description', 'videoPrompt'] as const;
+type KeyframeInput = Partial<Pick<ShotRow, 'keyframePath' | (typeof KEYFRAME_SOURCES)[number] | (typeof KEYFRAME_COMPOSED_FROM)[number]>> & {
+  keyframeStale?: false;
+};
+
+/**
+ * The keyframe rule (adr-0019): a change to what the keyframe is drawn from moves the shot's keyframe revision on,
+ * which makes the keyframe (or one being drawn) stale; it still goes as the first frame until redrawn, replaced or
+ * kept. A keyframe set or removed by hand, or kept (`keyframeStale: false`), is current at the new revision.
+ */
+function keyframePatch(current: ShotRow, input: KeyframeInput, rebound: boolean): Partial<Record<'keyframeRevision' | 'keyframeDrawnRevision', SQL>> {
+  const changed = (k: (typeof KEYFRAME_SOURCES)[number] | (typeof KEYFRAME_COMPOSED_FROM)[number]) =>
+    input[k] !== undefined && input[k] !== current[k];
+  const composed = (input.imagePrompt ?? current.imagePrompt).trim() === '';
+  const moved = rebound || KEYFRAME_SOURCES.some(changed) || (composed && KEYFRAME_COMPOSED_FROM.some(changed));
+  const revision = moved ? sql`${shots.keyframeRevision} + 1` : sql`${shots.keyframeRevision}`;
+  const kept = input.keyframePath !== undefined || input.keyframeStale === false;
+  return { ...(moved ? { keyframeRevision: revision } : {}), ...(kept ? { keyframeDrawnRevision: revision } : {}) };
+}
+
 /**
  * For a prompt written by an agent run: call before the run, and the returned check once the prompt is saved. A
  * source the creator changed meanwhile (even back to what it was) marks the new prompt stale, since it may have been
@@ -251,12 +284,7 @@ export function watchPromptSources(shotId: number): () => void {
  * they go stale like any other source change. Called inside the asset's transaction, before its bindings go.
  */
 export function markAssetPromptsStale(tx: Tx, asset: { kind: AssetKind; id: number }) {
-  const ids =
-    asset.kind === 'scene'
-      ? tx.select({ id: shots.id }).from(shots).where(eq(shots.sceneId, asset.id)).all().map((r) => r.id)
-      : asset.kind === 'character'
-        ? tx.select({ id: shotCharacters.shotId }).from(shotCharacters).where(eq(shotCharacters.characterId, asset.id)).all().map((r) => r.id)
-        : tx.select({ id: shotProps.shotId }).from(shotProps).where(eq(shotProps.propId, asset.id)).all().map((r) => r.id);
+  const ids = boundShots(tx, asset);
   if (ids.length === 0) return;
   for (const id of ids) sourceEdits.set(id, (sourceEdits.get(id) ?? 0) + 1);
   tx.update(shots).set({ videoPromptStale: true }).where(and(inArray(shots.id, ids), ne(shots.videoPrompt, ''))).run();
@@ -270,6 +298,17 @@ export function recomputeDuration(tx: Tx, episodeId: number) {
 
 // Read model
 
+/** The live shot before each shot marked as continuing it that has a video (`continuationStale`). */
+function shotsBefore(rows: ShotRow[]): Map<number, ShotRow | undefined> {
+  const before = new Map<number, ShotRow | undefined>();
+  const marked = rows.filter((r) => r.continuesPrevious && r.videoPath);
+  for (const episodeId of new Set(marked.map((r) => r.episodeId))) {
+    const live = liveShotRows(episodeId);
+    for (const r of marked.filter((m) => m.episodeId === episodeId)) before.set(r.id, live[live.findIndex((l) => l.id === r.id) - 1]);
+  }
+  return before;
+}
+
 function toCards(rows: ShotRow[]): ShotCard[] {
   const bindings = loadBindings(rows);
   const ids = rows.map((r) => r.id);
@@ -277,6 +316,7 @@ function toCards(rows: ShotRow[]): ShotCard[] {
   const keyframes = latestTasks('image', generationTasks.shotId, ids);
   const lines = latestTasks('speech', generationTasks.shotId, ids);
   const syncs = latestTasks('lipsync', generationTasks.shotId, ids);
+  const before = shotsBefore(rows);
   return rows.map((r) => ({
     ...toShot(r),
     bindings: bindings.get(r.id)!,
@@ -284,6 +324,7 @@ function toCards(rows: ShotRow[]): ShotCard[] {
     latestKeyframeTask: keyframes.get(r.id) ?? null,
     latestLineAudioTask: lines.get(r.id) ?? null,
     latestLipSyncTask: syncs.get(r.id) ?? null,
+    continuationStale: continuationStale(r, before.get(r.id)),
   }));
 }
 
@@ -367,7 +408,7 @@ export function writeShotUpdate(id: number, input: z.output<typeof UpdateShot>):
   assertSomething(input);
   checkReferenceMedia(input.referenceMedia);
   if (input.keyframePath && !existsSync(toAbsolute(input.keyframePath))) throw invalid(`No stored file at ${input.keyframePath}`);
-  const { characterIds, propIds, videoPath, speakerId, ...fields } = input;
+  const { characterIds, propIds, videoPath, speakerId, keyframeStale, ...fields } = input;
   let videoDurationSeconds: number | null | undefined;
   if (videoPath !== undefined) {
     const task = db
@@ -383,7 +424,7 @@ export function writeShotUpdate(id: number, input: z.output<typeof UpdateShot>):
     assertBindable(tx, ep.dramaId, { sceneId: fields.sceneId, characterIds, propIds });
     const rebound = writeBindings(tx, id, ep.id, { sceneId: fields.sceneId, characterIds, propIds });
     const video = videoPath !== undefined ? { videoPath, videoDurationSeconds } : {};
-    const stale = promptStaleness(current, fields, rebound);
+    const stale = { ...promptStaleness(current, fields, rebound), ...keyframePatch(current, { ...fields, keyframeStale }, rebound) };
     const speaker = speakerPatch(tx, id, current, { speakerId, line: fields.line });
     tx.update(shots).set({ ...fields, ...video, ...stale, ...speaker, updatedAt: nowIso() }).where(eq(shots.id, id)).run();
     if (fields.durationSeconds !== undefined) recomputeDuration(tx, ep.id);
@@ -462,7 +503,8 @@ export function saveShots(
       if (existing) {
         const rebound = writeBindings(tx, existing.id, episodeId, { sceneId, characterIds, propIds });
         const speaker = speakerPatch(tx, existing.id, existing, { speakerId, line: fields.line });
-        tx.update(shots).set({ ...values, ...promptStaleness(existing, values, rebound), ...speaker }).where(eq(shots.id, existing.id)).run();
+        const stale = { ...promptStaleness(existing, values, rebound), ...keyframePatch(existing, values, rebound) };
+        tx.update(shots).set({ ...values, ...stale, ...speaker }).where(eq(shots.id, existing.id)).run();
       } else {
         const shotId = tx
           .insert(shots)

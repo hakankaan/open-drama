@@ -1,15 +1,18 @@
-# Read model — a query-optimised projection.
 name: EpisodeAssets
-description: The assets stage of the workbench — characters, scenes and props linked to the episode with their fields, final prompt, reference image (plus thumbnail), readiness (ready / generating / pending) and the extraction job status per type.
+description: >-
+  The assets stage of the workbench — characters, scenes and props linked to the episode with their fields, final
+  prompt, reference image (plus thumbnail), readiness (ready / generating / pending) and the extraction job status per
+  type; each character also carries its outfit in the episode, the outfit picture and the latest outfit task
+  (adr-0023).
 fields:
   - name: episodeId
     type: ID
   - name: characters
-    type: "CharacterCard[]"
+    type: EpisodeCharacterCard[]
   - name: scenes
-    type: "SceneCard[]"
+    type: SceneCard[]
   - name: props
-    type: "PropCard[]"
+    type: PropCard[]
   - name: extraction
     type: ExtractionStatusByTarget
 subscribes_to:
@@ -20,6 +23,8 @@ subscribes_to:
   - SceneUpdated
   - PropUpdated
   - CharacterImageAttached
+  - EpisodeOutfitSet
+  - OutfitImageAttached
   - SceneImageAttached
   - PropImageAttached
   - ExtractionStarted
@@ -27,3 +32,5 @@ subscribes_to:
   - ExtractionFailed
 used_by:
   - Creator
+adr_refs:
+  - adr-0023

@@ -6,7 +6,7 @@
 
 ## Summary
 
-The assets stage of the workbench — characters, scenes and props linked to the episode with their fields, final prompt, reference image (plus thumbnail), readiness (ready / generating / pending) and the extraction job status per type.
+The assets stage of the workbench — characters, scenes and props linked to the episode with their fields, final prompt, reference image (plus thumbnail), readiness (ready / generating / pending) and the extraction job status per type; each character also carries its outfit in the episode, the outfit picture and the latest outfit task (adr-0023).
 
 
 ## Fields
@@ -14,7 +14,7 @@ The assets stage of the workbench — characters, scenes and props linked to the
 | Name | Type | Description |
 |------|------|-------------|
 | `episodeId` | `ID` | — |
-| `characters` | `CharacterCard[]` | — |
+| `characters` | `EpisodeCharacterCard[]` | — |
 | `scenes` | `SceneCard[]` | — |
 | `props` | `PropCard[]` | — |
 | `extraction` | `ExtractionStatusByTarget` | — |
@@ -32,6 +32,8 @@ The assets stage of the workbench — characters, scenes and props linked to the
 | Subscribes to | `SceneUpdated` |
 | Subscribes to | `PropUpdated` |
 | Subscribes to | `CharacterImageAttached` |
+| Subscribes to | `EpisodeOutfitSet` |
+| Subscribes to | `OutfitImageAttached` |
 | Subscribes to | `SceneImageAttached` |
 | Subscribes to | `PropImageAttached` |
 | Subscribes to | `ExtractionStarted` |
@@ -41,4 +43,6 @@ The assets stage of the workbench — characters, scenes and props linked to the
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0023](../../adr/adr-0023.md) | Per-episode outfits | proposed |

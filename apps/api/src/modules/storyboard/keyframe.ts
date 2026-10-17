@@ -13,6 +13,8 @@ const MAX_CAST = 4;
 const OPENING = /^\s*Shot\s*1\s*[:：]\s*/i;
 const FRAME = "A single still frame from a film: the opening moment of the shot, as the camera sees it.";
 const IDENTITY = 'Each character has the face, hair and outfit of their reference images.';
+/** An episode outfit not pictured yet (adr-0023): the references show the usual clothes, the wardrobe line the outfit. */
+const IDENTITY_OUTFIT = 'Each character has the face and hair of their reference images, and wears what is described above.';
 const REFERENCE_REQUIRED =
   'The keyframe is drawn from the characters’ images, and this image model takes no reference image, so it would draw other people; pick an image model that edits images.';
 
@@ -83,7 +85,7 @@ export function requestShotKeyframe(shotId: number, body: z.output<typeof Reques
     wardrobeOf(cast),
     moment,
     lighting && `Lighting: ${lighting}.`,
-    [cast.length ? IDENTITY : '', CLEAN_FRAME].filter(Boolean).join(' '),
+    [cast.length ? (cast.some((c) => c.outfit && !c.views?.body) ? IDENTITY_OUTFIT : IDENTITY) : '', CLEAN_FRAME].filter(Boolean).join(' '),
   ]
     .filter(Boolean)
     .join('\n');
@@ -99,6 +101,7 @@ export function requestShotKeyframe(shotId: number, body: z.output<typeof Reques
     imageServiceId: body.imageServiceId,
     lockedServiceId: ep.imageServiceId,
     lockFor: ep.id,
+    keyframeRevision: shot.keyframeRevision,
   });
   touchDrama(ep.dramaId);
   return { taskId };

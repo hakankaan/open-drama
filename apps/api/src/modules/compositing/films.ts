@@ -2,11 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
 import { extname, join } from 'node:path';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import type { z } from 'zod';
-import { VIDEO_TASK_TYPES, type Film, type MergeShots, type MergeStarted } from '@open-drama/contracts';
+import type { Film, MergeShots, MergeStarted } from '@open-drama/contracts';
 import { db } from '../../db/client';
-import { films, generationTasks } from '../../db/schema';
+import { films } from '../../db/schema';
 import { nowIso } from '../../db/schema/columns';
 import { env } from '../../env';
 import { conflict, invalid, precondition } from '../../http/errors';
@@ -17,6 +17,7 @@ import { deriveRenditions } from '../media/store';
 import { attachEpisodeFilm, getEpisodeRow } from '../production/episodes';
 import { isShuttingDown } from '../../lib/shutdown';
 import { getDramaRow, touchDrama } from '../production/dramas';
+import { clipTask, joinsBefore } from '../storyboard/staleness';
 import { assertNoBreakdown, liveShotRows } from '../storyboard/service';
 import { colourStats, gradeTowards, type ColourStats } from './colour';
 import { ENCODER, filmFrame, FPS, renderFilm, type FilmClip, type FilmOptions } from './render';
@@ -38,47 +39,6 @@ export function latestFilm(episodeId: number): Film | null {
   getEpisodeRow(episodeId);
   const row = db.select().from(films).where(eq(films.episodeId, episodeId)).orderBy(desc(films.id)).get();
   return row ? toFilm(row) : null;
-}
-
-interface ClipTask {
-  seconds: number | null;
-  firstFrame: string | null;
-  /** The shot and video it continues, and the time of the frame it started from (adr-0020). */
-  chainedFrom: { shotId: number; videoPath: string; at: number } | null;
-  /** For a lip sync, the video it re-synced (adr-0021): the take a continued shot started from. */
-  sourceVideoPath: string | null;
-}
-
-/**
- * What a shot's video was generated with: its length, since providers return a few frames more than asked (9.056 s
- * for 9 s), which would add up across the film; the still it started from; and the video it continues. Nulls when
- * the task is not found.
- */
-function clipTask(shotId: number, videoPath: string): ClipTask {
-  const task = db
-    .select({ params: generationTasks.params })
-    .from(generationTasks)
-    .where(
-      and(
-        eq(generationTasks.shotId, shotId),
-        inArray(generationTasks.type, VIDEO_TASK_TYPES),
-        eq(generationTasks.status, 'completed'),
-        eq(generationTasks.localPath, videoPath),
-      ),
-    )
-    .orderBy(desc(generationTasks.id))
-    .get();
-  const { durationSeconds: seconds, firstFrame, chainedFrom, sourceVideoPath } = task?.params ?? {};
-  const from = chainedFrom as Partial<NonNullable<ClipTask['chainedFrom']>> | undefined;
-  return {
-    seconds: typeof seconds === 'number' && seconds > 0 ? seconds : null,
-    firstFrame: typeof firstFrame === 'string' ? firstFrame : null,
-    chainedFrom:
-      typeof from?.shotId === 'number' && typeof from.videoPath === 'string' && typeof from.at === 'number'
-        ? { shotId: from.shotId, videoPath: from.videoPath, at: from.at }
-        : null,
-    sourceVideoPath: typeof sourceVideoPath === 'string' ? sourceVideoPath : null,
-  };
 }
 
 /** A clip as the merge plans it; `joinsAt` is set when it continues the clip before it in this film. */
@@ -153,8 +113,7 @@ export async function mergeShots(episodeId: number, input: z.output<typeof Merge
   const planned: PlannedClip[] = clips.map((s, i) => {
     const task = tasks[i]!;
     const before = clips[i - 1];
-    const takes = before ? [before.videoPath, tasks[i - 1]!.sourceVideoPath] : [];
-    const joins = task.chainedFrom && before && task.chainedFrom.shotId === before.id && takes.includes(task.chainedFrom.videoPath);
+    const joins = before !== undefined && joinsBefore(task, { id: before.id, videoPath: before.videoPath! }, tasks[i - 1]!);
     return {
       shotNumber: s.shotNumber,
       path: s.videoPath!,

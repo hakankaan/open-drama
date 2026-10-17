@@ -172,6 +172,12 @@ export function testSavedModelService(id: number, model?: string): Promise<Model
   return probeService({ serviceType: saved.serviceType, provider: saved.provider, baseUrl: saved.baseUrl, apiKey: saved.apiKey, model: model || saved.models[0] });
 }
 
+/** The service an episode's lock names, while it still exists, is active and is of the type; else undefined (a dead lock). */
+export function liveLock(type: ServiceType, id: number) {
+  const row = db.select().from(modelServices).where(eq(modelServices.id, id)).get();
+  return row && row.isActive && row.serviceType === type ? row : undefined;
+}
+
 /**
  * The service to use for a type: an explicit id, else the episode's lock while it is still active, else the
  * highest-priority usable (active, keyed) service. null when the type has none.
@@ -184,8 +190,8 @@ export function resolveService(type: ServiceType, opts: { explicitId?: number | 
     return { row, locked: true };
   }
   if (opts.lockedId) {
-    const row = db.select().from(modelServices).where(eq(modelServices.id, opts.lockedId)).get();
-    if (row && row.isActive && row.serviceType === type) return { row, locked: true };
+    const row = liveLock(type, opts.lockedId);
+    if (row) return { row, locked: true };
   }
   const row = db
     .select()

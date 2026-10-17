@@ -1,0 +1,14 @@
+name: OutfitImageRequested
+description: >-
+  A picture of a character in an episode's outfit was requested (adr-0023); the task carries the episode and the
+  outfit it is drawn for.
+fields:
+  - name: characterId
+    type: ID
+  - name: episodeId
+    type: ID
+  - name: taskId
+    type: ID
+raised_by: Character
+adr_refs:
+  - adr-0023

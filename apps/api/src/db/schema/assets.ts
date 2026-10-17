@@ -89,6 +89,10 @@ export const episodeCharacters = sqliteTable(
     characterId: integer()
       .notNull()
       .references(() => characters.id),
+    // What the character wears in this episode, when it differs from the asset's styling (adr-0023), and a full-body
+    // picture of them in it; the picture is cleared when the outfit changes.
+    outfit: text().notNull().default(''),
+    outfitPath: text(),
     createdAt: createdAt(),
   },
   // The second index serves the reverse lookup (deleting a character).

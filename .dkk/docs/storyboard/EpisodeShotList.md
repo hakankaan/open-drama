@@ -6,7 +6,7 @@
 
 ## Summary
 
-The video-production stage — every shot of the episode in order with description, atmosphere, duration, bound scene/characters/props (with their reference images and readiness), speaker, line and line audio, video prompt, current video (with poster) and its check, generation, keyframe, line-audio and lip-sync status and history, plus the breakdown job state.
+The video-production stage — every shot of the episode in order with description, atmosphere, duration, bound scene/characters/props (with their reference images and readiness), speaker, line and line audio, video prompt, current video (with poster) and its check, generation, keyframe (and whether it is stale), line-audio and lip-sync status and history, whether a continued video still joins the shot before, plus the breakdown job state.
 
 
 ## Fields
@@ -46,5 +46,7 @@ The video-production stage — every shot of the episode in order with descripti
 
 | ADR | Title | Status |
 |-----|-------|--------|
+| [adr-0019](../../adr/adr-0019.md) | Shot keyframes and the finishing pass | proposed |
+| [adr-0020](../../adr/adr-0020.md) | Continuous takes between shots | proposed |
 | [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |
 | [adr-0022](../../adr/adr-0022.md) | Shot checks by a vision model | proposed |
