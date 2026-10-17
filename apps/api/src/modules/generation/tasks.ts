@@ -12,7 +12,7 @@ import type {
   TaskOwner,
   TaskSummary,
 } from '@open-drama/contracts';
-import { SentView } from '@open-drama/contracts';
+import { SentView, VIDEO_TASK_TYPES } from '@open-drama/contracts';
 import { db } from '../../db/client';
 import {
   characters,
@@ -98,8 +98,9 @@ export function deleteTask(id: number): { id: number } {
   const row = getTaskRow(id);
   if (row.status === 'processing') throw conflict('The task is still running; delete it once it has finished');
   if (row.shotId && row.localPath) {
-    const shot = db.select({ videoPath: shots.videoPath }).from(shots).where(eq(shots.id, row.shotId)).get();
+    const shot = db.select({ videoPath: shots.videoPath, keyframePath: shots.keyframePath }).from(shots).where(eq(shots.id, row.shotId)).get();
     if (shot?.videoPath === row.localPath) throw conflict('This is the shot’s current video; pick another one before deleting it');
+    if (shot?.keyframePath === row.localPath) throw conflict('This is the shot’s current keyframe; replace it before deleting it');
   }
   db.delete(generationTasks).where(eq(generationTasks.id, id)).run();
   return { id };
@@ -116,12 +117,25 @@ function sentViewsOf(slots: unknown): Record<string, SentView[]> {
   return out;
 }
 
-/** Completed videos of a shot, newest first; `current` marks the one the shot plays. */
+/** The number of the shot a version continued (`params.chainedFrom`, adr-0020). */
+function continuedShotOf(chainedFrom: unknown): number | null {
+  const n = (chainedFrom as { shotNumber?: unknown } | undefined)?.shotNumber;
+  return typeof n === 'number' ? n : null;
+}
+
+/** Completed videos of a shot, generated or lip-synced (adr-0021), newest first; `current` marks the one the shot plays. */
 export function shotVideos(shotId: number, currentPath: string | null): ShotVideo[] {
   return db
     .select()
     .from(generationTasks)
-    .where(and(eq(generationTasks.type, 'video'), eq(generationTasks.shotId, shotId), eq(generationTasks.status, 'completed'), isNotNull(generationTasks.localPath)))
+    .where(
+      and(
+        inArray(generationTasks.type, VIDEO_TASK_TYPES),
+        eq(generationTasks.shotId, shotId),
+        eq(generationTasks.status, 'completed'),
+        isNotNull(generationTasks.localPath),
+      ),
+    )
     .orderBy(desc(generationTasks.id))
     .all()
     .map((t) => ({
@@ -134,6 +148,9 @@ export function shotVideos(shotId: number, currentPath: string | null): ShotVide
       seed: typeof t.params.seed === 'number' ? t.params.seed : null,
       droppedReferences: Array.isArray(t.params.droppedReferences) ? t.params.droppedReferences.filter((n): n is string => typeof n === 'string') : [],
       sentViews: sentViewsOf(t.params.slots),
+      firstFrame: typeof t.params.firstFrame === 'string' ? t.params.firstFrame : null,
+      continues: continuedShotOf(t.params.chainedFrom),
+      lipSynced: t.type === 'lipsync',
       createdAt: t.createdAt,
       completedAt: t.completedAt,
       current: t.localPath === currentPath,

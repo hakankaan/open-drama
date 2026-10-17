@@ -1,12 +1,20 @@
-# Command — an instruction to change domain state.
 name: MergeShots
-description: Render a film from the episode's shots that have videos (all of them, or the given shot ids). Checks FFmpeg availability and clip existence, creates the merge record and starts rendering in the background.
+description: >-
+  Render a film from the episode's shots that have videos (all of them, or the given shot ids). Checks FFmpeg
+  availability and clip existence, creates the merge record and starts rendering in the background. With colour match
+  on, each clip is nudged towards the keyframe it started from, else its shot's keyframe. A clip that continues the clip
+  before it in the film (adr-0020) joins it without a cut and takes its grade; one that continued a version not in the
+  film is matched to its shot's keyframe only; a lip sync counts as the take it was synced from (adr-0021). The film's
+  encoder line records how many clips were matched and joined.
 fields:
   - name: episodeId
     type: ID
   - name: shotIds
-    type: "ID[]"
+    type: ID[]
     description: Optional subset; still rendered in shot order
+  - name: colorMatch
+    type: boolean
+    description: Grade each clip towards its keyframe (default true); clips without one stay as they are
 actor: Creator
 handled_by: Film
 preconditions:
@@ -16,3 +24,7 @@ rejections:
   - No selected shot has a video
   - A selected shot's video file is missing on disk
   - FFmpeg unavailable
+adr_refs:
+  - adr-0019
+  - adr-0020
+  - adr-0021

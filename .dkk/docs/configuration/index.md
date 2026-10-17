@@ -2,16 +2,16 @@
 
 > Auto-generated — do not edit manually. Run `domain-knowledge-kit render` to regenerate.
 
-Configuration of the AI model services the app talks to (text, image and video providers with base URL, key, models and priority), the visual style presets injected into prompts, and application-level settings such as the AI content language.
+Configuration of the AI model services the app talks to (text, image and video providers, and the optional speech, lip-sync and vision ones, with base URL, key, models and priority), the visual style presets injected into prompts, and application-level settings such as the AI content language.
 
 ## Glossary
 
 | Term | Definition | Aliases |
 |------|------------|---------|
-| **Model service** | A configured provider endpoint for one service type (text, image or video) with base URL, API key, an ordered list of models (first is the default), a priority and an active flag. Keys live in the database, never in files. | AI service config |
-| **Service type** | text, image or video — each stage needs exactly one active service of the type it uses. | — |
+| **Model service** | A configured provider endpoint for one service type (text, image, video, speech, lip sync or vision) with base URL, API key, an ordered list of models (first is the default), a priority and an active flag. Keys live in the database, never in files. | AI service config |
+| **Service type** | text, image or video — each stage needs exactly one active service of the type it uses; speech and lipsync are optional and serve only pinned voices (adr-0021), and vision (a chat model that reads images) only shot checks (adr-0022), so readiness never waits for them. | — |
 | **Provider** | The dialect a service speaks: the official endpoints of the supported model families (openai, gemini, volcengine, minimax, aliyun), plus byteplus (the international Ark, served by the Volcengine adapters) and modelrunner (its own queue adapter, adr-0013). Determines the adapter and the connectivity probe. | — |
-| **Quick setup** | Writing a recommended text, image and video service in one step from a single API key of a compatible gateway. | — |
+| **Quick setup** | Writing a recommended text, image and video service (on ModelRunner also speech, lip sync and vision) in one step from a single API key of a compatible gateway. | — |
 | **Style preset** | A named visual style (3d, anime, ghibli, …) with an English prompt fragment prepended to every image and video prompt of dramas that use it. Built-ins are seeded and upgraded without overwriting user edits. | — |
 | **Assistant endpoint** | POST /mcp on the API's port, outside the versioned REST base: the MCP (Streamable HTTP) transport through which the creator's AI assistant uses the same service layer as the studio. Stateless, forwarded unchanged by the web proxy, guarded like /api, off when OPEN_DRAMA_ASSISTANT=0 (adr-0016). | — |
 | **Assistant token** | The bearer token /mcp requires. From OPEN_DRAMA_ASSISTANT_TOKEN (at least 32 characters) when set, else generated at first boot (32 random bytes, base64url) into app_settings and printed once to stdout. Read through GET /settings/assistant, rotated through POST /settings/assistant/rotate, compared in constant time; never logged. | — |
@@ -26,7 +26,7 @@ Configuration of the AI model services the app talks to (text, image and video p
 | [ModelServiceDeleted](ModelServiceDeleted.md) | A service was removed. | `ModelService` | serviceId (ID), serviceType (string) |
 | [ModelServiceProbed](ModelServiceProbed.md) | A connectivity probe returned with reachability, status code and a preview. | `ModelService` | provider (string), reachable (boolean), status (number), message (string) |
 | [ModelServiceUpdated](ModelServiceUpdated.md) | A service changed; the default model or the active service of its type may have changed with it. | `ModelService` | serviceId (ID), changedFields (string[]) |
-| [QuickSetupApplied](QuickSetupApplied.md) | The recommended text, image and video services were written from one key. | `ModelService` | serviceIds (ID[]) |
+| [QuickSetupApplied](QuickSetupApplied.md) | The recommended services (text, image, video, and where offered speech, lip sync and vision) were written from one key. | `ModelService` | serviceIds (ID[]) |
 | [StylePresetCreated](StylePresetCreated.md) | A new style is available for project creation. | `StylePreset` | presetId (ID), value (string) |
 | [StylePresetDeleted](StylePresetDeleted.md) | A style was removed. | `StylePreset` | presetId (ID), value (string) |
 | [StylePresetUpdated](StylePresetUpdated.md) | A style's prompt or metadata changed; future prompts of dramas using it pick up the new fragment. | `StylePreset` | presetId (ID), changedFields (string[]) |
@@ -37,7 +37,7 @@ Configuration of the AI model services the app talks to (text, image and video p
 | Command | Description | Actor | Handled By | Fields |
 |---------|-------------|-------|------------|--------|
 | [AddModelService](AddModelService.md) | Add a provider endpoint for a service type with its base URL, API key, models, priority and optional temperature. New services are active by default. | `Creator` | `ModelService` | serviceType (string), provider (string), name (string), baseUrl (string), apiKey (string), models (string[]), priority (number), temperature (number) |
-| [ApplyQuickSetup](ApplyQuickSetup.md) | From one API key of a compatible gateway, write the three recommended services (text, image, video) with preset base URLs and default models in a single step, then probe each. | `Creator` | `ModelService` | apiKey (string), gateway (string) |
+| [ApplyQuickSetup](ApplyQuickSetup.md) | From one API key of a compatible gateway, write the recommended services (text, image, video, and on ModelRunner speech, lip sync and vision) with preset base URLs and default models in a single step, then probe each. | `Creator` | `ModelService` | apiKey (string), gateway (string) |
 | [CreateStylePreset](CreateStylePreset.md) | Add a visual style with a unique key, a name, an English prompt fragment, an optional description and sort order. | `Creator` | `StylePreset` | name (string), value (string), prompt (string), description (string), sortOrder (number), isActive (boolean) |
 | [DeleteModelService](DeleteModelService.md) | Remove a service permanently. | `Creator` | `ModelService` | serviceId (ID) |
 | [DeleteStylePreset](DeleteStylePreset.md) | Hard-delete a style. Dramas keep their key; a deleted built-in may be re-seeded on restart, so disabling is usually preferable. | `Creator` | `StylePreset` | presetId (ID) |
@@ -65,7 +65,7 @@ _No policies._
 |------------|-------------|---------------|---------|
 | [ActiveModelServices](ActiveModelServices.md) | For each service type, the active services sorted by priority with their models, so the workbench top bar can switch text/image/video models and episode creation can lock the defaults. | ModelServiceAdded, ModelServiceUpdated, ModelServiceDeleted, QuickSetupApplied | Creator |
 | [AppSettingsView](AppSettingsView.md) | The current content language and the tours already seen, read at app start. | ContentLanguageChanged, ToursSeenRecorded | Creator |
-| [ConfigurationReadiness](ConfigurationReadiness.md) | Which service types (text, image, video) still lack an active service. Drives the site-wide banner and the first-run tour. | ModelServiceAdded, ModelServiceUpdated, ModelServiceDeleted, QuickSetupApplied | Creator |
+| [ConfigurationReadiness](ConfigurationReadiness.md) | Which required service types (text, image, video) still lack an active service; the optional speech, lip-sync and vision types never count. Drives the site-wide banner and the first-run tour. | ModelServiceAdded, ModelServiceUpdated, ModelServiceDeleted, QuickSetupApplied | Creator |
 | [ModelCatalog](ModelCatalog.md) | The ModelRunner endpoints a service of one type can use, with their USD prices (per million tokens, per image, or per output second over the resolution tiers). Read live from ModelRunner's public catalog each time the service dialog asks and never stored; image and video list the mode endpoints the adapter offers by category and name (text-to-video and reference-to-video; text-to-image and edit). No per-entry input schema is read here. Picking one adds it to the service's models. | — | Creator |
 | [StylePresetCatalog](StylePresetCatalog.md) | Style presets sorted by sort order — active only for project creation, all of them for the settings page. | StylePresetCreated, StylePresetUpdated, StylePresetDeleted | Creator |
 
@@ -84,3 +84,5 @@ _No policies._
 | [adr-0012](../../adr/adr-0012.md) | Licence: CC BY-NC-SA 4.0 | accepted |
 | [adr-0013](../../adr/adr-0013.md) | Model providers: official endpoints of supported models, plus BytePlus and ModelRunner | accepted |
 | [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
+| [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |
+| [adr-0022](../../adr/adr-0022.md) | Shot checks by a vision model | proposed |

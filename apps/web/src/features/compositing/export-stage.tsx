@@ -5,8 +5,9 @@ import { Clapperboard, Download, Film as FilmIcon, Loader2, Merge, Play, Triangl
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import type { EpisodeView, Film, ShotCard } from '@open-drama/contracts';
+import { DramaLook, type EpisodeView, type Film, type ShotCard } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Tag } from '@/components/ui/tag';
@@ -14,7 +15,7 @@ import { cn } from '@/lib/cn';
 import { useToastError } from '@/lib/errors';
 import { mediaUrl, posterOf } from '@/lib/media';
 import { relativeTime } from '@/lib/time';
-import { productionKeys, useUpdateEpisode } from '../production/api';
+import { productionKeys, useDramaDetail, useUpdateDrama, useUpdateEpisode } from '../production/api';
 import { useEpisodeShots } from '../storyboard/api';
 import { shotTitle } from '../storyboard/model';
 import { isMergeRunning, useEpisodeFilms, useMergeShots } from './api';
@@ -164,6 +165,46 @@ function ShotTile({
   );
 }
 
+/** The drama's series look (every episode's merge uses it) and this merge's colour match. */
+function FinishOptions({
+  dramaId,
+  colorMatch,
+  onColorMatch,
+}: {
+  dramaId: number;
+  colorMatch: boolean;
+  onColorMatch: (on: boolean) => void;
+}) {
+  const t = useTranslations('studio.export');
+  const toastError = useToastError();
+  const drama = useDramaDetail(dramaId);
+  const update = useUpdateDrama();
+  return (
+    <div className="flex flex-wrap items-end gap-x-6 gap-y-3 rounded-md border border-line bg-surface px-4 py-3">
+      <label className="flex min-w-56 flex-col gap-1 text-sm">
+        <span className="font-medium text-ink-2">{t('look')}</span>
+        <Select
+          value={drama.data?.look}
+          onValueChange={(look) =>
+            update.mutate({ id: dramaId, look: look as DramaLook }, { onError: (err) => toastError(err) })
+          }
+          options={DramaLook.options.map((value) => ({ value, label: t(`looks.${value}`) }))}
+          disabled={!drama.data || update.isPending}
+          className="h-9"
+        />
+        <span className="text-xs text-muted">{t('lookHint')}</span>
+      </label>
+      <label className="flex max-w-sm items-start gap-2 text-sm">
+        <Switch checked={colorMatch} onCheckedChange={onColorMatch} label={t('colorMatch')} />
+        <span className="flex flex-col gap-0.5">
+          <span className="font-medium text-ink-2">{t('colorMatch')}</span>
+          <span className="text-xs text-muted">{t('colorMatchHint')}</span>
+        </span>
+      </label>
+    </div>
+  );
+}
+
 /**
  * Export stage (Plan 3 §4.5): the episode's films, the shot clips to merge (only shots with a video can be selected;
  * clips are always joined in shot order), and the "Mark done" toggle that completes the episode.
@@ -178,6 +219,7 @@ export function ExportStage({ episode, onVideo }: { episode: EpisodeView; onVide
   useMergeSettled(films.data, episode);
   const [checked, setChecked] = useState<Set<number> | null>(null);
   const [preview, setPreview] = useState<{ path: string; title: string } | null>(null);
+  const [colorMatch, setColorMatch] = useState(true);
 
   if (films.isLoading || list.isLoading || !list.data) return <Skeleton className="h-[60dvh]" />;
 
@@ -196,7 +238,7 @@ export function ExportStage({ episode, onVideo }: { episode: EpisodeView; onVide
   };
   const startMerge = () =>
     merge.mutate(
-      { shotIds: [...selected] },
+      { shotIds: [...selected], colorMatch },
       {
         onError: (err) => (isMergeRunning(err) ? toast.info(t('alreadyMerging')) : toastError(err)),
       },
@@ -260,6 +302,9 @@ export function ExportStage({ episode, onVideo }: { episode: EpisodeView; onVide
             </Button>
           </div>
         </div>
+        {generated.length > 0 ? (
+          <FinishOptions dramaId={episode.dramaId} colorMatch={colorMatch} onColorMatch={setColorMatch} />
+        ) : null}
         {generated.length === 0 ? (
           <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-line px-4 py-6">
             <p className="text-sm text-muted">{shots.length === 0 ? t('noShots') : t('noClips')}</p>

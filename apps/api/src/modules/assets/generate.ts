@@ -5,7 +5,7 @@ import { db } from '../../db/client';
 import { characters, generationTasks } from '../../db/schema';
 import { conflict, invalid, precondition } from '../../http/errors';
 import { episodeForAsset, ensureFinalPrompt, loadAssetForPrompt } from '../agents/services/final-prompt';
-import { ASSET_TASK_OWNER, submitAssetImage, type SubmitImageInput } from '../generation/engine/images';
+import { ASSET_TASK_OWNER, submitImage, type SubmitImageInput } from '../generation/engine/images';
 import { getDramaRow, touchDrama } from '../production/dramas';
 import { referenceReason, VIEW_SHAPE, viewPrompt } from './views';
 
@@ -78,7 +78,7 @@ async function requestClaimed(kind: AssetKind, id: number, body: z.output<typeof
     input = { owner: { kind, id }, dramaId: asset.dramaId, prompt, aspectRatio: shape, ...service };
   }
   // The first image generation of the episode claims its image lock before the task starts (adr-0016).
-  const { taskId } = submitAssetImage(input);
+  const { taskId } = submitImage(input);
   touchDrama(asset.dramaId);
   return { taskId };
 }

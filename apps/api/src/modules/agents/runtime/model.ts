@@ -7,6 +7,8 @@ import { buildLanguageModel, type LanguageModel } from './sdk';
 import { stubLanguageModel } from './stub-model';
 import { patchedFetch } from './transport-patches';
 
+type ServiceRow = NonNullable<ReturnType<typeof resolveService>>['row'];
+
 export interface ResolvedModel {
   model: LanguageModel;
   modelId: string;
@@ -41,10 +43,25 @@ export function resolveTextModel(opts: {
   }
   const resolved = resolveService('text', { explicitId: opts.textServiceId });
   if (!resolved) throw precondition('Add an active text service with an API key in Settings before running an agent');
-  const { row } = resolved;
-  const modelId = opts.modelOverride || opts.promptModel || row.models[0];
-  if (!modelId) throw precondition(`The text service ${row.name} lists no model; add one in Settings`);
-  if (!row.apiKey) throw precondition(`The text service ${row.name} has no API key`);
+  return modelOf(resolved.row, opts.modelOverride || opts.promptModel || resolved.row.models[0]);
+}
+
+/**
+ * Vision service (adr-0022): a chat model the creator declared able to read images, for shot checks. Explicit id,
+ * else the active one; model: the request's, else the service's first. Offline with OPEN_DRAMA_STUB_PROVIDERS=1.
+ */
+export function resolveVisionModel(opts: { model?: string; serviceId?: number }): ResolvedModel {
+  if (env.OPEN_DRAMA_STUB_PROVIDERS) {
+    return { model: stubLanguageModel(), modelId: 'stub-vision', serviceId: null };
+  }
+  const resolved = resolveService('vision', { explicitId: opts.serviceId });
+  if (!resolved) throw precondition('Add an active vision service (a chat model that reads images) in Settings to check shots');
+  return modelOf(resolved.row, opts.model || resolved.row.models[0]);
+}
+
+function modelOf(row: ServiceRow, modelId: string | undefined): ResolvedModel {
+  if (!modelId) throw precondition(`The ${row.serviceType} service ${row.name} lists no model; add one in Settings`);
+  if (!row.apiKey) throw precondition(`The ${row.serviceType} service ${row.name} has no API key`);
   rememberSecret(row.apiKey);
   return {
     model: buildLanguageModel({

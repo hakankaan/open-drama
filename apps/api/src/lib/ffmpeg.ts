@@ -27,6 +27,8 @@ export const ffprobeBin = (): string => env.FFPROBE_BIN ?? bundledFfprobe() ?? '
 export interface RunResult {
   code: number | null;
   stdout: string;
+  /** stdout as bytes, for raw frame output. */
+  bytes: Buffer;
   stderr: string;
 }
 
@@ -49,9 +51,9 @@ export function run(bin: string, args: string[], timeoutMs = 60_000, opts: { kil
     const child = spawn(bin, args, { stdio: ['ignore', 'pipe', 'pipe'] });
     const children = opts.killOnShutdown ? encoders : new Set<ChildProcess>();
     children.add(child);
-    let stdout = '';
+    const chunks: Buffer[] = [];
     let stderr = '';
-    child.stdout.on('data', (d: Buffer) => (stdout += d.toString()));
+    child.stdout.on('data', (d: Buffer) => chunks.push(d));
     child.stderr.on('data', (d: Buffer) => (stderr = (stderr + d.toString()).slice(-20_000)));
     const timer = setTimeout(() => child.kill('SIGKILL'), timeoutMs);
     child.on('error', (err) => {
@@ -62,7 +64,8 @@ export function run(bin: string, args: string[], timeoutMs = 60_000, opts: { kil
     child.on('close', (code) => {
       clearTimeout(timer);
       children.delete(child);
-      resolve({ code, stdout, stderr });
+      const bytes = Buffer.concat(chunks);
+      resolve({ code, stdout: bytes.toString(), bytes, stderr });
     });
   });
 }

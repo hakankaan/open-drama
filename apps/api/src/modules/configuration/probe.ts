@@ -61,7 +61,7 @@ function buildProbe({ serviceType, provider, baseUrl, apiKey, model }: ProbeTarg
       };
     }
     case 'modelrunner': {
-      if (serviceType === 'text') return { url: `${base}/models`, init: { headers: bearer(apiKey) } };
+      if (serviceType === 'text' || serviceType === 'vision') return { url: `${base}/models`, init: { headers: bearer(apiKey) } };
       // The status of a request id that was never issued: authenticated, never billable, and nothing is submitted.
       const app = (model ?? 'bytedance/seedream-v5-pro').replace(/^\/+/, '').split('/').slice(0, 2).join('/');
       return {

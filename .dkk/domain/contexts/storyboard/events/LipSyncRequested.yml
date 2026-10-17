@@ -1,0 +1,14 @@
+name: LipSyncRequested
+description: A shot's video was sent to the lip-sync service with its padded line audio, by the creator or automatically.
+fields:
+  - name: shotId
+    type: ID
+  - name: sourceVideoPath
+    type: string
+  - name: lineAudioPath
+    type: string
+  - name: auto
+    type: boolean
+raised_by: Shot
+adr_refs:
+  - adr-0021

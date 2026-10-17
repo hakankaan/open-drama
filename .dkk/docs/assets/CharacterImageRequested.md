@@ -32,4 +32,4 @@ A reference view generation was requested for a character with a resolved prompt
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | accepted |

@@ -248,7 +248,29 @@ function stubBeats(outline: string, ordinal: number, total: number): { title: st
   return { title: `${words}`, synopsis: own[0]!.slice(0, 200), beats };
 }
 
+/**
+ * A shot check (adr-0022) has images and no tools: a placeholder verdict, the same for the same shot, that flags some
+ * shots so both outcomes can be seen offline. Nothing is looked at.
+ */
+function stubCheck(options: CallOptions): string | null {
+  const pictures = options.prompt.flatMap((m) => (m.role === 'user' ? m.content : [])).filter((p) => p.type === 'file');
+  if (pictures.length === 0 || (options.tools ?? []).length > 0) return null;
+  const text = userText(options);
+  let hash = 0;
+  for (const ch of text) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  const ok = { ok: true, note: 'Offline stub: nothing was looked at.' };
+  const flagged = hash % 3 === 0;
+  return JSON.stringify({
+    people: ok,
+    outfit: ok,
+    scene: ok,
+    artifacts: flagged ? { ok: false, note: 'Offline stub: a placeholder flag, so a shot to look at can be seen.' } : ok,
+  });
+}
+
 function plan(options: CallOptions): Step {
+  const check = stubCheck(options);
+  if (check) return { text: check };
   const tools = new Set((options.tools ?? []).map((t) => t.name));
   const done = toolResults(options);
   const message = userText(options);

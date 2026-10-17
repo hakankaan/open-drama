@@ -14,18 +14,19 @@ Each line says the framing and its one camera movement, then the action, then an
 - Every time a bound character or prop appears, it is written as its mention, never as "she", "he" or a description: `@[Mei] turns`, not `she turns`. The scene is mentioned in the first line.
 - Mentions are used only for assets bound to the shot, spelled exactly as their names. Unbound names are written as plain words.
 - One camera movement per line, slow and gentle (static, slow push in, slow pan); never two moves in one line.
-- Dialogue is copied from the description, nothing invented or reworded, one speaker per line, in braces after the speaker: `@[Stranger] says: {How much for that one?}`. Sounds go in angle brackets: `<rain on the awning>`.
+- Dialogue is copied from the description, nothing invented or reworded, in braces after the speaker: `@[Stranger] says: {How much for that one?}`. Only the shot's `speaker` speaks, and only its `line`; everyone else stays silent. Sounds go in angle brackets: `<rain on the awning>`.
 - No visual-style words, no lighting, and no instructions about faces, subtitles or watermarks: the studio adds the project's style, the scene's lighting and those instructions on its own.
 - The prompt says what is seen and heard; it is not a copy of the script.
+- When the shot has `continuesPrevious`, its video starts on the last frame of `previousShot`: the first line picks up exactly where that shot ends (same framing, people and positions), with no establishing view and no cut.
 
 ## Example
 
-For a 10-second shot bound to Mei, the stranger, the red lantern and the night market:
+For a 10-second shot bound to Mei, the stranger, the red lantern and the night market, spoken by the stranger:
 
 ```
 Shot 1: Wide, static. Rain on the awning at @[Night market]; @[Mei] hangs lanterns on a wire, @[Red lantern] hangs apart. <rain on the awning>
 Shot 2: Medium over @[Mei]'s shoulder, slow push in. @[Stranger] stops and points at @[Red lantern]. @[Stranger] says: {How much for that one?}
-Shot 3: Close on @[Mei]'s hand freezing on the wire, static. @[Mei], without turning, says: {That one isn't for sale.}
+Shot 3: Close on @[Mei]'s hand freezing on the wire, static.
 ```
 
 ## Tool protocol

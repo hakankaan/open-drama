@@ -59,6 +59,10 @@ export const CharacterCard = z.object({
   description: z.string(),
   appearance: z.string(),
   styling: z.string(),
+  /** The speech model's voice the character's lines are read in; '' for none (adr-0021). */
+  voice: z.string(),
+  /** A recording of the character's voice: cloned by speech models that take one, else sent as reference audio. */
+  voiceSamplePath: MediaPath.nullable(),
 });
 export type CharacterCard = z.infer<typeof CharacterCard>;
 
@@ -144,6 +148,9 @@ export const UpdateCharacter = z.strictObject({
   appearance: text(4000).optional(),
   styling: text(4000).optional(),
   views: CharacterViews.partial().strict().optional(),
+  /** Changing the voice or its sample clears the line audio of the shots the character speaks in. */
+  voice: text(80).optional(),
+  voiceSamplePath: MediaPath.nullable().optional(),
   ...common,
 });
 export type UpdateCharacter = z.input<typeof UpdateCharacter>;

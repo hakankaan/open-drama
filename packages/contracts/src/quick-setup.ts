@@ -8,7 +8,10 @@ export interface ServiceTemplate {
   models: string[];
 }
 
-/** One key of a platform that serves text, image and video writes all three services (ApplyQuickSetup). */
+/**
+ * One key of a platform writes a service per type it serves (ApplyQuickSetup): text, image and video, and on
+ * ModelRunner speech and lip sync for pinned voices (adr-0021) and a vision model for shot checks (adr-0022).
+ */
 export interface QuickSetupTemplate {
   gateway: string;
   label: string;
@@ -50,6 +53,29 @@ export const QUICK_SETUP_TEMPLATES: QuickSetupTemplate[] = [
         name: 'Seedance (ModelRunner)',
         baseUrl: MODELRUNNER_QUEUE,
         models: ['bytedance/seedance-v2/reference-to-video', 'bytedance/seedance-v2.5/reference-to-video'],
+      },
+      {
+        serviceType: 'speech',
+        provider: 'modelrunner',
+        name: 'Speech (ModelRunner)',
+        baseUrl: MODELRUNNER_QUEUE,
+        // Named voices in 29 languages; Chatterbox clones a character's voice sample (English).
+        models: ['elevenlabs/tts/multilingual-v2', 'resemble-ai/chatterbox/text-to-speech'],
+      },
+      {
+        serviceType: 'lipsync',
+        provider: 'modelrunner',
+        name: 'Lip sync (ModelRunner)',
+        baseUrl: MODELRUNNER_QUEUE,
+        models: ['bytedance/latentsync', 'sync/lipsync/v2'],
+      },
+      {
+        serviceType: 'vision',
+        provider: 'modelrunner',
+        name: 'Vision (ModelRunner)',
+        baseUrl: MODELRUNNER_TEXT,
+        // The text model reads images too (the catalog lists image input).
+        models: ['deepseek/v4.1-flash'],
       },
     ],
   },
@@ -122,12 +148,12 @@ export const PROVIDER_PRESETS: Record<
   openai: {
     label: 'OpenAI',
     baseUrl: 'https://api.openai.com/v1',
-    models: { text: ['gpt-5'], image: ['gpt-image-1'] },
+    models: { text: ['gpt-5'], image: ['gpt-image-1'], vision: ['gpt-5'] },
   },
   gemini: {
     label: 'Google Gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    models: { text: ['gemini-2.5-flash'], image: ['gemini-2.5-flash-image'] },
+    models: { text: ['gemini-2.5-flash'], image: ['gemini-2.5-flash-image'], vision: ['gemini-2.5-flash'] },
   },
   volcengine: {
     label: 'Volcengine Ark',
@@ -152,11 +178,14 @@ export const PROVIDER_PRESETS: Record<
   modelrunner: {
     label: 'ModelRunner',
     baseUrl: MODELRUNNER_QUEUE,
-    baseUrlByType: { text: MODELRUNNER_TEXT },
+    baseUrlByType: { text: MODELRUNNER_TEXT, vision: MODELRUNNER_TEXT },
     models: {
       text: ['deepseek/v4.1-flash'],
       image: ['bytedance/seedream-v5-pro/text-to-image'],
       video: ['bytedance/seedance-v2/reference-to-video'],
+      speech: ['elevenlabs/tts/multilingual-v2'],
+      lipsync: ['bytedance/latentsync'],
+      vision: ['deepseek/v4.1-flash'],
     },
   },
 };

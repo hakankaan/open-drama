@@ -37,7 +37,7 @@ const linked = <T extends { id: number }>(rows: T[], links: { id: number }[], de
 export const readStoryboardContext = defineTool({
   id: 'read_storyboard_context',
   description:
-    "Without shotId: the episode's script, its target length in seconds (null: follow the script), a `series` block (the project's premise and, for a serial drama, the earlier episodes' recaps), the project's characters, scenes and props with their ids (appearance and description only for those in this episode), and the current shots with their total length. With shotId: that shot's description, atmosphere, duration and bound asset names.",
+    "Without shotId: the episode's script, its target length in seconds (null: follow the script), a `series` block (the project's premise and, for a serial drama, the earlier episodes' recaps), the project's characters, scenes and props with their ids (appearance and description only for those in this episode), and the current shots with their total length. With shotId: that shot's description, atmosphere, duration, spoken line and its speaker, and bound asset names.",
   input: z.object({ shotId: z.number().int().optional().describe('Read one shot of this episode') }),
   execute: ({ shotId }, ctx) => {
     if (shotId !== undefined) {
@@ -56,7 +56,13 @@ export const readStoryboardContext = defineTool({
           description: shot.description,
           atmosphere: shot.atmosphere,
           currentVideoPrompt: shot.videoPrompt,
+          continuesPrevious: shot.continuesPrevious,
+          // The one line spoken in the shot and who speaks it (adr-0021); nobody else speaks.
+          speaker: b.characters.find((c) => c.id === shot.speakerId)?.name ?? null,
+          line: shot.line,
         },
+        // A continued shot starts on the last frame of the one before: its prompt picks up where that one ends.
+        ...(shot.continuesPrevious ? { previousShot: previousShotOf(shot) } : {}),
         mentionable: { scene: b.scene?.name ?? null, characters: b.characters.map((c) => c.name), props: b.props.map((p) => p.name) },
       };
     }
@@ -91,10 +97,19 @@ export const readStoryboardContext = defineTool({
         title: s.title,
         durationSeconds: s.durationSeconds,
         hasVideoPrompt: s.videoPrompt.trim().length > 0,
+        speakerId: s.speakerId,
+        line: s.line,
       })),
     };
   },
 });
+
+/** The shot before a continued one, as its prompt needs it: where the take stands when this shot begins. */
+function previousShotOf(shot: ReturnType<typeof getShotRow>) {
+  const live = liveShotRows(shot.episodeId);
+  const prev = live[live.findIndex((s) => s.id === shot.id) - 1];
+  return prev ? { shotNumber: prev.shotNumber, description: prev.description, videoPrompt: prev.videoPrompt } : null;
+}
 
 const text = (max: number) => z.string().max(max).optional();
 const ShotFields = {
@@ -114,6 +129,12 @@ const ShotFields = {
   sceneId: z.number().int().nullable().optional(),
   characterIds: z.array(z.number().int()).max(20).optional(),
   propIds: z.array(z.number().int()).max(20).optional(),
+  continuesPrevious: z
+    .boolean()
+    .optional()
+    .describe('One unbroken take with the previous shot (same scene, no cut, the action carries on); at most two shots in a row'),
+  speakerId: z.number().int().optional().describe("The one character who speaks in the shot: one of its characterIds, never a narrator"),
+  line: text(1000).describe("The speaker's words, exactly as in the description, without their name or quotation marks; empty when nobody speaks"),
 };
 
 /**

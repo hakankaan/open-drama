@@ -16,7 +16,7 @@ import {
   TestSavedModelService,
   UpdateModelServiceNoKey,
   UpdateStylePreset,
-  type ServiceType,
+  type RequiredServiceType,
 } from '@open-drama/contracts';
 import { env } from '../../env';
 import { listAssistantSkills } from '../../modules/agents/workspace/assistant';
@@ -31,7 +31,7 @@ import { getDramaStats } from '../../modules/production/dramas';
 import { tool } from '../errors';
 
 /** What each missing service type blocks: the story room runs on text alone (adr-0016). */
-const BLOCKS: Record<ServiceType, string[]> = {
+const BLOCKS: Record<RequiredServiceType, string[]> = {
   text: ['story outline', 'episode plan', 'scripts', 'recaps', 'asset extraction', 'storyboard breakdown', 'video prompts'],
   image: ['reference images of characters, scenes and props'],
   video: ['shot videos'],

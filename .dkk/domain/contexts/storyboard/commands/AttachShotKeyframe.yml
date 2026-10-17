@@ -1,0 +1,13 @@
+name: AttachShotKeyframe
+description: Record a completed keyframe image as the shot's keyframe. Issued by the generation write-back.
+fields:
+  - name: shotId
+    type: ID
+  - name: keyframePath
+    type: string
+  - name: taskId
+    type: ID
+actor: GenerationWorker
+handled_by: Shot
+adr_refs:
+  - adr-0019

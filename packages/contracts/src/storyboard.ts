@@ -30,6 +30,38 @@ export const ShotAssetRef = z.object({
 });
 export type ShotAssetRef = z.infer<typeof ShotAssetRef>;
 
+/** One point of a shot check: fine, worth a look, or not judged (nothing to compare with). */
+export const QaCheck = z.object({
+  result: z.enum(['ok', 'flag', 'skipped']),
+  /** One sentence on what was seen, in the content language; '' when skipped. */
+  note: z.string(),
+});
+export type QaCheck = z.infer<typeof QaCheck>;
+
+/**
+ * CheckShot's result (adr-0022): a vision model's look at three frames of the video beside the references. A signal,
+ * never a gate; it does not judge whether faces match (models do that unreliably).
+ */
+export const ShotQa = z.object({
+  /** The video that was checked; a check of an earlier video is not shown. */
+  videoPath: MediaPath,
+  checkedAt: Timestamp,
+  model: z.string(),
+  /** `check` when any point is flagged. */
+  verdict: z.enum(['ok', 'check']),
+  checks: z.object({
+    /** More people than the shot's cast, or one person twice. */
+    people: QaCheck,
+    /** Clothing unlike the characters' references. */
+    outfit: QaCheck,
+    /** A setting unlike the scene's reference. */
+    scene: QaCheck,
+    /** Deformed faces or hands, melting objects, text, logos or watermarks, glitches. */
+    artifacts: QaCheck,
+  }),
+});
+export type ShotQa = z.infer<typeof ShotQa>;
+
 export const Shot = z.object({
   id: z.number().int(),
   episodeId: z.number().int(),
@@ -43,6 +75,7 @@ export const Shot = z.object({
   description: z.string(),
   result: z.string(),
   atmosphere: z.string(),
+  /** The keyframe's prompt; empty composes one from the shot when the keyframe is requested. */
   imagePrompt: z.string(),
   videoPrompt: z.string(),
   /** A field the video prompt was written from (duration, description, bindings…) changed since it was written. */
@@ -54,6 +87,19 @@ export const Shot = z.object({
   referenceMedia: ReferenceMedia,
   videoPath: MediaPath.nullable(),
   videoDurationSeconds: z.number().nullable(),
+  /** The still the shot's video starts from, on a model that takes a first frame. */
+  keyframePath: MediaPath.nullable(),
+  /** One unbroken take with the previous shot: its video starts from that shot's last frame (at most two in a row). */
+  continuesPrevious: z.boolean(),
+  /** The character who speaks the shot's line: one of its bound characters (adr-0021). */
+  speakerId: z.number().int().nullable(),
+  /** What the speaker says, as spoken, without quotes or stage directions; '' when nobody speaks. */
+  line: z.string(),
+  /** The line in the speaker's voice; cleared when the line, the speaker or their voice changes. */
+  lineAudioPath: MediaPath.nullable(),
+  lineAudioSeconds: z.number().nullable(),
+  /** The latest check of the shot's current video (adr-0022); null when it was never checked or the video changed since. */
+  qa: ShotQa.nullable(),
   createdAt: Timestamp,
   updatedAt: Timestamp,
 });
@@ -70,6 +116,9 @@ export const ShotCard = Shot.extend({
     props: z.array(ShotAssetRef),
   }),
   latestVideoTask: TaskSummary.nullable(),
+  latestKeyframeTask: TaskSummary.nullable(),
+  latestLineAudioTask: TaskSummary.nullable(),
+  latestLipSyncTask: TaskSummary.nullable(),
 });
 export type ShotCard = z.infer<typeof ShotCard>;
 
@@ -101,7 +150,11 @@ const ShotText = z.object({
   videoPrompt: text(8000),
   bgmPrompt: text(1000),
   soundEffect: text(1000),
+  line: text(1000),
 }).partial();
+
+/** One of the shot's bound characters, or null for nobody; unbinding the speaker clears it. */
+const speakerId = z.number().int().positive().nullable().optional();
 
 /** CreateShot: a manual shot; shotNumber defaults to the next free number. */
 export const CreateShot = ShotText.extend({
@@ -111,12 +164,13 @@ export const CreateShot = ShotText.extend({
   sceneId: z.number().int().positive().nullable().optional(),
   characterIds: ids.default([]),
   propIds: ids.default([]),
+  speakerId,
 });
 export type CreateShot = z.input<typeof CreateShot>;
 
 /**
  * UpdateShot: any field, bindings (validated against the drama and linked to the episode), uploaded reference
- * media, or `videoPath` to make one of the shot's earlier results the current video.
+ * media, `videoPath` to make one of the shot's earlier results the current video, or the keyframe.
  */
 export const UpdateShot = z.strictObject({
   ...ShotText.shape,
@@ -126,6 +180,10 @@ export const UpdateShot = z.strictObject({
   propIds: ids.optional(),
   referenceMedia: ReferenceMedia.optional(),
   videoPath: MediaPath.optional(),
+  /** An uploaded still to start the video from, or null to start without one. */
+  keyframePath: MediaPath.nullable().optional(),
+  continuesPrevious: z.boolean().optional(),
+  speakerId,
 });
 export type UpdateShot = z.input<typeof UpdateShot>;
 
@@ -157,6 +215,8 @@ export const RequestShotVideo = z.object({
   generateAudio: z.boolean().optional(),
   /** For a model that takes one (adr-0017); without it a seed is drawn and recorded, so a retake can reuse it. */
   seed: VideoSeed.optional(),
+  /** Start from the shot's keyframe where the model takes a first frame (default true); false sends references instead. */
+  useKeyframe: z.boolean().optional(),
 });
 export type RequestShotVideo = z.input<typeof RequestShotVideo>;
 
@@ -169,6 +229,19 @@ export const ShotVideoStarted = z.object({
    * call (adr-0017), then anything past the provider's limit.
    */
   droppedReferences: z.array(z.string()),
+  /**
+   * The shot's keyframe: `sent` as the first frame (no reference images go with it), `off` when the request asked for
+   * references, `unsupported` when the model takes no first frame or the request carries reference video or audio;
+   * null when the shot has none or continues the previous shot.
+   */
+  keyframe: z.enum(['sent', 'off', 'unsupported']).nullable(),
+  /**
+   * The shot it continues, whose last frame it starts from; `waiting` while that shot's video is still generating
+   * (the task starts when it completes and fails if it fails). Null for a shot that starts a take.
+   */
+  continues: z.object({ shotNumber: z.number().int(), waiting: z.boolean() }).nullable(),
+  /** Pinned voices (adr-0021): the video is made silent and lip-synced to the shot's line audio once it is done. */
+  lipSync: z.boolean(),
 });
 export type ShotVideoStarted = z.infer<typeof ShotVideoStarted>;
 
@@ -186,8 +259,58 @@ export const ShotVideo = z.object({
   droppedReferences: z.array(z.string()),
   /** The images each character was sent as, by name (adr-0018); empty for versions made before views. */
   sentViews: z.record(z.string(), z.array(SentView)),
+  /** The still the version started from (its keyframe, or the last frame of the shot it continues); null when it was made from references. */
+  firstFrame: MediaPath.nullable(),
+  /** The number the continued shot had when this version was requested; null when the version started a take. */
+  continues: z.number().int().nullable(),
+  /** A lip sync of another version to the shot's line audio (adr-0021). */
+  lipSynced: z.boolean(),
   createdAt: Timestamp,
   completedAt: Timestamp.nullable(),
   current: z.boolean(),
 });
 export type ShotVideo = z.infer<typeof ShotVideo>;
+
+/** RequestShotKeyframe: a still of the shot's opening, drawn from its bound assets' images in the episode's image service. */
+export const RequestShotKeyframe = z.object({
+  /** Replaces the stored keyframe prompt for this request; neither given, one is composed from the shot. */
+  prompt: text(8000).optional(),
+  model: z.string().trim().max(200).optional(),
+  imageServiceId: z.number().int().positive().optional(),
+});
+export type RequestShotKeyframe = z.input<typeof RequestShotKeyframe>;
+
+/** RequestLineAudio: the shot's line spoken in its speaker's voice by the speech service (adr-0021). */
+export const RequestLineAudio = z.object({
+  model: z.string().trim().max(200).optional(),
+  speechServiceId: z.number().int().positive().optional(),
+});
+export type RequestLineAudio = z.input<typeof RequestLineAudio>;
+
+/** RequestLipSync: the shot's current video re-synced to its line audio by the lip-sync service (adr-0021). */
+export const RequestLipSync = z.object({
+  model: z.string().trim().max(200).optional(),
+  lipsyncServiceId: z.number().int().positive().optional(),
+});
+export type RequestLipSync = z.input<typeof RequestLipSync>;
+
+/** CheckShot: the shot's current video looked over by the vision service (adr-0022). */
+export const CheckShot = z.object({
+  model: z.string().trim().max(200).optional(),
+  visionServiceId: z.number().int().positive().optional(),
+});
+export type CheckShot = z.input<typeof CheckShot>;
+
+/** What the speech service can read lines in: the model's named voices, and whether it clones a voice sample. */
+export const SpeechVoices = z.object({
+  /** The model a line request without a pick runs; null without a speech service. */
+  model: z.string().nullable(),
+  voices: z.array(z.string()),
+  cloning: z.boolean(),
+});
+export type SpeechVoices = z.infer<typeof SpeechVoices>;
+
+/** Silence before the line in a lip-synced shot: the speaker draws breath before talking (adr-0021). */
+export const LINE_LEAD_IN_SECONDS = 0.5;
+/** Room after the line, so a shot grown to fit it does not cut the last word. */
+export const LINE_TAIL_SECONDS = 0.5;

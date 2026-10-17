@@ -2,15 +2,15 @@
 
 > Auto-generated — do not edit manually. Run `domain-knowledge-kit render` to regenerate.
 
-Provider-agnostic image and video generation. Every generation, whoever asked for it, is a task row with one lifecycle — submitted, dispatched to a provider through an adapter, polled until it settles, persisted to local media and written back to its owner.
+Provider-agnostic image, video, speech and lip-sync generation. Every generation, whoever asked for it, is a task row with one lifecycle — submitted, dispatched to a provider through an adapter, polled until it settles, persisted to local media and written back to its owner.
 
 ## Glossary
 
 | Term | Definition | Aliases |
 |------|------------|---------|
-| **Generation task** | One image or video generation request with its owner tags (character, scene or prop for images; shot for videos), provider, model, prompt, parameters, provider task id, result and status. | — |
+| **Generation task** | One image, video, speech or lip-sync request with its owner tags (character, scene or prop for images; shot for the rest), provider, model, prompt, parameters, provider task id, result and status. | — |
 | **Provider adapter** | A per-provider module that builds the generate request, parses the generate and poll responses and extracts the result URL or inline data. The worker never speaks a provider's dialect directly. | — |
-| **Polling profile** | The cadence and budget for polling a task type — images every 5 seconds up to 10 minutes, videos every 10 seconds up to 300 attempts. | — |
+| **Polling profile** | The cadence and budget for polling a task type — images every 5 seconds up to 10 minutes, videos every 10 seconds up to 300 attempts, speech every 3 seconds up to 10 minutes, lip syncs every 5 seconds up to 30 minutes. | — |
 | **Reference normalisation** | Turning local media paths into what a provider can consume — compressed data URLs for images, public URLs (via the configured public base URL) for videos and audio. | — |
 
 ## Events
@@ -51,7 +51,7 @@ Provider-agnostic image and video generation. Every generation, whoever asked fo
 
 | Aggregate | Description | Handles | Emits |
 |-----------|-------------|---------|-------|
-| [GenerationTask](GenerationTask.md) | One image or video generation request and its full lifecycle. Tagged with its owner so results can be written back, and with the provider task id so polling can resume. | SubmitImageGeneration, SubmitVideoGeneration, DispatchGenerationTask, PollGenerationTask, CompleteGenerationTask, FailGenerationTask, DeleteGenerationTask, FailInterruptedTasks, ResumeInterruptedTasks | GenerationTaskSubmitted, GenerationTaskDispatched, ProviderResultReceived, ImageGenerated, VideoGenerated, GenerationTaskFailed, GenerationTaskDeleted |
+| [GenerationTask](GenerationTask.md) | One image, video, speech or lip-sync request and its full lifecycle. Tagged with its owner so results can be written back, and with the provider task id so polling can resume. | SubmitImageGeneration, SubmitVideoGeneration, DispatchGenerationTask, PollGenerationTask, CompleteGenerationTask, FailGenerationTask, DeleteGenerationTask, FailInterruptedTasks, ResumeInterruptedTasks | GenerationTaskSubmitted, GenerationTaskDispatched, ProviderResultReceived, ImageGenerated, VideoGenerated, GenerationTaskFailed, GenerationTaskDeleted |
 
 ## Read Models
 
@@ -75,3 +75,4 @@ Provider-agnostic image and video generation. Every generation, whoever asked fo
 | [adr-0012](../../adr/adr-0012.md) | Licence: CC BY-NC-SA 4.0 | accepted |
 | [adr-0013](../../adr/adr-0013.md) | Model providers: official endpoints of supported models, plus BytePlus and ModelRunner | accepted |
 | [adr-0017](../../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |
+| [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |

@@ -1,6 +1,9 @@
-# Command — an instruction to change domain state.
 name: UpdateShot
-description: Edit any shot field — description, atmosphere, prompts, duration, camera fields, scene binding, character and prop bindings, uploaded reference media, or pick a different video from history as the current one.
+description: >-
+  Edit any shot field — description, atmosphere, prompts, duration, camera fields, scene binding, character and prop
+  bindings, uploaded reference media, pick a different video from history as the current one, set or remove the
+  keyframe, mark the shot as continuing the previous one in one take, or set its spoken line and who speaks it
+  (adr-0021). A changed line or speaker clears the shot's line audio.
 fields:
   - name: shotId
     type: ID
@@ -12,22 +15,41 @@ fields:
     type: string
   - name: imagePrompt
     type: string
+    description: The keyframe's prompt; empty composes one from the shot
   - name: durationSeconds
     type: number
   - name: sceneId
     type: ID
   - name: characterIds
-    type: "ID[]"
+    type: ID[]
   - name: propIds
-    type: "ID[]"
+    type: ID[]
   - name: referenceMedia
-    type: "ReferenceMedia[]"
+    type: ReferenceMedia[]
     description: Uploaded image / video / audio paths
   - name: videoPath
     type: string
     description: Set a historical generation as the current video
+  - name: keyframePath
+    type: string
+    description: A stored image as the shot's keyframe, or null to remove it
+  - name: continuesPrevious
+    type: boolean
+    description: One unbroken take with the previous shot; its video starts from that shot's last frame
+  - name: line
+    type: string
+    description: The one line spoken in the shot, at most 1000 characters; empty when nobody speaks
+  - name: speakerId
+    type: ID
+    description: One of the shot's bound characters, or null for nobody; unbinding the speaker clears it
 actor: Creator
 handled_by: Shot
 rejections:
   - Binding refers to an asset outside the drama
   - durationSeconds outside 2-30
+  - A keyframe path with no stored file
+  - A speaker who is not one of the shot's bound characters
+adr_refs:
+  - adr-0019
+  - adr-0020
+  - adr-0021

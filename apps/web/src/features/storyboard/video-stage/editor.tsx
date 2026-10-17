@@ -20,6 +20,7 @@ import { MentionTextarea } from '@/components/mention-textarea';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Tag } from '@/components/ui/tag';
 import { cn } from '@/lib/cn';
 import { useToastError } from '@/lib/errors';
@@ -41,7 +42,21 @@ function Section({ title, children, action }: { title: string; children: React.R
   );
 }
 
-function DraftArea({ value, save, rows, label }: { value: string; save: (v: string) => Promise<unknown>; rows: number; label: string }) {
+function DraftArea({
+  value,
+  save,
+  rows,
+  label,
+  maxLength,
+  placeholder,
+}: {
+  value: string;
+  save: (v: string) => Promise<unknown>;
+  rows: number;
+  label: string;
+  maxLength?: number;
+  placeholder?: string;
+}) {
   const toastError = useToastError();
   const draft = useDraft(value, save);
   return (
@@ -51,6 +66,8 @@ function DraftArea({ value, save, rows, label }: { value: string; save: (v: stri
       value={draft.value}
       onChange={(e) => draft.onChange(e.target.value)}
       onBlur={() => void draft.commit().catch((err) => toastError(err))}
+      maxLength={maxLength}
+      placeholder={placeholder}
       className="text-[13px]"
     />
   );
@@ -208,7 +225,15 @@ function planLabel(plan: ReferencePlan, view: (v: string) => string): string {
   return out.map((a) => (a.views.length ? `${a.name} (${a.views.join(' + ')})` : a.name)).join(', ');
 }
 
-/** Column 2: what the shot is (description, atmosphere), what it references, and its video prompt. */
+/** Where a shot stands in its take (adr-0020): the shot before it, and whether two shots in a row already continue. */
+export interface Continuity {
+  /** The number of the shot before; null for the first shot, which cannot continue anything. */
+  previous: number | null;
+  /** The shot before and the one before that both continue: this one would be the third in a row. */
+  capped: boolean;
+}
+
+/** Column 2: what the shot is (description, atmosphere), whether it continues the shot before, what it references, and its video prompt. */
 export function ShotEditor({
   shot,
   assets,
@@ -217,6 +242,7 @@ export function ShotEditor({
   promptPending,
   onToAssets,
   target,
+  continuity,
 }: {
   shot: ShotCard;
   assets: EpisodeAssets | undefined;
@@ -226,6 +252,7 @@ export function ShotEditor({
   onToAssets: () => void;
   /** The video model a generation would use, to show what it will be sent (adr-0018). */
   target: { model: string | null; caps: VideoProviderCaps };
+  continuity: Continuity;
 }) {
   const t = useTranslations('studio.video');
   const tv = useTranslations('assets.views');
@@ -246,10 +273,34 @@ export function ShotEditor({
   // What the target model would get from this shot as it stands, planned as the API plans it.
   const media = shot.referenceMedia;
   const imageLimit = imageLimitOf(target.caps, new Set(media.videoUrls ?? []).size, new Set(media.audioUrls ?? []).size);
-  const plan = target.model
-    ? planShotReferences({ bindings: b, prompt: promptDraft.value, imageLimit, reserved: media.imageUrls ?? [], model: target.model })
-    : null;
-  const planLine = plan?.slots.length ? t('refs.plan', { model: target.model ?? '', list: planLabel(plan, tv) }) : null;
+  const otherMedia = Boolean(media.videoUrls?.length || media.audioUrls?.length);
+  const modelName = target.model ?? t('keyframes.defaultModel');
+  // A shot that continues the one before starts from its last frame; one with a keyframe starts from that. Either
+  // way, on a model that takes a first frame, no reference image is sent.
+  const continues = shot.continuesPrevious && continuity.previous !== null;
+  const chained = continues && target.caps.firstFrame && !otherMedia && !continuity.capped;
+  const fromKeyframe = !continues && Boolean(shot.keyframePath) && target.caps.firstFrame && !otherMedia;
+  const plan =
+    target.model && !fromKeyframe && !chained
+      ? planShotReferences({ bindings: b, prompt: promptDraft.value, imageLimit, reserved: media.imageUrls ?? [], model: target.model })
+      : null;
+  const planLine = chained
+    ? t('refs.chained', { model: modelName, number: continuity.previous! })
+    : fromKeyframe
+      ? t('refs.fromKeyframe', { model: modelName })
+      : plan?.slots.length
+        ? t('refs.plan', { model: target.model ?? '', list: planLabel(plan, tv) })
+        : null;
+  // Why a shot marked as continuing cannot be generated as it stands (the API refuses it for the same reasons).
+  const blocked = !continues
+    ? null
+    : continuity.capped
+      ? t('continuity.capped')
+      : !target.caps.firstFrame
+        ? t('continuity.noFirstFrame', { model: modelName })
+        : otherMedia
+          ? t('continuity.noMedia')
+          : null;
 
   return (
     <div className="flex flex-col gap-5 p-4">
@@ -259,6 +310,29 @@ export function ShotEditor({
       <Section title={t('fields.atmosphere')}>
         <DraftArea label={t('fields.atmosphere')} value={shot.atmosphere} save={(atmosphere) => save({ atmosphere })} rows={2} />
       </Section>
+
+      {continuity.previous !== null ? (
+        <Section title={t('continuity.title')}>
+          <div className="flex items-center gap-2 text-[13px] text-ink-2">
+            <Switch
+              checked={shot.continuesPrevious}
+              onCheckedChange={(continuesPrevious) => bind({ continuesPrevious })}
+              label={t('continuity.toggle', { number: continuity.previous })}
+              disabled={!shot.continuesPrevious && continuity.capped}
+            />
+            <span>{t('continuity.toggle', { number: continuity.previous })}</span>
+          </div>
+          <p className="text-xs text-muted">
+            {!shot.continuesPrevious && continuity.capped ? t('continuity.capped') : t('continuity.hint', { number: continuity.previous })}
+          </p>
+          {blocked ? (
+            <p className="flex items-start gap-2 rounded-md bg-warning-soft px-3 py-2 text-xs text-warning" role="status">
+              <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
+              {blocked}
+            </p>
+          ) : null}
+        </Section>
+      ) : null}
 
       <Section
         title={t('refs.title')}
@@ -332,6 +406,31 @@ export function ShotEditor({
         </div>
       </Section>
 
+      <Section title={t('voice.dialogue')}>
+        <label htmlFor={`speaker-${shot.id}`} className="sr-only">
+          {t('voice.speaker')}
+        </label>
+        <Select
+          id={`speaker-${shot.id}`}
+          value={shot.speakerId !== null ? String(shot.speakerId) : 'none'}
+          onValueChange={(v) => bind({ speakerId: v === 'none' ? null : Number(v) })}
+          options={[
+            { value: 'none', label: t('voice.nobody') },
+            ...b.characters.map((c) => ({ value: String(c.id), label: c.name })),
+          ]}
+          className="h-8 text-[13px]"
+        />
+        <DraftArea
+          label={t('voice.line')}
+          value={shot.line}
+          save={(line) => save({ line })}
+          rows={2}
+          maxLength={1000}
+          placeholder={t('voice.linePlaceholder')}
+        />
+        <p className="text-xs text-muted">{t('voice.lineHint')}</p>
+      </Section>
+
       <ExtraReferences shot={shot} save={save} />
 
       <Section
@@ -360,6 +459,11 @@ export function ShotEditor({
         ) : null}
         <p className="text-xs text-muted">{t('prompt.hint')}</p>
         {mentionOptions.length === 0 ? <Tag tone="warning">{t('prompt.noBindings')}</Tag> : null}
+      </Section>
+
+      <Section title={t('keyframes.prompt')}>
+        <DraftArea label={t('keyframes.prompt')} value={shot.imagePrompt} save={(imagePrompt) => save({ imagePrompt })} rows={3} />
+        <p className="text-xs text-muted">{t('keyframes.promptHint')}</p>
       </Section>
     </div>
   );

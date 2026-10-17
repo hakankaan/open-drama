@@ -2,7 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { GeneratedView, type AspectRatio, type AssetKind } from '@open-drama/contracts';
 import { db } from '../../../db/client';
-import { characters, generationTasks, props, scenes } from '../../../db/schema';
+import { characters, episodes, generationTasks, props, scenes, shots } from '../../../db/schema';
 import { logger } from '../../../http/logger';
 import { assertImage, deriveRenditions, storeInlineImage, storeRemoteFile } from '../../media/store';
 import { imageAdapterFor } from '../adapters/registry';
@@ -22,8 +22,17 @@ export const ASSET_TASK_OWNER = {
   prop: { table: props, column: generationTasks.propId, key: 'propId' },
 } as const;
 
+/** What an image becomes: an asset's reference image, or a shot's keyframe. */
+export interface ImageOwner {
+  kind: AssetKind | 'shot';
+  id: number;
+}
+
+const ownerColumn = (kind: ImageOwner['kind']) =>
+  kind === 'shot' ? { column: generationTasks.shotId, key: 'shotId' as const } : ASSET_TASK_OWNER[kind];
+
 export interface SubmitImageInput {
-  owner: { kind: AssetKind; id: number };
+  owner: ImageOwner;
   dramaId: number;
   prompt: string;
   aspectRatio: AspectRatio;
@@ -43,22 +52,31 @@ export interface SubmitImageInput {
    * before anything is paid, instead of drawing someone else.
    */
   referenceRequired?: string;
+  /**
+   * What each reference image shows, in order (`Mei (face close-up)`); the prompt opens with the entries of the images
+   * the model actually takes. The references must be distinct.
+   */
+  legend?: string[];
 }
 
 /** The rest of a character's view request, kept on the task so a restart continues it; `finalPrompt` describes the person. */
 const ViewChain = z.object({ views: z.array(GeneratedView).min(1), finalPrompt: z.string() });
 type ViewChain = z.infer<typeof ViewChain>;
 
-/** The task's asset, or null when the task is not an asset image (set by submitAssetImage, read back on resume). */
-export function assetOwnerOf(task: { characterId: number | null; sceneId: number | null; propId: number | null }): SubmitImageInput['owner'] | null {
+/** An image task's owner, or null when it has none (set by submitImage, read back on resume). */
+export function imageOwnerOf(task: Pick<typeof generationTasks.$inferSelect, 'characterId' | 'sceneId' | 'propId' | 'shotId'>): ImageOwner | null {
   if (task.characterId !== null) return { kind: 'character', id: task.characterId };
   if (task.sceneId !== null) return { kind: 'scene', id: task.sceneId };
   if (task.propId !== null) return { kind: 'prop', id: task.propId };
+  if (task.shotId !== null) return { kind: 'shot', id: task.shotId };
   return null;
 }
 
-/** Stores the result and makes it the asset's reference image (AttachAssetImageOnGeneration); a deleted asset is left alone. */
-export async function completeImage(taskId: number, owner: SubmitImageInput['owner'], media: ResultMedia, serviceBaseUrl: string | undefined) {
+/**
+ * Stores the result and makes it the asset's reference image (AttachAssetImageOnGeneration) or the shot's keyframe;
+ * a deleted asset or shot is left alone.
+ */
+export async function completeImage(taskId: number, owner: ImageOwner, media: ResultMedia, serviceBaseUrl: string | undefined) {
   recordResultUrl(taskId, media.url);
   const path = media.file
     ? media.file
@@ -74,6 +92,10 @@ export async function completeImage(taskId: number, owner: SubmitImageInput['own
   // A character image lands on its view; one requested before views existed was a sheet (adr-0018).
   const view = GeneratedView.safeParse(task?.params.view).data;
   const written = completeTask(taskId, { localPath: path }, (tx) => {
+    if (owner.kind === 'shot') {
+      tx.update(shots).set({ keyframePath: path }).where(eq(shots.id, owner.id)).run();
+      return;
+    }
     if (owner.kind === 'character') {
       tx.update(characters)
         .set({ [VIEW_COLUMN[view ?? 'sheet']]: path })
@@ -107,7 +129,7 @@ function continueViews(task: typeof generationTasks.$inferSelect, characterId: n
     return;
   }
   try {
-    submitAssetImage({
+    submitImage({
       owner: { kind: 'character', id: characterId },
       dramaId: character.dramaId,
       prompt: viewPrompt(character.dramaId, chain.finalPrompt, view),
@@ -126,11 +148,21 @@ function continueViews(task: typeof generationTasks.$inferSelect, characterId: n
 
 /**
  * Right before the provider is paid, the task re-checks that it is still wanted: false when it no longer runs,
- * throws when its asset was deleted while the references were being prepared.
+ * throws when its asset (or shot, or the shot's episode) was deleted while the references were being prepared.
  */
-function stillWanted(taskId: number, owner: SubmitImageInput['owner']): boolean {
+function stillWanted(taskId: number, owner: ImageOwner): boolean {
   const task = db.select({ status: generationTasks.status }).from(generationTasks).where(eq(generationTasks.id, taskId)).get();
   if (task?.status !== 'processing') return false;
+  if (owner.kind === 'shot') {
+    const episode = db
+      .select({ deletedAt: episodes.deletedAt })
+      .from(shots)
+      .innerJoin(episodes, eq(episodes.id, shots.episodeId))
+      .where(eq(shots.id, owner.id))
+      .get();
+    if (!episode || episode.deletedAt) throw new Error('The shot was deleted before its keyframe was requested; nothing was sent to the provider');
+    return true;
+  }
   const { table } = ASSET_TASK_OWNER[owner.kind];
   const asset = db.select({ deletedAt: table.deletedAt }).from(table).where(eq(table.id, owner.id)).get();
   if (!asset || asset.deletedAt) throw new Error(`The ${owner.kind} was deleted before its image was requested; nothing was sent to the provider`);
@@ -146,23 +178,25 @@ async function run(taskId: number, resolved: ResolvedGeneration<ImageAdapter>, i
   if (referenceImages.length < new Set(input.referenceImages).size) {
     logger.info({ taskId, model, limit }, 'image references beyond the model limit were left out');
   }
-  const record = { taskId, prompt: input.prompt, referenceImages, aspectRatio: input.aspectRatio };
+  const legend = input.legend?.slice(0, referenceImages.length).map((entry, i) => `${i + 1} ${entry}`) ?? [];
+  const prompt = legend.length ? `Reference images in order: ${legend.join('; ')}.\n${input.prompt}` : input.prompt;
+  const record = { taskId, prompt, referenceImages, aspectRatio: input.aspectRatio };
   if (!stillWanted(taskId, input.owner)) return;
   await completeImage(taskId, input.owner, await generate(taskId, resolved, record, IMAGE_POLL, 'image'), resolved.config?.baseUrl);
 }
 
 /**
- * SubmitImageGeneration for an asset (adr-0005): resolves the service (explicit → episode lock → active),
- * refuses while the asset already has an image task processing, records the task and dispatches it detached.
+ * SubmitImageGeneration for an asset or a shot's keyframe (adr-0005): resolves the service (explicit → episode lock →
+ * active), refuses while the owner already has an image task processing, records the task and dispatches it detached.
  */
-export function submitAssetImage(input: SubmitImageInput): { taskId: number; serviceId: number | null } {
+export function submitImage(input: SubmitImageInput): { taskId: number; serviceId: number | null } {
   const resolved = resolveGeneration('image', imageAdapterFor, {
     explicitId: input.imageServiceId,
     lockedId: input.lockedServiceId,
     lockFor: input.lockFor,
     model: input.model,
   });
-  const owner = ASSET_TASK_OWNER[input.owner.kind];
+  const owner = ownerColumn(input.owner.kind);
   const taskId = claimTask(
     {
       type: 'image',
@@ -179,7 +213,11 @@ export function submitAssetImage(input: SubmitImageInput): { taskId: number; ser
         ...(input.then ? { then: input.then } : {}),
       },
     },
-    { column: owner.column, id: input.owner.id, busyMessage: 'An image is already being generated for this asset' },
+    {
+      column: owner.column,
+      id: input.owner.id,
+      busyMessage: input.owner.kind === 'shot' ? 'A keyframe is already being generated for this shot' : 'An image is already being generated for this asset',
+    },
   );
   logger.info({ taskId, provider: resolved.provider, model: resolved.model, owner: input.owner }, 'image task submitted');
   detach(taskId, 'image', () => run(taskId, resolved, input));

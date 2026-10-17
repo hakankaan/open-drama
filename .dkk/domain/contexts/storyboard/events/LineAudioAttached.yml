@@ -1,0 +1,14 @@
+name: LineAudioAttached
+description: >-
+  A shot has its line in its speaker's voice; the shot grew to hold it if it had to, and its video prompt is marked
+  stale.
+fields:
+  - name: shotId
+    type: ID
+  - name: lineAudioPath
+    type: string
+  - name: lineAudioSeconds
+    type: number
+raised_by: Shot
+adr_refs:
+  - adr-0021

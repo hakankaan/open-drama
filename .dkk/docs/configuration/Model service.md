@@ -6,11 +6,11 @@
 
 ## Summary
 
-A configured provider endpoint for one service type (text, image or video) with base URL, API key, an ordered list of models (first is the default), a priority and an active flag. Keys live in the database, never in files.
+A configured provider endpoint for one service type (text, image, video, speech, lip sync or vision) with base URL, API key, an ordered list of models (first is the default), a priority and an active flag. Keys live in the database, never in files.
 
 ## Meaning
 
-A configured provider endpoint for one service type (text, image or video) with base URL, API key, an ordered list of models (first is the default), a priority and an active flag. Keys live in the database, never in files.
+A configured provider endpoint for one service type (text, image, video, speech, lip sync or vision) with base URL, API key, an ordered list of models (first is the default), a priority and an active flag. Keys live in the database, never in files.
 
 
 

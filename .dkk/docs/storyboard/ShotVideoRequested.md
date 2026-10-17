@@ -26,6 +26,8 @@ A video generation was requested for a shot with the fully resolved prompt, refe
 | `referenceAudioUrls` | `string[]` | — |
 | `seed` | `number` | — |
 | `droppedReferences` | `string[]` | — |
+| `firstFrame` | `string` | The keyframe the video started from, when it was sent, or the frame taken from the shot it continues |
+| `chainedFrom` | `object` | The shot it continues, and once taken the video and time of the frame it started from |
 
 
 
@@ -40,3 +42,4 @@ A video generation was requested for a shot with the fully resolved prompt, refe
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0017](../../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |
+| [adr-0020](../../adr/adr-0020.md) | Continuous takes between shots | proposed |

@@ -17,6 +17,10 @@ const QUERY: Record<ServiceType, Record<string, string>> = {
   text: { category: 'text-to-text' },
   image: { outputModality: 'image' },
   video: { outputModality: 'video' },
+  speech: { category: 'sound' },
+  lipsync: { category: 'video-to-video' },
+  // Chat models that read images (adr-0022).
+  vision: { category: 'text-to-text', inputModality: 'image' },
 };
 
 const decimal = z.coerce.number().nonnegative();
@@ -76,7 +80,7 @@ export async function browseModelRunnerCatalog(type: ServiceType): Promise<Catal
     const entry = Entry.safeParse(raw);
     if (!entry.success) continue;
     const id = `${entry.data.ownerName}/${entry.data.alias}`;
-    if (type !== 'text' && !offersEndpoint(type, id, entry.data.category)) continue;
+    if (type !== 'text' && type !== 'vision' && !offersEndpoint(type, id, entry.data.category)) continue;
     models.push({ id, name: entry.data.name, description: entry.data.shortDescription ?? '', price: priceOf(entry.data) });
   }
   return models.sort((a, b) => a.id.localeCompare(b.id));

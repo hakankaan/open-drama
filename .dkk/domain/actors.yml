@@ -136,6 +136,8 @@ actors:
       - adr-0013
       - adr-0017
       - adr-0018
+      - adr-0019
+      - adr-0020
   - name: Assistant
     type: external
     description: >-
@@ -157,3 +159,47 @@ actors:
       - Spends the text provider's budget on repeated agent runs without pausing for review
     adr_refs:
       - adr-0016
+  - name: SpeechModelProvider
+    type: external
+    description: >-
+      A text-to-speech endpoint behind a speech provider adapter. Reads a shot's line in one of its named voices, or,
+      for a model that clones, in the voice of the character's uploaded sample; returns the audio inline or as a task to
+      poll.
+    capabilities:
+      - Text-to-speech in a named voice
+      - Voice cloning from a short recording (models that clone)
+    failure_modes:
+      - Cannot fetch a local voice sample because no public base URL is configured
+      - A voice the model no longer offers
+      - Content moderation rejection
+    adr_refs:
+      - adr-0021
+  - name: LipSyncModelProvider
+    type: external
+    description: >-
+      A lip-sync endpoint behind a lip-sync provider adapter. Takes a generated video and the line's padded audio and
+      returns the video with the speaker's mouth moving to it.
+    capabilities:
+      - Video-to-video lip sync to a given audio track
+    failure_modes:
+      - >-
+        Cannot fetch the video or the audio because no public base URL is configured and the files are too large to
+        inline
+      - No detectable face in the video
+      - Audio longer than the video (the line is cut off)
+    adr_refs:
+      - adr-0021
+  - name: VisionModelProvider
+    type: external
+    description: >-
+      A chat model that reads images (OpenAI, Gemini, Ark or BytePlus, or a ModelRunner chat model that takes images),
+      configured as a vision service. Looks at contact sheets of a shot's frames and references and answers the shot
+      check as JSON.
+    capabilities:
+      - Chat completions with image input
+    failure_modes:
+      - Authentication failure or quota exhaustion
+      - An answer that is not the requested JSON
+      - No answer within the 90 s the check waits
+    adr_refs:
+      - adr-0022

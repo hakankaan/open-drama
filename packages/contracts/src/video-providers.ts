@@ -24,6 +24,8 @@ export const VideoProviderCaps = z.object({
   aspectRatios: z.array(AspectRatio).optional(),
   /** Whether the model takes a seed, so a retake can reuse the one a video was made with (adr-0017). */
   seed: z.boolean(),
+  /** Whether the model can start from a given frame (a shot's keyframe); such a request sends no reference images. */
+  firstFrame: z.boolean(),
 });
 export type VideoProviderCaps = z.infer<typeof VideoProviderCaps>;
 
@@ -35,14 +37,15 @@ export const VideoCapsQuery = z.object({
 
 /** A provider's defaults; `VIDEO_MODEL_CAPS` refines them for the models of a family that differ. */
 export const VIDEO_PROVIDER_CAPS: Partial<Record<ProviderName, VideoProviderCaps>> = {
-  // Ark Seedance 2.0 (Volcengine and BytePlus ModelArk publish the same limits).
-  volcengine: { images: 9, videos: 3, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'], seed: true },
-  byteplus: { images: 9, videos: 3, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'], seed: true },
+  // Ark Seedance 2.0 (Volcengine and BytePlus ModelArk publish the same limits). A first frame is an image with the
+  // role `first_frame`, as third-party guides describe it (not yet confirmed against Ark's own reference).
+  volcengine: { images: 9, videos: 3, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'], seed: true, firstFrame: true },
+  byteplus: { images: 9, videos: 3, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'], seed: true, firstFrame: true },
   // ModelRunner's Seedance 2.0 reference-to-video endpoint. Each model's own limits are read from its endpoints'
   // input schemas (adr-0013 amendment 5); these apply only while they cannot be read.
-  modelrunner: { images: 9, videos: 0, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'], seed: false },
-  minimax: { images: 9, videos: 3, audios: 3, total: 12, audioNeedsVisual: false, durationRange: [4, 15], resolutions: ['720p', '1080p'], seed: false },
-  aliyun: { images: 10, videos: 5, audios: 5, total: 20, audioNeedsVisual: false, durationRange: [2, 30], resolutions: ['480p', '720p', '1080p'], seed: true },
+  modelrunner: { images: 9, videos: 0, audios: 3, audioNeedsVisual: true, durationRange: [4, 15], resolutions: ['480p', '720p', '1080p'], seed: false, firstFrame: false },
+  minimax: { images: 9, videos: 3, audios: 3, total: 12, audioNeedsVisual: false, durationRange: [4, 15], resolutions: ['720p', '1080p'], seed: false, firstFrame: false },
+  aliyun: { images: 10, videos: 5, audios: 5, total: 20, audioNeedsVisual: false, durationRange: [2, 30], resolutions: ['480p', '720p', '1080p'], seed: true, firstFrame: false },
 };
 
 const ARK_SEEDANCE_25: Partial<VideoProviderCaps> = {
@@ -79,6 +82,7 @@ export const DEFAULT_VIDEO_CAPS: VideoProviderCaps = {
   durationRange: [2, 15],
   resolutions: ['480p', '720p', '1080p'],
   seed: true,
+  firstFrame: true,
 };
 
 /** A model id as configured, without surrounding whitespace or leading and trailing slashes. */

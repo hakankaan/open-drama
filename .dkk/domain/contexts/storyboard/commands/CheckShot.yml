@@ -1,0 +1,26 @@
+name: CheckShot
+description: >-
+  Have the vision service look over the shot's current video: three frames (at a sixth, half and five sixths of the
+  clip) beside the bound characters' full bodies (else their covers, at most four) and the scene's image, sent as two
+  contact sheets with the expected cast and the shot's description. The model judges four points (more people than the
+  cast or someone twice, an outfit unlike its reference, a setting unlike the scene, visible defects) and writes a note
+  on each in the content language; it never scores whether faces match. A point with nothing to compare with is skipped.
+  The answer comes back in the same request and is stored on the shot with the video it judged.
+fields:
+  - name: shotId
+    type: ID
+  - name: model
+    type: string
+  - name: visionServiceId
+    type: ID
+actor: Creator
+handled_by: Shot
+preconditions:
+  - The shot has a current video whose file can be read
+rejections:
+  - No vision service configured
+  - The shot's episode was deleted
+  - The shot has no video yet, or its file is missing or unreadable
+  - The vision model's answer is not the check (nothing is stored)
+adr_refs:
+  - adr-0022

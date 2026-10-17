@@ -6,7 +6,7 @@
 
 ## Summary
 
-The video-production stage — every shot of the episode in order with description, atmosphere, duration, bound scene/characters/props (with their reference images and readiness), video prompt, current video (with poster), generation status and history, plus the breakdown job state.
+The video-production stage — every shot of the episode in order with description, atmosphere, duration, bound scene/characters/props (with their reference images and readiness), speaker, line and line audio, video prompt, current video (with poster) and its check, generation, keyframe, line-audio and lip-sync status and history, plus the breakdown job state.
 
 
 ## Fields
@@ -32,6 +32,11 @@ The video-production stage — every shot of the episode in order with descripti
 | Subscribes to | `ShotVideoPromptSaved` |
 | Subscribes to | `ShotVideoRequested` |
 | Subscribes to | `ShotVideoAttached` |
+| Subscribes to | `LineAudioRequested` |
+| Subscribes to | `LineAudioAttached` |
+| Subscribes to | `LipSyncRequested` |
+| Subscribes to | `LipSyncedVideoAttached` |
+| Subscribes to | `ShotChecked` |
 | Subscribes to | `StoryboardBreakdownRequested` |
 | Subscribes to | `StoryboardBreakdownCompleted` |
 | Subscribes to | `StoryboardBreakdownFailed` |
@@ -39,4 +44,7 @@ The video-production stage — every shot of the episode in order with descripti
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |
+| [adr-0022](../../adr/adr-0022.md) | Shot checks by a vision model | proposed |

@@ -50,7 +50,10 @@
   "serviceType": {
     "text": "文本",
     "image": "图像",
-    "video": "视频"
+    "video": "视频",
+    "speech": "语音",
+    "lipsync": "口型同步",
+    "vision": "视觉"
   },
   "status": {
     "draft": "未开始",
@@ -164,7 +167,10 @@
       "types": {
         "text": "文本",
         "image": "图像",
-        "video": "视频"
+        "video": "视频",
+        "speech": "语音",
+        "lipsync": "口型同步",
+        "vision": "视觉"
       },
       "ready": "已就绪",
       "missing": "未配置",
@@ -177,7 +183,7 @@
       "deleteConfirm": "删除服务",
       "quick": {
         "title": "通过 {gateway} 快速配置",
-        "body": "一个 {gateway} API Key 就能同时配置好文本、图像和视频服务，之后仍可修改。",
+        "body": "一个 {gateway} API Key 就能同时配置好下面这些服务，之后仍可修改。",
         "getKey": "获取 API Key",
         "platform": "平台",
         "recommended": "{gateway}（推荐）",
@@ -251,12 +257,15 @@
       "tour": {
         "replay": "查看引导",
         "quickTitle": "快速配置",
-        "quickBody": "一个 API Key，一步配置好文本、图像和视频服务。",
+        "quickBody": "一个 API Key，一步配置好多项服务。",
         "servicesTitle": "或者逐个添加服务",
         "servicesBody": "每种类型都需要一个填好 API Key 的已启用服务。默认使用优先级最高的那个，除非某一集保留了自己的服务。",
         "agentsTitle": "调整智能体",
         "agentsBody": "“智能体”标签页里是负责写剧本、提取素材、拆分镜和写视频提示词的提示词与技能。"
-      }
+      },
+      "optional": "可选",
+      "optionalHint": "仅固定音色会用到：由语音模型念出台词，再让视频口型与之同步。不配置也不影响其他功能。",
+      "visionHint": "仅镜头检查会用到：由能看图的对话模型把每段视频的画面与参考图对照查看。不配置也不影响其他功能。"
     },
     "general": {
       "language": "语言",
@@ -315,7 +324,8 @@
         "uploads": "上传文件",
         "temp": "临时文件",
         "workspace": "工作区",
-        "other": "其他"
+        "other": "其他",
+        "audio": "音频"
       },
       "unused": {
         "title": "未使用的文件",
@@ -491,6 +501,19 @@
         "back": "背面视图，以头像特写为参考生成。只发送给使用转身视图的模型（Seedance 2.5），多占一张图。",
         "sheet": "一张图里包含多个视图，制作于角色视图功能之前。多数视频模型可能把它识别为多个人；有了头像特写或全身图后，它将不再被发送。"
       }
+    },
+    "voice": {
+      "title": "音色",
+      "none": "无音色",
+      "notOffered": "当前语音模型不提供此音色",
+      "unavailable": "无法读取语音模型的音色列表，请稍后再试。",
+      "noService": "先在设置中添加语音服务，再选择音色。",
+      "clones": "{model} 有样本时会克隆样本音色，否则使用所选音色。",
+      "named": "{model} 使用所选音色朗读，不支持克隆样本。",
+      "removeSample": "移除样本",
+      "replaceSample": "替换样本",
+      "uploadSample": "上传音色样本",
+      "sampleHint": "一段干净的角色说话录音，10 到 30 秒（mp3、wav、m4a 或 aac）。更换音色或样本会清除该角色所说镜头的台词音频。"
     }
   },
   "project": {
@@ -503,7 +526,9 @@
     "edit": {
       "open": "编辑项目",
       "title": "编辑项目",
-      "description": "画风和画幅保持创建时的设置。"
+      "description": "画风和画幅保持创建时的设置。",
+      "pinnedVoices": "固定音色",
+      "pinnedVoicesHint": "每句台词由语音模型用角色的音色念出，镜头视频先静音生成，再与台词口型同步，让角色在每个镜头里声音一致。需要配置语音和口型同步服务。"
     },
     "tabs": {
       "episodes": "剧集",
@@ -624,7 +649,10 @@
       "default": "默认模型",
       "text": "文本模型",
       "image": "图像模型",
-      "video": "视频模型"
+      "video": "视频模型",
+      "speech": "语音模型",
+      "lipsync": "口型同步模型",
+      "vision": "视觉模型"
     },
     "resolution": "分辨率 {resolution}。更改分辨率",
     "refresh": "刷新",
@@ -747,6 +775,16 @@
         "atmosphere": "氛围",
         "videoPrompt": "视频提示词"
       },
+      "continuity": {
+        "title": "连贯性",
+        "toggle": "与镜头 #{number} 连续，不切镜",
+        "hint": "视频从镜头 #{number} 的最后一帧开始，两段作为一个长镜头播放。它会在那个镜头的视频生成后再生成，不发送参考图。",
+        "capped": "最多只能连续两个镜头接续前一个镜头：它们没有参考图，人脸会逐渐走样。",
+        "noFirstFrame": "{model} 不接受首帧，因此此镜头无法接续前一个镜头。请换一个支持首帧的模型，或关闭此项。",
+        "noMedia": "接续前一镜头的镜头不能带参考视频或音频。请移除它们，或关闭此项。",
+        "waiting": "镜头 #{number} 的视频仍在生成；生成完成后，此镜头将从它的最后一帧开始。",
+        "short": "接续 #{number}"
+      },
       "refs": {
         "title": "参考素材",
         "goGenerate": "{count, plural, other {生成缺少的 # 张图片}}",
@@ -762,7 +800,9 @@
         "character": "角色",
         "prop": "道具",
         "plan": "发送给 {model}：{list}",
-        "notSent": "未发送：{names}。单次调用最多包含 4 个人、5 个素材，此模型最多 {count} 张图；提示词中提到的素材优先。"
+        "fromKeyframe": "{model} 将从关键帧开始，因此不发送参考图。",
+        "notSent": "未发送：{names}。单次调用最多包含 4 个人、5 个素材，此模型最多 {count} 张图；提示词中提到的素材优先。",
+        "chained": "{model} 将从镜头 #{number} 的最后一帧开始，因此不发送参考图。"
       },
       "extra": {
         "title": "额外参考",
@@ -803,7 +843,12 @@
         "regenerate": "重新生成",
         "seed": "{model} · 种子 {seed}",
         "retakeSeed": "用此种子重新生成",
-        "notSent": "此版本未发送：超出单次调用上限"
+        "notSent": "此版本未发送：超出单次调用上限",
+        "fromKeyframe": "从关键帧开始生成。",
+        "notSentKeyframe": "此版本未发送：它从关键帧开始",
+        "continued": "从镜头 #{number} 的最后一帧开始。",
+        "notSentChained": "此版本未发送：它从上一个镜头的最后一帧开始",
+        "lipSynced": "已口型同步"
       },
       "batch": {
         "progress": "正在提交视频 {done}/{total}",
@@ -824,6 +869,86 @@
         "turnaround": "{model} 还会使用侧面和背面视图，让角色转身时外貌保持一致。{names} 尚缺这些视图。",
         "turnaroundAction": "生成（{count} 张图）",
         "dismiss": "关闭"
+      },
+      "keyframes": {
+        "title": "关键帧",
+        "draw": "绘制关键帧",
+        "redraw": "重新绘制",
+        "drawing": "绘制中",
+        "remove": "移除",
+        "none": "还没有关键帧。关键帧是镜头开场的一张静帧，依据镜头的角色、场景和道具绘制；视频会从它开始。",
+        "alt": "镜头 #{number} 的关键帧",
+        "used": "视频将从这张关键帧开始；不会同时发送参考图。",
+        "unsupported": "{model} 不接受首帧，视频会根据参考图生成。",
+        "defaultModel": "本集的视频模型",
+        "prompt": "关键帧提示词",
+        "promptHint": "留空时，会根据镜头的景别与角度、视频提示词的第一个节拍和地点自动组成。",
+        "notUsed": "未使用关键帧：该模型不接受首帧，或镜头附带了参考视频或音频。",
+        "alreadyDrawing": "这个镜头的关键帧正在绘制中。",
+        "sheet": "关键帧 {done}/{total}",
+        "sheetTitle": "关键帧",
+        "sheetBody": "在生成视频之前，对比整集的面孔、服装和光线。点击镜头即可打开。",
+        "open": "打开镜头 #{number}",
+        "failed": "上一次关键帧绘制失败",
+        "close": "关闭",
+        "drawMissing": "绘制 {count} 张缺少的关键帧",
+        "batch": {
+          "progress": "正在请求关键帧 {done}/{total}",
+          "summary": "已开始 {started} 个，{already} 个已在绘制，{failed} 个失败"
+        },
+        "continued": "此镜头接续镜头 #{number}，因此视频从该镜头的最后一帧开始，而不是从关键帧开始。"
+      },
+      "voice": {
+        "dialogue": "台词",
+        "speaker": "说话人",
+        "nobody": "无人说话",
+        "line": "台词",
+        "linePlaceholder": "说话人说的原话",
+        "lineHint": "每个镜头只有一位说话人。只写说出的话，不加引号或舞台说明。",
+        "title": "台词音频",
+        "pinned": "固定音色",
+        "speak": "生成台词音频",
+        "respeak": "重新生成",
+        "speaking": "生成中…",
+        "lipSync": "口型同步",
+        "syncing": "口型同步中…",
+        "noLine": "在编辑区选择说话人并写下台词后即可生成。",
+        "seconds": "{seconds} 秒",
+        "syncFailed": "口型同步失败：{error}",
+        "pinnedHint": "视频静音生成，完成后自动与这段音频口型同步。",
+        "willSync": "视频将静音生成，完成后与台词口型同步。"
+      },
+      "qa": {
+        "title": "镜头检查",
+        "check": "检查",
+        "again": "重新检查",
+        "checking": "检查中…",
+        "verdict": {
+          "ok": "看起来没问题",
+          "check": "需要查看"
+        },
+        "result": {
+          "ok": "正常",
+          "flag": "有问题",
+          "skipped": "已跳过"
+        },
+        "points": {
+          "people": "人物",
+          "outfit": "服装",
+          "scene": "场景",
+          "artifacts": "瑕疵"
+        },
+        "skipped": "已跳过：没有可对照的参考图。",
+        "hint": "视觉模型会把主版本的三帧画面与参考图对照：多出的人物、服装、场景和明显瑕疵。它不判断长相，也不会阻止合成。",
+        "noVideo": "生成视频后即可检查。",
+        "by": "检查模型：{model}",
+        "checkNew": "检查 {count, plural, other {# 段视频}}",
+        "checkSelected": "检查所选（{count}）",
+        "allChecked": "视频已检查",
+        "batch": {
+          "progress": "正在检查镜头 {done}/{total}",
+          "summary": "已检查 {started} 个，{failed} 个失败"
+        }
       }
     },
     "export": {
@@ -854,7 +979,19 @@
       "toVideo": "前往视频制作",
       "noVideo": "无视频",
       "previewShot": "预览分镜 #{number}",
-      "shotPreview": "分镜 #{number}"
+      "shotPreview": "分镜 #{number}",
+      "look": "系列色调",
+      "lookHint": "合成时应用到每一集的成片。",
+      "looks": {
+        "none": "无",
+        "warm": "暖色",
+        "cool": "冷色",
+        "teal_orange": "青橙",
+        "faded": "褪色",
+        "mono": "黑白"
+      },
+      "colorMatch": "按关键帧统一色彩",
+      "colorMatchHint": "把每个片段的色彩向它起始的关键帧靠拢，让剪接更一致；没有关键帧的片段保持原样。"
     },
     "tasks": {
       "open": "生成任务",
@@ -875,7 +1012,9 @@
       "kind": {
         "image": "图片",
         "video": "视频",
-        "merge": "合成"
+        "merge": "合成",
+        "speech": "台词音频",
+        "lipsync": "口型同步"
       },
       "owner": {
         "shot": "分镜 {label}",

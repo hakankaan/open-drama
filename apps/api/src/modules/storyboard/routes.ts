@@ -1,7 +1,11 @@
 import { Hono } from 'hono';
 import {
+  CheckShot,
   CreateShot,
   IdParam,
+  RequestLineAudio,
+  RequestLipSync,
+  RequestShotKeyframe,
   RequestShotVideo,
   StartVideoPromptBatch,
   TextModelOverride,
@@ -13,7 +17,10 @@ import { startBreakdown } from '../agents/services/breakdown';
 import { generateShotVideoPrompt, startVideoPromptBatch } from '../agents/services/video-prompts';
 import { shotVideos } from '../generation/tasks';
 import { createShot, deleteShot, getEpisodeShots, getShotRow, updateShot } from './service';
+import { requestShotKeyframe } from './keyframe';
+import { checkShot } from './qa';
 import { requestShotVideo } from './video';
+import { requestLineAudio, requestLipSync, speechVoices } from './voice';
 
 const id = v('param', IdParam);
 
@@ -34,6 +41,19 @@ export const storyboardRoutes = new Hono()
   .post('/shots/:id/video', id, v('json', RequestShotVideo.default({})), async (c) =>
     ok(c, await requestShotVideo(c.req.valid('param').id, c.req.valid('json'))),
   )
+  .post('/shots/:id/keyframe', id, v('json', RequestShotKeyframe.default({})), (c) =>
+    ok(c, requestShotKeyframe(c.req.valid('param').id, c.req.valid('json'))),
+  )
+  .post('/shots/:id/line-audio', id, v('json', RequestLineAudio.default({})), async (c) =>
+    ok(c, await requestLineAudio(c.req.valid('param').id, c.req.valid('json'))),
+  )
+  .post('/shots/:id/lip-sync', id, v('json', RequestLipSync.default({})), (c) =>
+    ok(c, requestLipSync(c.req.valid('param').id, c.req.valid('json'))),
+  )
+  .post('/shots/:id/qa', id, v('json', CheckShot.default({})), async (c) =>
+    ok(c, await checkShot(c.req.valid('param').id, c.req.valid('json'))),
+  )
+  .get('/speech/voices', async (c) => ok(c, await speechVoices()))
   .get('/shots/:id/videos', id, (c) => {
     const shot = getShotRow(c.req.valid('param').id);
     return ok(c, shotVideos(shot.id, shot.videoPath));

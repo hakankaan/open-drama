@@ -1,0 +1,20 @@
+name: ShotChecked
+description: >-
+  A shot's video was looked over by the vision service; stored only while the shot still plays the video that was
+  judged, and replacing any earlier check.
+fields:
+  - name: shotId
+    type: ID
+  - name: videoPath
+    type: string
+  - name: model
+    type: string
+  - name: verdict
+    type: string
+    description: ok, or check when any point is flagged
+  - name: checks
+    type: ShotQaChecks
+    description: people, outfit, scene and artifacts, each ok, flag or skipped with a note
+raised_by: Shot
+adr_refs:
+  - adr-0022

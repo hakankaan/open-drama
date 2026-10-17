@@ -6,14 +6,15 @@
 
 ## Summary
 
-One image or video generation request and its full lifecycle. Tagged with its owner so results can be written back, and with the provider task id so polling can resume.
+One image, video, speech or lip-sync request and its full lifecycle. Tagged with its owner so results can be written back, and with the provider task id so polling can resume.
 
 
 
 ## Rules & Invariants
 
 - status moves processing → completed | failed and never back; a completed task always has a local result path.
-- The service used is the explicitly requested one, else the owner episode's locked service, else the highest-priority active service of the type; a disabled locked service falls back rather than blocking.
+- The service used is the explicitly requested one, else the owner episode's locked service, else the highest-priority active service of the type; a disabled locked service falls back rather than blocking. Speech and lip sync take no episode lock and no per-episode slot.
+- A shot's video and lip-sync tasks are one family: both are versions of the shot's video, and neither starts while the other is processing for the same shot.
 - Video resolution is stored in the project's own vocabulary (480p / 720p / 1080p) and mapped to the nearest provider tier by each adapter.
 - Provider failures that are terminal (moderation, invalid input) fail the task immediately; transport errors retry until the polling budget is exhausted.
 
@@ -46,3 +47,4 @@ One image or video generation request and its full lifecycle. Tagged with its ow
 | [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |
 | [adr-0008](../../adr/adr-0008.md) | Background jobs are in-process and database-backed | accepted |
 | [adr-0013](../../adr/adr-0013.md) | Model providers: official endpoints of supported models, plus BytePlus and ModelRunner | accepted |
+| [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |

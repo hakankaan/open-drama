@@ -15,11 +15,12 @@ Batch upsert of shots from the agent's save_shots tool (at most 8 per call). The
 |------|------|-------------|
 | `episodeId` | `ID` | — |
 | `replaceExisting` | `boolean` | — |
-| `shots` | `ShotInput[]` | shotNumber, title, shotType, angle, movement, location, time, description, result, atmosphere, imagePrompt, videoPrompt, bgmPrompt, soundEffect, durationSeconds, sceneId, characterIds, propIds |
+| `shots` | `ShotInput[]` | shotNumber, title, shotType, angle, movement, location, time, description, result, atmosphere, imagePrompt, videoPrompt, bgmPrompt, soundEffect, durationSeconds, sceneId, characterIds, propIds, continuesPrevious, speakerId, line |
 
 ## Rules & Invariants
 
 - A bound scene, character or prop does not belong to the drama
+- A speaker who is not one of the shot's bound characters
 
 
 ## Relationships
@@ -31,4 +32,7 @@ Batch upsert of shots from the agent's save_shots tool (at most 8 per call). The
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0020](../../adr/adr-0020.md) | Continuous takes between shots | proposed |
+| [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |

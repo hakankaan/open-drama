@@ -1,0 +1,1 @@
+ALTER TABLE `shots` ADD `continues_previous` integer DEFAULT false NOT NULL;

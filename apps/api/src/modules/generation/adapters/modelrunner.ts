@@ -1,4 +1,4 @@
-import { AspectRatio, cleanModelId as clean, Resolution, type VideoProviderCaps } from '@open-drama/contracts';
+import { AspectRatio, cleanModelId as clean, Resolution, type ServiceType, type VideoProviderCaps } from '@open-drama/contracts';
 import { ConfigError } from '../engine/errors';
 import { readInputs, type EndpointInputs, type Field } from './modelrunner-inputs';
 import { joinProviderUrl } from './url';
@@ -6,9 +6,12 @@ import {
   ProviderError,
   type GenerateOutcome,
   type ImageAdapter,
+  type LipSyncAdapter,
   type PollOutcome,
   type ProviderRequest,
   type ServiceConfig,
+  type SpeechAdapter,
+  type SpeechVoiceInfo,
   type VideoAdapter,
 } from './types';
 
@@ -26,6 +29,8 @@ const IMAGE_SLOT = /^reference_image_(\d+)$/;
 const AUDIO_LIST = ['reference_audios', 'reference_audio_urls', 'audio_urls'];
 const SIZE = ['size', 'image_size'];
 const NEGATIVE = ['negative_prompt'];
+/** A video's opening picture, as image-to-video endpoints name it: one image, sent as a string. */
+const FIRST_FRAME = ['start_image_url', 'image_url', 'image', 'first_frame_url', 'first_frame_image'];
 /** Prompt rewriting switches, turned off: a rewrite differs per shot and drifts the style and identity wording (adr-0017). */
 const EXPANSION = ['enable_prompt_expansion', 'prompt_extend', 'prompt_optimizer', 'enhance_prompt', 'expand_prompt'];
 
@@ -38,6 +43,8 @@ interface Endpoint {
   size?: Field;
   seed?: Field;
   negative?: Field;
+  /** The picture a video starts from (an image-to-video endpoint's image). */
+  firstFrame?: Field;
   /** Boolean prompt-expansion switches it has. */
   expansion: Field[];
   /** Reference images: one list field, or single-image fields in slot order (`reference_image_1`, `_2`…). */
@@ -68,7 +75,7 @@ function maxOf(field: Field): number | undefined {
 const pick = (inputs: EndpointInputs, names: string[], type?: string) =>
   names.map((n) => inputs.fields.get(n)).find((f) => f && (!type || f.types.includes(type)));
 
-function endpointOf(inputs: EndpointInputs): Endpoint {
+function endpointOf(inputs: EndpointInputs, kind: Kind): Endpoint {
   const list = pick(inputs, IMAGE_LIST, 'array');
   const slots = [...inputs.fields.values()]
     .filter((f) => IMAGE_SLOT.test(f.name))
@@ -83,6 +90,8 @@ function endpointOf(inputs: EndpointInputs): Endpoint {
     size: pick(inputs, SIZE),
     seed: pick(inputs, ['seed'], 'integer'),
     negative: pick(inputs, NEGATIVE, 'string'),
+    // An image endpoint's single image is something else (the picture to edit).
+    firstFrame: kind === 'video' ? pick(inputs, FIRST_FRAME, 'string') : undefined,
   };
   const expansion = EXPANSION.flatMap((n) => {
     const f = inputs.fields.get(n);
@@ -106,55 +115,68 @@ function endpointOf(inputs: EndpointInputs): Endpoint {
   };
 }
 
+const VIDEO_MODES = ['/text-to-video', '/reference-to-video', '/image-to-video'];
+
 /**
- * ModelRunner splits a family by mode: `…/text-to-video` and `…/reference-to-video`; `…/edit` beside `…/text-to-image`
- * or the bare family id. The service names one; the other is found by name and used when references are (or are not)
- * sent.
+ * ModelRunner splits a family by mode: `…/text-to-video`, `…/reference-to-video` and `…/image-to-video`; `…/edit`
+ * beside `…/text-to-image` or the bare family id. The service names one; the others are found by name and used when
+ * references or a first frame are (or are not) sent.
  */
 function siblingsOf(id: string, kind: Kind): string[] {
   const swap = (from: string, to: string[]) => (id.endsWith(from) ? to.map((t) => id.slice(0, -from.length) + t) : null);
-  if (kind === 'video') return swap('/text-to-video', ['/reference-to-video']) ?? swap('/reference-to-video', ['/text-to-video']) ?? [];
+  if (kind === 'video') {
+    const mode = VIDEO_MODES.find((m) => id.endsWith(m));
+    return mode ? (swap(mode, VIDEO_MODES.filter((m) => m !== mode)) ?? []) : [];
+  }
   return swap('/edit', ['/text-to-image', '']) ?? swap('/text-to-image', ['/edit']) ?? [`${id}/edit`];
 }
 
 const usable = (e: Endpoint) => e.hasPrompt && e.unfilled.length === 0;
 
-interface Pair {
+interface Modes {
   /** The endpoint for requests without reference images. */
   plain?: Endpoint;
   /** The endpoint that takes reference images. */
   referenced?: Endpoint;
+  /** The endpoint that starts a video from a given first frame. */
+  framed?: Endpoint;
 }
 
-/** The named endpoint with its mode sibling, when one exists and fits: the candidates are read together. */
-async function withSibling(named: Endpoint, kind: Kind): Promise<Pair> {
-  const candidates = await Promise.all(
-    siblingsOf(named.id, kind).map(async (id) => {
-      const inputs = await readInputs(id);
-      return inputs && endpointOf(inputs);
-    }),
-  );
-  const sibling = candidates.find((e) => e && usable(e) && (named.images ? !e.imagesRequired : Boolean(e.images))) ?? undefined;
-  return named.images ? { plain: sibling, referenced: named } : { plain: named, referenced: sibling };
+const servesPlain = (e: Endpoint) => !e.imagesRequired && !e.firstFrame?.required;
+const servesReferenced = (e: Endpoint) => Boolean(e.images) && !e.firstFrame?.required;
+const servesFramed = (e: Endpoint) => Boolean(e.firstFrame);
+
+/** The endpoint for each mode: the named one where it serves, else a sibling that does; the siblings are read together. */
+async function withSiblings(named: Endpoint, kind: Kind): Promise<Modes> {
+  const complete = servesPlain(named) && servesReferenced(named) && (kind === 'image' || servesFramed(named));
+  const siblings = complete
+    ? []
+    : await Promise.all(
+        siblingsOf(named.id, kind).map(async (id) => {
+          const inputs = await readInputs(id);
+          return inputs && endpointOf(inputs, kind);
+        }),
+      );
+  const all = [named, ...siblings.filter((e): e is Endpoint => Boolean(e && usable(e)))];
+  return { plain: all.find(servesPlain), referenced: all.find(servesReferenced), framed: kind === 'video' ? all.find(servesFramed) : undefined };
 }
 
 /** The endpoints a configured model runs on; ConfigError when the named one does not exist or cannot be driven. */
-async function pairOf(model: string, kind: Kind): Promise<Pair> {
+async function endpointsOf(model: string, kind: Kind): Promise<Modes> {
   const id = clean(model);
   const inputs = await readInputs(id);
   if (!inputs) throw new ConfigError(`ModelRunner has no endpoint ${id}`);
-  const named = endpointOf(inputs);
+  const named = endpointOf(inputs, kind);
   if (!named.hasPrompt) throw new ConfigError(`${id} takes no text prompt, so the ${kind} adapter cannot drive it`);
   if (named.unfilled.length > 0) {
     throw new ConfigError(`${id} requires ${named.unfilled.join(', ')}, which the ${kind} adapter does not send; pick its text or reference endpoint`);
   }
-  // An endpoint whose references are optional serves both kinds of request.
-  const pair = named.images && !named.imagesRequired ? { plain: named, referenced: named } : await withSibling(named, kind);
+  const modes = await withSiblings(named, kind);
   // Every video request sets a length; an endpoint that counts frames instead cannot be timed.
-  if (kind === 'video' && !pair.plain?.duration && !pair.referenced?.duration) {
+  if (kind === 'video' && ![modes.plain, modes.referenced, modes.framed].some((e) => e?.duration)) {
     throw new ConfigError(`${id} takes no length in seconds, so the video adapter cannot time its clips`);
   }
-  return pair;
+  return modes;
 }
 
 /** The whole-second lengths a duration field allows: its literals, else every second of its range. */
@@ -253,6 +275,15 @@ function assertDefaultShape(target: Endpoint, sibling: Endpoint | undefined, asp
   );
 }
 
+/**
+ * A first frame sets the picture's shape: the exact literal, else the model's own choice (`adaptive`), which follows the
+ * frame (Seedance 2.5's image-to-video offers nothing else).
+ */
+function framedAspect(field: Field, aspect: AspectRatio): string | undefined {
+  const literals = field.values.map(String);
+  return literals.find((l) => names(l, aspect)) ?? literals.find((l) => AUTO.includes(l)) ?? videoAspect(field, aspect);
+}
+
 /** An image takes the nearest shape the model offers: assets are framed, not composited. */
 function imageAspect(field: Field, aspect: AspectRatio): string | undefined {
   const literals = field.values.map(String);
@@ -316,11 +347,20 @@ const MENTION: Record<Endpoint['mention'], (slot: number, name: string) => strin
   plain: (_slot, name) => name,
 };
 
-/** Catalog endpoints worth offering in the model picker, by their category or their reference mode's name. */
-export function offersEndpoint(kind: Kind, model: string, category?: string | null): boolean {
+/** Catalog endpoints worth offering in the model picker, by their category or their mode's name. */
+export function offersEndpoint(kind: Exclude<ServiceType, 'text' | 'vision'>, model: string, category?: string | null): boolean {
   const id = clean(model);
-  if (kind === 'video') return category === 'text-to-video' || id.endsWith('/reference-to-video');
-  return (category === 'text-to-image' && !id.endsWith('/text-to-vector')) || id.endsWith('/edit');
+  switch (kind) {
+    case 'video':
+      return category === 'text-to-video' || id.endsWith('/reference-to-video');
+    case 'image':
+      return (category === 'text-to-image' && !id.endsWith('/text-to-vector')) || id.endsWith('/edit');
+    // Sound also holds music, effects and voice changers: speech endpoints say so in their name.
+    case 'speech':
+      return category === 'sound' && /(^|[/-])tts($|[/-])|text-to-speech|\/speech-\d|kokoro/.test(id);
+    case 'lipsync':
+      return category === 'video-to-video' && /lip-?sync|latentsync/.test(id);
+  }
 }
 
 const headers = (config: ServiceConfig) => ({ Authorization: `Key ${config.apiKey}`, 'Content-Type': 'application/json' });
@@ -342,7 +382,7 @@ interface QueueRequest {
   detail?: unknown;
 }
 
-/** Outputs are per model: a URL, a list of URLs, or an object carrying them (`url`, `images[]`, `video`). */
+/** Outputs are per model: a URL, a list of URLs, or an object carrying them (`url`, `images[]`, `video`, `audio`). */
 function firstUrl(output: unknown): string | undefined {
   if (typeof output === 'string') return /^https?:\/\//.test(output) ? output : undefined;
   if (Array.isArray(output)) {
@@ -354,7 +394,16 @@ function firstUrl(output: unknown): string | undefined {
   }
   if (output && typeof output === 'object') {
     const o = output as Record<string, unknown>;
-    return firstUrl(o.url) ?? firstUrl(o.images) ?? firstUrl(o.video) ?? firstUrl(o.image) ?? firstUrl(o.videos);
+    return (
+      firstUrl(o.url) ??
+      firstUrl(o.images) ??
+      firstUrl(o.video) ??
+      firstUrl(o.image) ??
+      firstUrl(o.videos) ??
+      firstUrl(o.audio) ??
+      firstUrl(o.audio_url) ??
+      firstUrl(o.video_url)
+    );
   }
   return undefined;
 }
@@ -442,13 +491,13 @@ export const modelrunnerImage: ImageAdapter = {
   // Inline reference images make the submit body large on a slow link.
   submitTimeoutMs: 120_000,
   async describeModel(model) {
-    const { referenced } = await pairOf(model, 'image');
+    const { referenced } = await endpointsOf(model, 'image');
     return { images: referenced ? (referenced.imageMax ?? DEFAULT_IMAGE_REFS) : 0 };
   },
   async buildGenerateRequest(config, record) {
-    const pair = await pairOf(config.model, 'image');
+    const modes = await endpointsOf(config.model, 'image');
     const referencing = record.referenceImages.length > 0;
-    const target = referencing ? pair.referenced : pair.plain;
+    const target = referencing ? modes.referenced : modes.plain;
     if (!target) {
       throw new ConfigError(`${clean(config.model)} ${referencing ? 'takes no reference images' : 'needs reference images, and none were sent'}`);
     }
@@ -472,11 +521,11 @@ function shared<T>(plain: T[] | undefined, referenced: T[] | undefined): T[] | u
 
 /**
  * What a video model accepts, read from its endpoints: references from the reference endpoint (none without one),
- * length, tiers and shapes those both endpoints take. Only what the schemas state is returned; the rest keeps the
- * provider's defaults.
+ * length, tiers and shapes those both endpoints take, and a first frame when it has an image-to-video endpoint. Only
+ * what the schemas state is returned; the rest keeps the provider's defaults.
  */
 async function describeVideo(model: string) {
-  const { plain, referenced } = await pairOf(model, 'video');
+  const { plain, referenced, framed } = await endpointsOf(model, 'video');
   const both = <T>(of: (e: Endpoint) => T[] | undefined) => shared(plain && of(plain), referenced && of(referenced));
   const caps: Partial<VideoProviderCaps> = {
     images: referenced ? referenced.imageMax : 0,
@@ -487,7 +536,8 @@ async function describeVideo(model: string) {
     resolutions: both((e) => e.resolution && tiersOf(e.resolution)) ?? [],
     aspectRatios: both((e) => e.aspect && aspectsOf(e.aspect)),
     // Whichever endpoint a request goes to must take it, or the recorded seed would be one the model never saw.
-    seed: [plain, referenced].every((e) => !e || Boolean(e.seed)),
+    seed: [plain, referenced, framed].every((e) => !e || Boolean(e.seed)),
+    firstFrame: Boolean(framed),
   };
   const seconds = both((e) => e.duration && secondsOf(e.duration));
   if (seconds) {
@@ -507,24 +557,126 @@ export const modelrunnerVideo: VideoAdapter = {
   describeModel: describeVideo,
   async buildGenerateRequest(config, record) {
     if (record.referenceVideos.length > 0) throw new ConfigError('The ModelRunner video adapter sends no reference videos');
-    const pair = await pairOf(config.model, 'video');
-    const referencing = record.referenceImages.length > 0 || (record.referenceAudios.length > 0 && !pair.plain?.audios);
-    const target = referencing ? pair.referenced : pair.plain;
+    const modes = await endpointsOf(config.model, 'video');
+    const framing = Boolean(record.firstFrame);
+    const referencing = !framing && (record.referenceImages.length > 0 || (record.referenceAudios.length > 0 && !modes.plain?.audios));
+    const target = framing ? modes.framed : referencing ? modes.referenced : modes.plain;
     if (!target) {
-      throw new ConfigError(`${clean(config.model)} ${referencing ? 'takes no reference images' : 'needs reference images, and none were sent'}`);
+      const lacks = framing ? 'takes no first frame' : referencing ? 'takes no reference images' : 'needs reference images, and none were sent';
+      throw new ConfigError(`${clean(config.model)} ${lacks}`);
     }
-    assertDefaultShape(target, target === pair.plain ? pair.referenced : pair.plain, record.aspectRatio);
+    if (!framing) assertDefaultShape(target, target === modes.plain ? modes.referenced : modes.plain, record.aspectRatio);
     const body: Record<string, unknown> = { prompt: record.prompt };
     set(body, target.duration, target.duration && durationValue(target.duration, record.durationSeconds));
     set(body, target.resolution, target.resolution && resolutionValue(target.resolution, record.resolution));
-    set(body, target.aspect, target.aspect && videoAspect(target.aspect, record.aspectRatio));
+    set(body, target.aspect, target.aspect && (framing ? framedAspect : videoAspect)(target.aspect, record.aspectRatio));
     set(body, target.audioFlag, record.generateAudio);
     set(body, target.seed, record.seed);
     set(body, target.negative, record.negativePrompt);
     for (const field of target.expansion) body[field.name] = false;
+    set(body, target.firstFrame, record.firstFrame);
     placeImages(body, target, record.referenceImages);
     if (record.referenceAudios.length > 0) set(body, target.audios, record.referenceAudios);
     return submit(config, target.id, body);
+  },
+  ...polling,
+};
+
+/** Speech endpoints (adr-0021): the words, a named voice, a recording to clone, and the language, as each one names them. */
+const SPEECH_TEXT = ['text', 'prompt'];
+const VOICE = ['voice', 'voice_id', 'voice_name', 'speaker'];
+const CLONE = ['audio_url', 'reference_audio_url', 'voice_url', 'speaker_audio_url'];
+const LANGUAGE = ['language_code', 'language'];
+const LANGUAGE_NAME: Record<string, string> = { en: 'english', zh: 'chinese', ja: 'japanese', ko: 'korean' };
+
+interface SpeechEndpoint {
+  id: string;
+  text: Field;
+  voice?: Field;
+  clone?: Field;
+  language?: Field;
+}
+
+/** Fails (ConfigError) when an endpoint requires an input no role fills. */
+function assertFilled(inputs: EndpointInputs, filled: (Field | undefined)[], what: string) {
+  const names = new Set(filled.flatMap((f) => (f ? [f.name] : [])));
+  const unfilled = [...inputs.fields.values()].filter((f) => f.required && !names.has(f.name)).map((f) => f.name);
+  if (unfilled.length > 0) throw new ConfigError(`${inputs.endpoint} requires ${unfilled.join(', ')}, which the ${what} adapter does not send`);
+}
+
+async function speechEndpoint(model: string): Promise<SpeechEndpoint> {
+  const id = clean(model);
+  const inputs = await readInputs(id);
+  if (!inputs) throw new ConfigError(`ModelRunner has no endpoint ${id}`);
+  const text = pick(inputs, SPEECH_TEXT, 'string');
+  if (!text) throw new ConfigError(`${id} takes no text, so the speech adapter cannot drive it`);
+  const named = pick(inputs, VOICE, 'string');
+  // Some endpoints call the language they speak a voice (Chatterbox multilingual).
+  const languageVoice = named && /^language\b/i.test(named.description) ? named : undefined;
+  const roles = {
+    voice: languageVoice ? undefined : named,
+    clone: pick(inputs, CLONE, 'string'),
+    language: languageVoice ?? pick(inputs, LANGUAGE, 'string'),
+  };
+  assertFilled(inputs, [text, ...Object.values(roles)], 'speech');
+  return { id, text, ...roles };
+}
+
+/** The endpoint's literal for a language (`en`, `en-us`, `english`), the code itself when it lists none, else nothing. */
+function languageValue(field: Field, code: string): string | undefined {
+  const literals = field.values.map(String);
+  if (literals.length === 0) return code;
+  const name = LANGUAGE_NAME[code];
+  return literals.find((l) => {
+    const v = l.toLowerCase();
+    return v === code || v.startsWith(`${code}-`) || v.startsWith(`${code}_`) || v === name;
+  });
+}
+
+/** ModelRunner queue, speech endpoints. */
+export const modelrunnerSpeech: SpeechAdapter = {
+  provider: 'modelrunner',
+  submitTimeoutMs: 120_000,
+  async describeModel(model): Promise<SpeechVoiceInfo> {
+    const e = await speechEndpoint(model);
+    return { named: Boolean(e.voice), voices: e.voice ? e.voice.values.map(String) : [], cloning: Boolean(e.clone) };
+  },
+  async buildGenerateRequest(config, record) {
+    const e = await speechEndpoint(config.model);
+    const body: Record<string, unknown> = { [e.text.name]: record.text };
+    if (record.voiceSample) {
+      if (!e.clone) throw new ConfigError(`${e.id} clones no recorded voice`);
+      body[e.clone.name] = record.voiceSample;
+    } else if (record.voice && e.voice) body[e.voice.name] = record.voice;
+    set(body, e.language, e.language && languageValue(e.language, record.language));
+    return submit(config, e.id, body);
+  },
+  ...polling,
+};
+
+const LIP_VIDEO = ['video_url', 'video'];
+const LIP_AUDIO = ['audio_url', 'audio'];
+
+/**
+ * ModelRunner queue, lip-sync endpoints: the video and the speech, and `cut_off` where the endpoint reconciles their
+ * lengths (the speech is padded to the video's length, so nothing is cut).
+ */
+export const modelrunnerLipSync: LipSyncAdapter = {
+  provider: 'modelrunner',
+  submitTimeoutMs: 120_000,
+  async buildGenerateRequest(config, record) {
+    const id = clean(config.model);
+    const inputs = await readInputs(id);
+    if (!inputs) throw new ConfigError(`ModelRunner has no endpoint ${id}`);
+    const video = pick(inputs, LIP_VIDEO, 'string');
+    const audio = pick(inputs, LIP_AUDIO, 'string');
+    if (!video || !audio) throw new ConfigError(`${id} does not take a video and an audio track, so it cannot lip-sync a shot`);
+    if (!record.videoUrl || !record.audioUrl) throw new ConfigError('The lip sync was sent without addresses for its video and audio');
+    const mode = inputs.fields.get('sync_mode');
+    assertFilled(inputs, [video, audio, mode], 'lip sync');
+    const body: Record<string, unknown> = { [video.name]: record.videoUrl, [audio.name]: record.audioUrl };
+    if (mode?.values.includes('cut_off')) body[mode.name] = 'cut_off';
+    return submit(config, id, body);
   },
   ...polling,
 };

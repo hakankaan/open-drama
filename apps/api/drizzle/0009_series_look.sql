@@ -1,0 +1,1 @@
+ALTER TABLE `dramas` ADD `look` text DEFAULT 'none' NOT NULL;

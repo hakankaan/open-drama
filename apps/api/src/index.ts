@@ -10,7 +10,7 @@ logger.info({ dataDir: env.dataDir, version: env.OPEN_DRAMA_VERSION }, 'env pars
 for (const dir of [env.dataDir, env.storageRoot, env.workspaceDir]) mkdirSync(dir, { recursive: true });
 // temp/ holds only work in progress (partial films, stub frames); nothing there survives a restart.
 rmSync(join(env.storageRoot, 'temp'), { recursive: true, force: true });
-for (const bucket of ['uploads', 'images', 'videos', 'merged', 'temp']) {
+for (const bucket of ['uploads', 'images', 'videos', 'audio', 'merged', 'temp']) {
   mkdirSync(join(env.storageRoot, bucket), { recursive: true });
 }
 logger.info({ storageRoot: env.storageRoot, workspaceDir: env.workspaceDir }, 'directories ready');

@@ -1,0 +1,9 @@
+name: AttachLipSyncOnGeneration
+description: >-
+  Triggered by a completed lip-sync task tagged with a shot — muxes the padded line over the provider's picture and
+  makes it the shot's current video while the shot still plays the source and has the same line audio.
+then:
+  commands:
+    - AttachLipSyncedVideo
+adr_refs:
+  - adr-0021

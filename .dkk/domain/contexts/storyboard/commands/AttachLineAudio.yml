@@ -1,0 +1,21 @@
+name: AttachLineAudio
+description: >-
+  Record completed speech as the shot's line audio, grow the shot to hold it after the lead-in (never shrinking it,
+  capped at the longest shot) and mark the video prompt stale. Issued by the generation write-back.
+fields:
+  - name: shotId
+    type: ID
+  - name: lineAudioPath
+    type: string
+  - name: lineAudioSeconds
+    type: number
+  - name: taskId
+    type: ID
+actor: GenerationWorker
+handled_by: Shot
+rejections:
+  - >-
+    The line, the speaker, or the speaker's voice or sample changed since the request (the audio is kept in the task
+    only)
+adr_refs:
+  - adr-0021

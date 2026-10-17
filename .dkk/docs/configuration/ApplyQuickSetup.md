@@ -6,7 +6,7 @@
 
 ## Summary
 
-From one API key of a compatible gateway, write the three recommended services (text, image, video) with preset base URLs and default models in a single step, then probe each.
+From one API key of a compatible gateway, write the recommended services (text, image, video, and on ModelRunner speech, lip sync and vision) with preset base URLs and default models in a single step, then probe each.
 
 
 ## Fields
@@ -30,4 +30,7 @@ From one API key of a compatible gateway, write the three recommended services (
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |
+| [adr-0022](../../adr/adr-0022.md) | Shot checks by a vision model | proposed |

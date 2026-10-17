@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TextModelOverride } from './agents';
 import { AddModelService, UpdateModelService } from './configuration';
-import { ContentLanguage, Id, JobKind, JobStatus, ServiceType, Timestamp } from './common';
+import { ContentLanguage, Id, JobKind, JobStatus, RequiredServiceType, ServiceType, Timestamp } from './common';
 import { AgentJob } from './jobs';
 import { EpisodeView, ScriptFromContent, UpdateDrama, UpdateEpisode } from './production';
 
@@ -164,9 +164,9 @@ export const McpStatus = z.object({
   version: z.string(),
   readiness: z.object({
     ready: z.boolean(),
-    missingTypes: z.array(ServiceType),
+    missingTypes: z.array(RequiredServiceType),
     /** Per missing type, what it blocks (the story room needs text only). */
-    blocks: z.array(z.object({ type: ServiceType, stages: z.array(z.string()) })),
+    blocks: z.array(z.object({ type: RequiredServiceType, stages: z.array(z.string()) })),
   }),
   /** The studio's address, or null when the web interface is off (OPEN_DRAMA_WEB_UI=0). */
   studio: z.string().nullable(),

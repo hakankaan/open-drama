@@ -37,7 +37,7 @@ function bucketOf(abs: string): StorageBucket {
   if (abs.startsWith(env.workspaceDir + sep)) return 'workspace';
   if (abs.startsWith(env.storageRoot + sep)) {
     const top = relative(env.storageRoot, abs).split(sep)[0];
-    if (top === 'images' || top === 'videos' || top === 'merged' || top === 'uploads' || top === 'temp') return top;
+    if (top === 'images' || top === 'videos' || top === 'audio' || top === 'merged' || top === 'uploads' || top === 'temp') return top;
   }
   return 'other';
 }

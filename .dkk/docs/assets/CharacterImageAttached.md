@@ -29,4 +29,4 @@ A generated or uploaded image is now one of the character's views (adr-0018); an
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | accepted |

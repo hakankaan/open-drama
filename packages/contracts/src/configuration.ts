@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ContentLanguage, ProviderName, ServiceType, Timestamp } from './common';
+import { ContentLanguage, ProviderName, RequiredServiceType, ServiceType, Timestamp } from './common';
 
 // Model services
 
@@ -110,7 +110,8 @@ export const CatalogModel = z.object({
 export type CatalogModel = z.infer<typeof CatalogModel>;
 
 export const ConfigurationReadiness = z.object({
-  missingTypes: z.array(ServiceType),
+  /** Required types only: speech and lip sync are optional (adr-0021). */
+  missingTypes: z.array(RequiredServiceType),
   ready: z.boolean(),
 });
 export type ConfigurationReadiness = z.infer<typeof ConfigurationReadiness>;

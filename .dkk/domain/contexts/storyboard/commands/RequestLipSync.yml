@@ -1,0 +1,25 @@
+name: RequestLipSync
+description: >-
+  Re-sync the shot's video to its line audio with the lip-sync service. The source is the shot's current video, or, when
+  that is itself a lip sync, the video it was made from; the audio is the line after a half-second lead-in, padded with
+  silence to the video's length. Issued by the creator, or by LipSyncPinnedVideo.
+fields:
+  - name: shotId
+    type: ID
+  - name: model
+    type: string
+  - name: lipsyncServiceId
+    type: ID
+actor: Creator
+handled_by: Shot
+preconditions:
+  - The shot has a spoken line with its line audio, and a video
+  - The line after its lead-in fits in the video
+rejections:
+  - No lip-sync model service configured
+  - A video or a lip sync for this shot is still generating
+  - >-
+    The video or the line audio cannot reach a remote provider (no public URL, no fresh provider URL, too large to
+    inline)
+adr_refs:
+  - adr-0021

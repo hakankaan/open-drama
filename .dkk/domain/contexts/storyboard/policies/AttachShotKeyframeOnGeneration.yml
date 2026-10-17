@@ -1,0 +1,9 @@
+name: AttachShotKeyframeOnGeneration
+description: >-
+  Triggered by generation.ImageGenerated (cross-context event) for an image task tagged with a shot — makes the image
+  that shot's keyframe.
+then:
+  commands:
+    - AttachShotKeyframe
+adr_refs:
+  - adr-0019

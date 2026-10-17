@@ -9,6 +9,7 @@ import {
   PROVIDER_PRESETS,
   PROVIDERS_BY_TYPE,
   QUICK_SETUP_TEMPLATES,
+  REQUIRED_SERVICE_TYPES,
   SERVICE_TYPES,
   type ModelService,
   type ModelServiceProbe,
@@ -224,13 +225,15 @@ function TypeCard({
 }) {
   const t = useTranslations('settings.ai');
   const ready = services.some((s) => s.isActive && s.hasKey);
+  // Speech and lip sync serve pinned voices only (adr-0021), vision the shot checks (adr-0022): a run never waits for them.
+  const optional = !(REQUIRED_SERVICE_TYPES as readonly ServiceType[]).includes(type);
   return (
     <section className="rounded-lg border border-line bg-surface" aria-labelledby={`type-${type}`} data-tour={`service-${type}`}>
       <header className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">
         <h2 id={`type-${type}`} className="font-display text-2xl font-semibold tracking-wide">
           {t(`types.${type}`)}
         </h2>
-        {ready ? <Tag tone="success">{t('ready')}</Tag> : <Tag tone="warning">{t('missing')}</Tag>}
+        {ready ? <Tag tone="success">{t('ready')}</Tag> : optional ? <Tag>{t('optional')}</Tag> : <Tag tone="warning">{t('missing')}</Tag>}
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <span className="text-xs text-muted">{t('addFrom')}</span>
           {PROVIDERS_BY_TYPE[type].map((p) => {
@@ -253,6 +256,7 @@ function TypeCard({
           })}
         </div>
       </header>
+      {optional ? <p className="border-b border-line px-5 py-3 text-[13px] text-muted">{t(type === 'vision' ? 'visionHint' : 'optionalHint')}</p> : null}
       {services.length === 0 ? (
         <p className="px-5 py-6 text-sm text-ink-2">{t('empty', { type: t(`types.${type}`) })}</p>
       ) : (

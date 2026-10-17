@@ -64,6 +64,41 @@
       "when": 1792057442523,
       "tag": "0008_character_views",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1792152273725,
+      "tag": "0009_series_look",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1792153043799,
+      "tag": "0010_shot_keyframes",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1792154442776,
+      "tag": "0011_shot_continuity",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1792155789545,
+      "tag": "0012_pinned_voices",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1792158350522,
+      "tag": "0013_shot_checks",
+      "breakpoints": true
     }
   ]
 }

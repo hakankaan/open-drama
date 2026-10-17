@@ -1,0 +1,12 @@
+name: ShotKeyframeAttached
+description: >-
+  A generated image is now the shot's keyframe; the next video request starts from it on a model that takes a first
+  frame.
+fields:
+  - name: shotId
+    type: ID
+  - name: keyframePath
+    type: string
+raised_by: Shot
+adr_refs:
+  - adr-0019

@@ -1,0 +1,30 @@
+name: RequestShotKeyframe
+description: >-
+  Draw the shot's keyframe: a still of its opening moment in the drama's aspect ratio, made by the episode's locked
+  image service (claimed on first use) from the bound characters' faces (headshot, else the image they have; at most
+  four, the ones the prompts mention first), the scene, the characters' full bodies and the props, in that order, with a
+  legend naming each image the model actually takes. The prompt is the request's, else the shot's keyframe prompt (its
+  image prompt), else one composed from the framing, the first Shot 1 beat of the video prompt (else the description)
+  and the location; the code frames it with the drama's style, a headcount, a wardrobe line, the scene's lighting and
+  identity and clean-frame sentences.
+fields:
+  - name: shotId
+    type: ID
+  - name: prompt
+    type: string
+    description: Keyframe prompt (defaults to the shot's image prompt, else one composed from the shot)
+  - name: model
+    type: string
+  - name: imageServiceId
+    type: ID
+actor: Creator
+handled_by: Shot
+preconditions:
+  - A keyframe prompt, a description or a video prompt
+rejections:
+  - No image model service configured
+  - A keyframe for this shot is still generating
+  - A breakdown of the episode is running
+  - Characters are bound and the image model takes no reference image (the task fails before anything is paid)
+adr_refs:
+  - adr-0019

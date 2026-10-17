@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckSquare, Clapperboard, Loader2, Play, RotateCcw, Scissors, Sparkles, TriangleAlert } from 'lucide-react';
+import { CheckSquare, Clapperboard, ImageIcon, Loader2, Play, RotateCcw, ScanEye, Scissors, Sparkles, TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { toast } from 'sonner';
@@ -20,16 +20,18 @@ import { CancelJobButton } from '../../production/cancel-job-button';
 import {
   useEpisodeShots,
   useGenerateShotVideoPrompt,
+  useRequestShotKeyframe,
   useRequestShotVideo,
   useStartBreakdown,
   useStartVideoPromptBatch,
   useUpdateShot,
 } from '../api';
 import { shotStateOf } from '../model';
-import { useBatchVideos } from '../use-batch-videos';
+import { useBatchKeyframes, useBatchVideos, useShotChecks } from '../use-batch-videos';
 import { useVideoTarget } from '../use-video-target';
 import { ShotEditor } from './editor';
 import { ShotInspector } from './inspector';
+import { KeyframeSheet } from './keyframe-sheet';
 import { ReferenceAdvice } from './reference-advice';
 import { TaskList, type ShotFilter } from './task-list';
 
@@ -121,7 +123,16 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
   const requestVideo = useRequestShotVideo(episode.id);
   const target = useVideoTarget(episode, picks);
   const override = videoOverride(picks);
-  const batch = useBatchVideos(episode.id, override);
+  const batch = useBatchVideos(episode.id, override, (shotId) => {
+    const shots = list.data?.shots ?? [];
+    const i = shots.findIndex((s) => s.id === shotId);
+    return i > 0 && shots[i]!.continuesPrevious ? shots[i - 1]!.id : null;
+  });
+  const requestKeyframe = useRequestShotKeyframe(episode.id);
+  // A keyframe is drawn in the image pick's service and model (the text pick plays no part).
+  const keyframeOverride = picks.image ? { imageServiceId: picks.image.serviceId, model: picks.image.model } : {};
+  const keyframeBatch = useBatchKeyframes(episode.id, keyframeOverride);
+  const checks = useShotChecks(episode.id);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [filter, setFilter] = useState<ShotFilter>('all');
@@ -130,6 +141,8 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
   const [confirming, setConfirming] = useState<ShotCard[] | null>(null);
   const [breakAgain, setBreakAgain] = useState(false);
   const [requesting, setRequesting] = useState<Set<number>>(new Set());
+  const [keyframing, setKeyframing] = useState<Set<number>>(new Set());
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [promptingId, setPromptingId] = useState<number | null>(null);
   const [widths, setWidths] = usePersistedState<[number, number]>('workbench-widths', DEFAULT_WIDTHS);
 
@@ -148,6 +161,10 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
   const breaking = job?.status === 'running';
   const prompting = promptJob?.status === 'running';
   const selected = shots.find((s) => s.id === selectedId) ?? shots[0] ?? null;
+  // Where the selected shot stands in its take, as the API counts it (adr-0020): the first shot continues nothing.
+  const at = selected ? shots.indexOf(selected) : -1;
+  const continues = (i: number) => i > 0 && shots[i]!.continuesPrevious;
+  const continuity = { previous: at > 0 ? shots[at - 1]!.shotNumber : null, capped: continues(at - 1) && continues(at - 2) };
   const withoutPrompt = shots.filter((s) => !s.videoPrompt.trim() || s.videoPromptStale).length;
   // The episode's length as the model renders it, against the creator's target (the breakdown is held to it).
   const rendered = shots.reduce((n, s) => n + target.clamp(s.durationSeconds), 0);
@@ -156,6 +173,9 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
   const failed = shots.filter((s) => shotStateOf(s) === 'failed');
   const missing = shots.filter((s) => !s.videoPath && shotStateOf(s) !== 'generating');
   const batchTargets = selectMode ? shots.filter((s) => checked.has(s.id) && shotStateOf(s) !== 'generating') : missing;
+  // A video can be checked once it is done and not being lip-synced (adr-0022); a new video drops the old check.
+  const checkable = (s: ShotCard) => !!s.videoPath && shotStateOf(s) !== 'generating' && s.latestLipSyncTask?.status !== 'processing';
+  const checkTargets = shots.filter((s) => checkable(s) && (selectMode ? checked.has(s.id) : !s.qa));
   const progress = promptJob?.progress as { total?: number; completed?: number; failed?: number } | undefined;
 
   const startBreakdown = () =>
@@ -171,13 +191,33 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
     try {
       const started = await requestVideo.mutateAsync({ id: shot.id, ...override, ...(seed !== undefined ? { seed } : {}) });
       if (started.unmatchedMentions.length) toast.warning(t('unmatched', { names: started.unmatchedMentions.join(', ') }));
-      if (started.droppedReferences.length) toast.warning(t('dropped', { names: started.droppedReferences.join(', ') }));
+      // From a keyframe nothing is over the limit; the editor already says reference images are not sent.
+      if (started.droppedReferences.length && started.keyframe !== 'sent') toast.warning(t('dropped', { names: started.droppedReferences.join(', ') }));
+      if (started.keyframe === 'unsupported') toast.info(t('keyframes.notUsed'));
+      if (started.continues?.waiting) toast.info(t('continuity.waiting', { number: started.continues.shotNumber }));
+      if (started.lipSync) toast.info(t('voice.willSync'));
     } catch (err) {
       if (err instanceof ApiError && err.code === 'CONFLICT' && !(err.details as { jobId?: number } | undefined)?.jobId) {
         toast.info(t('alreadyGenerating'));
       } else toastError(err);
     } finally {
       setRequesting((s) => {
+        const next = new Set(s);
+        next.delete(shot.id);
+        return next;
+      });
+    }
+  };
+  const drawKeyframe = async (shot: ShotCard) => {
+    setKeyframing((s) => new Set(s).add(shot.id));
+    try {
+      await requestKeyframe.mutateAsync({ id: shot.id, ...keyframeOverride });
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'CONFLICT' && !(err.details as { jobId?: number } | undefined)?.jobId) {
+        toast.info(t('keyframes.alreadyDrawing'));
+      } else toastError(err);
+    } finally {
+      setKeyframing((s) => {
         const next = new Set(s);
         next.delete(shot.id);
         return next;
@@ -194,6 +234,7 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
       setPromptingId(null);
     }
   };
+  const checkOne = (shot: ShotCard) => checks.one(shot.id).catch((err) => toastError(err));
   const onCheck = (ids: number[], on: boolean) =>
     setChecked((s) => {
       const next = new Set(s);
@@ -250,6 +291,7 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
           </Tag>
         ) : null}
         {drama.data ? <Tag mono>{drama.data.aspectRatio}</Tag> : null}
+        {drama.data?.pinnedVoices ? <Tag tone="accent">{t('voice.pinned')}</Tag> : null}
         <Tag tone={list.data.generatedCount === shots.length ? 'success' : 'neutral'}>
           {t('generated', { done: list.data.generatedCount, total: shots.length })}
         </Tag>
@@ -263,6 +305,10 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
           </>
         ) : null}
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          <Button size="sm" variant="ghost" onClick={() => setSheetOpen(true)} disabled={breaking}>
+            {keyframeBatch.running ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <ImageIcon className="h-3.5 w-3.5" aria-hidden />}
+            {t('keyframes.sheet', { done: shots.filter((s) => s.keyframePath).length, total: shots.length })}
+          </Button>
           <Button size="sm" variant="ghost" onClick={() => setBreakAgain(true)} disabled={breaking || prompting}>
             <Scissors className="h-3.5 w-3.5" aria-hidden />
             {t('breakAgain')}
@@ -281,6 +327,22 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
               {withoutPrompt > 0 ? t('fillPrompts', { count: withoutPrompt }) : t('promptsDone')}
             </Button>
           )}
+          {shots.some((s) => s.videoPath) ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => void checks.run(checkTargets.map((s) => s.id))}
+              disabled={checkTargets.length === 0 || checks.running}
+              loading={checks.running}
+            >
+              {checks.running ? null : <ScanEye className="h-3.5 w-3.5" aria-hidden />}
+              {selectMode
+                ? t('qa.checkSelected', { count: checkTargets.length })
+                : checkTargets.length > 0
+                  ? t('qa.checkNew', { count: checkTargets.length })
+                  : t('qa.allChecked')}
+            </Button>
+          ) : null}
           {failed.length > 0 ? (
             <Button size="sm" variant="ghost" onClick={() => setConfirming(failed)} disabled={batch.running || breaking}>
               <RotateCcw className="h-3.5 w-3.5" aria-hidden />
@@ -358,6 +420,7 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
               promptPending={promptingId === selected.id}
               onToAssets={onAssets}
               target={target}
+              continuity={continuity}
             />
           ) : null}
         </div>
@@ -378,12 +441,37 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
               save={save(selected.id)}
               onGenerate={(seed) => void generateOne(selected, seed)}
               requesting={requesting.has(selected.id)}
-              config={{ model: target.model, resolution: episode.resolution, clamp: target.clamp, seeds: target.caps.seed }}
+              onKeyframe={() => void drawKeyframe(selected)}
+              keyframing={keyframing.has(selected.id)}
+              config={{
+                model: target.model,
+                resolution: episode.resolution,
+                clamp: target.clamp,
+                seeds: target.caps.seed,
+                firstFrame: target.caps.firstFrame,
+              }}
+              continues={continues(at) ? continuity.previous : null}
+              pinned={drama.data?.pinnedVoices ?? false}
+              onCheck={() => void checkOne(selected)}
+              checking={checks.checking.has(selected.id)}
             />
           ) : null}
         </div>
       </div>
 
+      {sheetOpen ? (
+        <KeyframeSheet
+          shots={shots}
+          aspect={drama.data?.aspectRatio ?? '16:9'}
+          running={keyframeBatch.running}
+          onSelect={(id) => {
+            setSelectedId(id);
+            setSheetOpen(false);
+          }}
+          onDrawMissing={(ids) => void keyframeBatch.run(ids)}
+          onClose={() => setSheetOpen(false)}
+        />
+      ) : null}
       {confirming ? (
         <BatchConfirm
           shots={confirming}

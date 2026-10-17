@@ -36,7 +36,7 @@ import { latestTasks } from '../generation/tasks';
 import { latestExtractionJobs } from '../jobs/run-job';
 import { getDramaRow, touchDrama } from '../production/dramas';
 import { getEpisodeRow } from '../production/episodes';
-import { markAssetPromptsStale } from '../storyboard/service';
+import { markAssetPromptsStale, type Tx } from '../storyboard/service';
 import { normaliseName, sceneKey } from './names';
 import { viewColumns, viewsOf } from './views';
 
@@ -201,6 +201,7 @@ export function updateCharacter(id: number, input: z.output<typeof UpdateCharact
   if (input.name !== undefined) assertUniqueCharacter(current.dramaId, input.name, id);
   const { views, ...fields } = input;
   for (const path of Object.values(views ?? {})) checkImagePath(path);
+  checkImagePath(input.voiceSamplePath);
   // A running view chain draws its next views from the headshot and writes each result onto its view (adr-0018).
   const running = views && latestImageTasks('character', [id]).get(id);
   if (running?.status === 'processing') {
@@ -209,6 +210,8 @@ export function updateCharacter(id: number, input: z.output<typeof UpdateCharact
   const row = db.transaction((tx) => {
     // Shot prompts mention the character by name.
     if (input.name !== undefined && input.name !== current.name) markAssetPromptsStale(tx, { kind: 'character', id });
+    // Lines spoken in the old voice no longer match the character (adr-0021).
+    if (changed(current, input, ['voice', 'voiceSamplePath'])) clearSpokenLines(tx, id);
     return tx
       .update(characters)
       .set({ ...fields, ...viewColumns(views), ...promptPatch(current, input, changed(current, input, ['appearance', 'styling'])) })
@@ -228,9 +231,16 @@ export function deleteCharacter(id: number): { id: number } {
     tx.update(characters).set({ deletedAt: now() }).where(eq(characters.id, id)).run();
     tx.delete(episodeCharacters).where(eq(episodeCharacters.characterId, id)).run();
     tx.delete(shotCharacters).where(eq(shotCharacters.characterId, id)).run();
+    clearSpokenLines(tx, id);
+    tx.update(shots).set({ speakerId: null }).where(eq(shots.speakerId, id)).run();
   });
   touchDrama(current.dramaId);
   return { id };
+}
+
+/** The line audio of the shots a character speaks in: made in a voice that is no longer theirs. */
+function clearSpokenLines(tx: Tx, characterId: number) {
+  tx.update(shots).set({ lineAudioPath: null, lineAudioSeconds: null }).where(eq(shots.speakerId, characterId)).run();
 }
 
 // Scenes

@@ -41,4 +41,4 @@ Generate the character's reference views (adr-0018), by default the headshot and
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |
-| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | accepted |

@@ -1,12 +1,12 @@
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { TaskErrorClass, TaskStatus } from '@open-drama/contracts';
+import type { GenerationType, TaskErrorClass, TaskStatus } from '@open-drama/contracts';
 import { createdAt, id, json, updatedAt } from './columns';
 
 export const generationTasks = sqliteTable(
   'generation_tasks',
   {
     id: id(),
-    type: text().$type<'image' | 'video'>().notNull(),
+    type: text().$type<GenerationType>().notNull(),
     dramaId: integer(),
     shotId: integer(),
     characterId: integer(),

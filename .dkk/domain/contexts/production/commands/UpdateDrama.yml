@@ -1,7 +1,7 @@
 name: UpdateDrama
 description: >-
-  Update a drama's title, description, genre, style, status, tags, serial flag or outline (the creator's edit from the
-  story tab). The aspect ratio is immutable and is ignored if supplied.
+  Update a drama's title, description, genre, style, status, tags, serial flag, series look or outline (the creator's
+  edit from the story tab), or whether its voices are pinned. The aspect ratio is immutable and is ignored if supplied.
 fields:
   - name: dramaId
     type: ID
@@ -20,9 +20,15 @@ fields:
     type: string[]
   - name: serial
     type: boolean
+  - name: look
+    type: string
+    description: none | warm | cool | teal_orange | faded | mono — the grade laid over every merged film of the drama
   - name: outline
     type: string
     description: Markdown, at most 20000 characters; empty clears it; every change bumps outlineRevision (adr-0016)
+  - name: pinnedVoices
+    type: boolean
+    description: Spoken lines are read by the speech service and shot videos are made silent and lip-synced (adr-0021)
 actor: Creator
 handled_by: Drama
 rejections:
@@ -32,3 +38,5 @@ rejections:
 adr_refs:
   - adr-0015
   - adr-0016
+  - adr-0019
+  - adr-0021

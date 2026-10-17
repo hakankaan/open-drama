@@ -1,9 +1,10 @@
-# Read model — a query-optimised projection.
 name: ConfigurationReadiness
-description: Which service types (text, image, video) still lack an active service. Drives the site-wide banner and the first-run tour.
+description: >-
+  Which required service types (text, image, video) still lack an active service; the optional speech, lip-sync and
+  vision types never count. Drives the site-wide banner and the first-run tour.
 fields:
   - name: missingTypes
-    type: "string[]"
+    type: string[]
   - name: ready
     type: boolean
 subscribes_to:
@@ -13,3 +14,6 @@ subscribes_to:
   - QuickSetupApplied
 used_by:
   - Creator
+adr_refs:
+  - adr-0021
+  - adr-0022

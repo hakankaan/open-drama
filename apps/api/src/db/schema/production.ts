@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import type { AspectRatio, DramaStatus, EpisodeStatus, Resolution } from '@open-drama/contracts';
+import type { AspectRatio, DramaLook, DramaStatus, EpisodeStatus, Resolution } from '@open-drama/contracts';
 import { bool, createdAt, deletedAt, id, json, updatedAt } from './columns';
 
 export const dramas = sqliteTable('dramas', {
@@ -15,6 +15,10 @@ export const dramas = sqliteTable('dramas', {
   thumbnail: text(),
   // Episodes continue one story: earlier episodes' recaps are given to the agents (adr-0014).
   serial: bool().notNull().default(true),
+  // The series look the merge grades every episode's film with.
+  look: text().$type<DramaLook>().notNull().default('none'),
+  // Lines are spoken in each character's pinned voice and lip-synced onto silent videos (adr-0021).
+  pinnedVoices: bool().notNull().default(false),
   // The story outline the episodes are planned from (adr-0015); Markdown, empty until written.
   outline: text().notNull().default(''),
   // Bumped on every change of the outline, whoever writes it (adr-0016).

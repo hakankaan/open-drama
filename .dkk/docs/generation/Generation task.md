@@ -6,11 +6,11 @@
 
 ## Summary
 
-One image or video generation request with its owner tags (character, scene or prop for images; shot for videos), provider, model, prompt, parameters, provider task id, result and status.
+One image, video, speech or lip-sync request with its owner tags (character, scene or prop for images; shot for the rest), provider, model, prompt, parameters, provider task id, result and status.
 
 ## Meaning
 
-One image or video generation request with its owner tags (character, scene or prop for images; shot for videos), provider, model, prompt, parameters, provider task id, result and status.
+One image, video, speech or lip-sync request with its owner tags (character, scene or prop for images; shot for the rest), provider, model, prompt, parameters, provider task id, result and status.
 
 
 

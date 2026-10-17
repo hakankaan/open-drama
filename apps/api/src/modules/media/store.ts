@@ -10,7 +10,7 @@ import { ffmpegBin, probeDurationSeconds, run } from '../../lib/ffmpeg';
 import { downloadPublic, FetchError } from '../../lib/remote';
 import { toAbsolute, toMediaPath } from '../../lib/paths';
 
-export type Bucket = 'uploads' | 'images' | 'videos' | 'merged' | 'temp';
+export type Bucket = 'uploads' | 'images' | 'videos' | 'audio' | 'merged' | 'temp';
 export type MediaKind = 'image' | 'video' | 'audio';
 
 /** Writes bytes under a fresh uuid name (paths are never reused, so immutable caching is safe, adr-0009). */
@@ -62,6 +62,9 @@ const EXT_BY_MIME: Record<string, string> = {
   'video/webm': '.webm',
   'audio/mpeg': '.mp3',
   'audio/wav': '.wav',
+  'audio/x-wav': '.wav',
+  'audio/mp4': '.m4a',
+  'audio/aac': '.aac',
 };
 
 const extFor = (mime: string | null, url: string, fallback: string) => {
@@ -118,6 +121,17 @@ export async function assertVideo(mediaPath: string): Promise<number> {
   return seconds;
 }
 
+/** Refuses a stored result that is not playable audio and returns its duration; the file is removed on refusal. */
+export async function assertAudio(mediaPath: string): Promise<number> {
+  const abs = toAbsolute(mediaPath);
+  const seconds = await probeDurationSeconds(abs);
+  if (seconds === null) {
+    await rm(abs, { force: true });
+    throw new Error('The provider returned a file that is not valid audio');
+  }
+  return seconds;
+}
+
 /**
  * StoreRemoteFile: downloads a provider result so the provider URL is never the source of truth (adr-0009). The URL
  * comes from the provider's response, so it goes through the guarded fetch; only the service's own configured host
@@ -135,7 +149,8 @@ export async function storeRemoteFile(url: string, kind: MediaKind, serviceBaseU
         trustedHost: serviceBaseUrl ? hostOf(serviceBaseUrl) : undefined,
       });
       if (kind === 'image') return await keepImage(temp);
-      const abs = join(env.storageRoot, 'videos', `${randomUUID()}${safeExt(extFor(contentType || null, url, '.mp4'))}`);
+      const [bucket, fallback] = kind === 'audio' ? ['audio', '.mp3'] : ['videos', '.mp4'];
+      const abs = join(env.storageRoot, bucket, `${randomUUID()}${safeExt(extFor(contentType || null, url, fallback))}`);
       await rename(temp, abs);
       return toMediaPath(abs);
     } catch (err) {

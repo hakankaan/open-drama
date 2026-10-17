@@ -1,0 +1,10 @@
+name: LipSyncedVideoAttached
+description: A lip-synced version of a shot's video is now its current video, with the line as its sound.
+fields:
+  - name: shotId
+    type: ID
+  - name: videoPath
+    type: string
+raised_by: Shot
+adr_refs:
+  - adr-0021

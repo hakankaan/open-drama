@@ -6,7 +6,7 @@
 
 ## Summary
 
-Update a drama's title, description, genre, style, status, tags, serial flag or outline (the creator's edit from the story tab). The aspect ratio is immutable and is ignored if supplied.
+Update a drama's title, description, genre, style, status, tags, serial flag, series look or outline (the creator's edit from the story tab), or whether its voices are pinned. The aspect ratio is immutable and is ignored if supplied.
 
 
 ## Fields
@@ -21,7 +21,9 @@ Update a drama's title, description, genre, style, status, tags, serial flag or 
 | `status` | `string` | draft | active | completed (project-level status shown on the launcher) |
 | `tags` | `string[]` | — |
 | `serial` | `boolean` | — |
+| `look` | `string` | none | warm | cool | teal_orange | faded | mono — the grade laid over every merged film of the drama |
 | `outline` | `string` | Markdown, at most 20000 characters; empty clears it; every change bumps outlineRevision (adr-0016) |
+| `pinnedVoices` | `boolean` | Spoken lines are read by the speech service and shot videos are made silent and lip-synced (adr-0021) |
 
 ## Rules & Invariants
 
@@ -43,3 +45,5 @@ Update a drama's title, description, genre, style, status, tags, serial flag or 
 |-----|-------|--------|
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |
 | [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
+| [adr-0019](../../adr/adr-0019.md) | Shot keyframes and the finishing pass | proposed |
+| [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |

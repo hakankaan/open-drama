@@ -14,6 +14,7 @@ import { useToastError } from '@/lib/errors';
 import { mediaUrl } from '@/lib/media';
 import { useUpdateAsset, type UpdateAssetInput } from './api';
 import { CharacterViewsPanel } from './character-views';
+import { CharacterVoice } from './character-voice';
 import { ASSET_FIELDS } from './fields';
 import { titleOf, type AnyAsset } from './model';
 
@@ -157,6 +158,7 @@ export function AssetDetailDialog({
                 </Field>
               );
             })}
+            {item.kind === 'character' ? <CharacterVoice character={item.asset} dramaId={dramaId} /> : null}
             <Field label={t('fields.finalPrompt')} htmlFor="asset-final-prompt" hint={t('finalPromptHint')}>
               <div className="flex flex-col gap-1.5">
                 {item.asset.finalPromptStale && !promptChanged ? (

@@ -35,4 +35,4 @@ Run the prompt-generator agent to write the final prompt for a character, descri
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | accepted |

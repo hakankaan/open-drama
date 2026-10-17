@@ -1,6 +1,6 @@
 'use client';
 
-import { Clapperboard, Loader2, Play, TriangleAlert } from 'lucide-react';
+import { Clapperboard, Link2, Loader2, Play, ScanEye, TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ShotCard } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,8 @@ export function TaskList({
   const t = useTranslations('studio.video');
   const counts = Object.fromEntries(FILTERS.map((f) => [f, f === 'all' ? shots.length : shots.filter((s) => shotStateOf(s) === f).length]));
   const visible = filter === 'all' ? shots : shots.filter((s) => shotStateOf(s) === filter);
+  // The number of the shot before each one, which a continuing shot is one take with (adr-0020).
+  const before = new Map(shots.slice(1).map((s, i) => [s.id, shots[i]!.shotNumber]));
   const quick = (state: ShotState | 'all' | 'none') => {
     if (state === 'none') return onCheck([...checked], false);
     onCheck(shots.filter((s) => state === 'all' || shotStateOf(s) === state).map((s) => s.id), true);
@@ -126,6 +128,24 @@ export function TaskList({
                         {t(`state.${state}`)}
                       </Tag>
                       <span className="tabular-nums">{t('seconds', { seconds: shot.durationSeconds })}</span>
+                      {shot.continuesPrevious && before.has(shot.id) ? (
+                        <span className="inline-flex items-center gap-0.5">
+                          <Link2 className="h-3 w-3" aria-hidden />
+                          {t('continuity.short', { number: before.get(shot.id)! })}
+                        </span>
+                      ) : null}
+                      {/* The check of the current video (adr-0022); a fine one is only an icon. */}
+                      {shot.qa?.verdict === 'check' ? (
+                        <span className="inline-flex items-center gap-0.5 text-warning">
+                          <ScanEye className="h-3 w-3" aria-hidden />
+                          {t('qa.verdict.check')}
+                        </span>
+                      ) : shot.qa ? (
+                        <span className="inline-flex items-center text-success" title={t('qa.verdict.ok')}>
+                          <ScanEye className="h-3 w-3" aria-hidden />
+                          <span className="sr-only">{t('qa.verdict.ok')}</span>
+                        </span>
+                      ) : null}
                       {shot.bindings.scene ? <span className="truncate">{shot.bindings.scene.name}</span> : null}
                     </span>
                     {state === 'failed' && task?.error ? (

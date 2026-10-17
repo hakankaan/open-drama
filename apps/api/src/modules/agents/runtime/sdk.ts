@@ -129,3 +129,28 @@ export async function runToolLoop(opts: {
     stepLimitReached: !done && result.steps.length >= opts.maxSteps,
   };
 }
+
+/** One question about some images, answered in text: no tools, one call (shot checks, adr-0022). */
+export async function askAboutImages(opts: {
+  model: LanguageModel;
+  instructions: string;
+  text: string;
+  /** JPEG bytes, in the order the text names them. */
+  images: Uint8Array[];
+  temperature?: number;
+  timeoutMs: number;
+}): Promise<{ text: string; finishReason: RunLoopResult['finishReason'] }> {
+  const result = await generateText({
+    model: opts.model,
+    instructions: opts.instructions,
+    messages: [
+      {
+        role: 'user',
+        content: [{ type: 'text', text: opts.text }, ...opts.images.map((image) => ({ type: 'image' as const, image, mediaType: 'image/jpeg' }))],
+      },
+    ],
+    temperature: opts.temperature,
+    abortSignal: AbortSignal.timeout(opts.timeoutMs),
+  });
+  return { text: result.text, finishReason: result.finishReason };
+}

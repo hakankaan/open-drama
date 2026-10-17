@@ -15,6 +15,13 @@ import {
 
 // Dramas
 
+/**
+ * The series look: one fixed grade the merge lays over every episode's film after the clips are joined, so episodes
+ * read as one series. 'none' leaves the picture as matched.
+ */
+export const DramaLook = z.enum(['none', 'warm', 'cool', 'teal_orange', 'faded', 'mono']);
+export type DramaLook = z.infer<typeof DramaLook>;
+
 /** The story outline (adr-0015): Markdown the planner splits into episodes. */
 export const OUTLINE_MAX_CHARS = 20_000;
 
@@ -30,6 +37,12 @@ export const Drama = z.object({
   thumbnail: MediaPath.nullable(),
   /** Episodes continue one story: the agents get earlier episodes' recaps (adr-0014). Off for anthologies. */
   serial: z.boolean(),
+  look: DramaLook,
+  /**
+   * Pinned voices (adr-0021): each shot's line is spoken by a speech model in its speaker's voice, the video is made
+   * silent and then lip-synced to that line, so a character sounds the same in every shot.
+   */
+  pinnedVoices: z.boolean(),
   createdAt: Timestamp,
   updatedAt: Timestamp,
 });
@@ -79,6 +92,8 @@ export const UpdateDrama = z.strictObject({
   status: DramaStatus.optional(),
   tags: tags.optional(),
   serial: z.boolean().optional(),
+  look: DramaLook.optional(),
+  pinnedVoices: z.boolean().optional(),
   /** The creator's edit of the story outline; refused while the story writer is writing it. */
   outline: z.string().trim().max(OUTLINE_MAX_CHARS).optional(),
 });

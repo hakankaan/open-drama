@@ -50,7 +50,10 @@
   "serviceType": {
     "text": "텍스트",
     "image": "이미지",
-    "video": "영상"
+    "video": "영상",
+    "speech": "음성",
+    "lipsync": "립싱크",
+    "vision": "비전"
   },
   "status": {
     "draft": "시작 전",
@@ -164,7 +167,10 @@
       "types": {
         "text": "텍스트",
         "image": "이미지",
-        "video": "영상"
+        "video": "영상",
+        "speech": "음성",
+        "lipsync": "립싱크",
+        "vision": "비전"
       },
       "ready": "준비됨",
       "missing": "없음",
@@ -177,7 +183,7 @@
       "deleteConfirm": "서비스 삭제",
       "quick": {
         "title": "{gateway} 빠른 설정",
-        "body": "{gateway} API 키 하나로 텍스트, 이미지, 영상 서비스를 한 번에 설정해요. 설정한 뒤에도 수정할 수 있어요.",
+        "body": "{gateway} API 키 하나로 아래 서비스를 한 번에 설정해요. 설정한 뒤에도 수정할 수 있어요.",
         "getKey": "키 발급받기",
         "platform": "플랫폼",
         "recommended": "{gateway} (추천)",
@@ -251,12 +257,15 @@
       "tour": {
         "replay": "가이드 보기",
         "quickTitle": "빠른 설정",
-        "quickBody": "키 하나로 텍스트, 이미지, 영상 서비스를 한 번에 설정해요.",
+        "quickBody": "키 하나로 여러 서비스를 한 번에 설정해요.",
         "servicesTitle": "또는 서비스를 하나씩 추가하기",
         "servicesBody": "유형마다 API 키가 있는 활성 서비스가 하나씩 필요해요. 에피소드에 고정된 서비스가 없으면 우선순위가 가장 높은 서비스를 써요.",
         "agentsTitle": "에이전트 다듬기",
         "agentsBody": "에이전트 탭에는 대본 작성, 에셋 추출, 샷 분할, 영상 프롬프트 작성을 맡는 프롬프트와 스킬이 있어요."
-      }
+      },
+      "optional": "선택",
+      "optionalHint": "목소리 고정에서만 씁니다. 음성 모델이 대사를 읽고, 영상의 입 모양을 그 대사에 맞춥니다. 없어도 다른 기능은 모두 쓸 수 있습니다.",
+      "visionHint": "샷 검사에서만 씁니다. 이미지를 읽는 채팅 모델이 각 영상의 프레임을 참조 이미지와 비교합니다. 없어도 다른 기능은 모두 쓸 수 있습니다."
     },
     "general": {
       "language": "언어",
@@ -315,7 +324,8 @@
         "uploads": "업로드",
         "temp": "임시 파일",
         "workspace": "작업 공간",
-        "other": "기타"
+        "other": "기타",
+        "audio": "오디오"
       },
       "unused": {
         "title": "사용하지 않는 파일",
@@ -491,6 +501,19 @@
         "back": "뒷모습 뷰예요. 얼굴 클로즈업을 참고해 그려져요. 턴어라운드 뷰를 쓰는 모델(Seedance 2.5)에만 이미지 1장으로 전송돼요.",
         "sheet": "한 이미지에 여러 뷰를 담은 것으로, 뷰 기능 이전에 만들어졌어요. 대부분의 영상 모델은 이걸 여러 사람으로 읽을 수 있어요. 얼굴 클로즈업이나 전신이 생기면 더 이상 전송되지 않아요."
       }
+    },
+    "voice": {
+      "title": "목소리",
+      "none": "목소리 없음",
+      "notOffered": "현재 음성 모델에 없는 목소리",
+      "unavailable": "음성 모델의 목소리 목록을 읽지 못했습니다. 잠시 후 다시 시도하세요.",
+      "noService": "목소리를 고르려면 설정에서 음성 서비스를 추가하세요.",
+      "clones": "{model}은(는) 샘플이 있으면 목소리를 복제하고, 없으면 고른 목소리로 읽습니다.",
+      "named": "{model}은(는) 고른 목소리로 읽으며 샘플 복제는 지원하지 않습니다.",
+      "removeSample": "샘플 삭제",
+      "replaceSample": "샘플 교체",
+      "uploadSample": "목소리 샘플 업로드",
+      "sampleHint": "캐릭터가 말하는 깨끗한 녹음 10~30초(mp3, wav, m4a, aac). 목소리나 샘플을 바꾸면 그 캐릭터가 말하는 샷의 대사 음성이 지워집니다."
     }
   },
   "project": {
@@ -503,7 +526,9 @@
     "edit": {
       "open": "프로젝트 편집",
       "title": "프로젝트 편집",
-      "description": "화풍과 화면 비율은 만들 때 그대로 유지됩니다."
+      "description": "화풍과 화면 비율은 만들 때 그대로 유지됩니다.",
+      "pinnedVoices": "목소리 고정",
+      "pinnedVoicesHint": "각 대사를 음성 모델이 캐릭터의 목소리로 읽고, 샷 영상은 무음으로 만든 뒤 대사에 립싱크합니다. 캐릭터가 모든 샷에서 같은 목소리를 냅니다. 음성과 립싱크 서비스가 필요합니다."
     },
     "tabs": {
       "episodes": "에피소드",
@@ -624,7 +649,10 @@
       "default": "기본 모델",
       "text": "텍스트 모델",
       "image": "이미지 모델",
-      "video": "영상 모델"
+      "video": "영상 모델",
+      "speech": "음성 모델",
+      "lipsync": "립싱크 모델",
+      "vision": "비전 모델"
     },
     "resolution": "해상도 {resolution}. 해상도 변경",
     "refresh": "새로고침",
@@ -747,6 +775,16 @@
         "atmosphere": "분위기",
         "videoPrompt": "영상 프롬프트"
       },
+      "continuity": {
+        "title": "연속성",
+        "toggle": "샷 #{number}에서 컷 없이 이어짐",
+        "hint": "영상이 샷 #{number}의 마지막 프레임에서 시작해 두 샷이 하나의 테이크로 재생됩니다. 그 샷의 영상이 준비된 뒤 생성되며, 참조 이미지는 보내지 않습니다.",
+        "capped": "앞 샷에 이어지는 샷은 연속 두 개까지입니다. 참조 이미지가 없어 얼굴이 점점 달라지기 때문입니다.",
+        "noFirstFrame": "{model}은(는) 첫 프레임을 받지 않으므로 이 샷은 앞 샷에 이어질 수 없습니다. 지원하는 모델을 고르거나 이 옵션을 끄세요.",
+        "noMedia": "앞 샷에 이어지는 샷에는 참조 영상이나 오디오를 붙일 수 없습니다. 제거하거나 이 옵션을 끄세요.",
+        "waiting": "샷 #{number}의 영상이 아직 생성 중입니다. 완료되면 이 샷은 그 마지막 프레임에서 시작합니다.",
+        "short": "#{number}에서 이어짐"
+      },
       "refs": {
         "title": "레퍼런스 에셋",
         "goGenerate": "{count, plural, other {없는 이미지 #개 생성}}",
@@ -762,7 +800,9 @@
         "character": "캐릭터",
         "prop": "소품",
         "plan": "{model}에 전송: {list}",
-        "notSent": "전송되지 않음: {names}. 한 번의 호출에는 최대 4명, 에셋 5개, 이 모델은 이미지 {count}장까지 담겨요. 프롬프트에서 언급한 에셋이 먼저 전송돼요."
+        "fromKeyframe": "{model}은(는) 키프레임에서 시작하므로 참조 이미지를 보내지 않습니다.",
+        "notSent": "전송되지 않음: {names}. 한 번의 호출에는 최대 4명, 에셋 5개, 이 모델은 이미지 {count}장까지 담겨요. 프롬프트에서 언급한 에셋이 먼저 전송돼요.",
+        "chained": "{model}은(는) 샷 #{number}의 마지막 프레임에서 시작하므로 참조 이미지를 보내지 않습니다."
       },
       "extra": {
         "title": "추가 레퍼런스",
@@ -803,7 +843,12 @@
         "regenerate": "다시 생성",
         "seed": "{model} · 시드 {seed}",
         "retakeSeed": "이 시드로 다시 생성",
-        "notSent": "이 버전에는 보내지 않음: 호출당 한도 초과"
+        "notSent": "이 버전에는 보내지 않음: 호출당 한도 초과",
+        "fromKeyframe": "키프레임에서 시작했습니다.",
+        "notSentKeyframe": "이 버전에서는 보내지 않음: 키프레임에서 시작했습니다",
+        "continued": "샷 #{number}의 마지막 프레임에서 시작했습니다.",
+        "notSentChained": "이 버전에는 보내지 않음: 앞 샷의 마지막 프레임에서 시작했습니다",
+        "lipSynced": "립싱크됨"
       },
       "batch": {
         "progress": "영상 요청 중 {done}/{total}",
@@ -824,6 +869,86 @@
         "turnaround": "{model}은(는) 측면과 뒷모습 뷰도 써서 캐릭터가 돌아서도 모습을 유지해요. {names}에게는 아직 없어요.",
         "turnaroundAction": "생성 (이미지 {count}장)",
         "dismiss": "닫기"
+      },
+      "keyframes": {
+        "title": "키프레임",
+        "draw": "키프레임 그리기",
+        "redraw": "다시 그리기",
+        "drawing": "그리는 중",
+        "remove": "빼기",
+        "none": "아직 키프레임이 없습니다. 키프레임은 샷의 시작 장면을 담은 정지 이미지로, 캐릭터·장면·소품 이미지로 그리며 영상은 여기서 시작합니다.",
+        "alt": "샷 #{number}의 키프레임",
+        "used": "영상은 이 키프레임에서 시작합니다. 참조 이미지는 함께 보내지 않습니다.",
+        "unsupported": "{model}은(는) 첫 프레임을 받지 않으므로 참조 이미지로 영상을 만듭니다.",
+        "defaultModel": "에피소드의 영상 모델",
+        "prompt": "키프레임 프롬프트",
+        "promptHint": "비워 두면 샷의 구도, 영상 프롬프트의 첫 장면, 장소로 구성합니다.",
+        "notUsed": "키프레임을 쓰지 않았습니다. 이 모델이 첫 프레임을 받지 않거나, 샷에 참조 영상이나 오디오가 있습니다.",
+        "alreadyDrawing": "이 샷의 키프레임을 이미 그리는 중입니다.",
+        "sheet": "키프레임 {done}/{total}",
+        "sheetTitle": "키프레임",
+        "sheetBody": "영상을 만들기 전에 에피소드 전체의 얼굴, 의상, 빛을 비교하세요. 샷을 클릭하면 열립니다.",
+        "open": "샷 #{number} 열기",
+        "failed": "마지막 키프레임이 실패했습니다",
+        "close": "닫기",
+        "drawMissing": "빠진 키프레임 {count}개 그리기",
+        "batch": {
+          "progress": "키프레임 요청 중 {done}/{total}",
+          "summary": "시작 {started}, 그리는 중 {already}, 실패 {failed}"
+        },
+        "continued": "이 샷은 샷 #{number}에 이어지므로 영상이 키프레임이 아니라 그 샷의 마지막 프레임에서 시작합니다."
+      },
+      "voice": {
+        "dialogue": "대사",
+        "speaker": "화자",
+        "nobody": "아무도 말하지 않음",
+        "line": "대사",
+        "linePlaceholder": "화자가 실제로 하는 말",
+        "lineHint": "샷마다 화자는 한 명입니다. 따옴표나 지문 없이 말하는 내용만 쓰세요.",
+        "title": "대사 음성",
+        "pinned": "목소리 고정",
+        "speak": "대사 음성 만들기",
+        "respeak": "다시 만들기",
+        "speaking": "만드는 중…",
+        "lipSync": "립싱크",
+        "syncing": "립싱크 중…",
+        "noLine": "에디터에서 화자를 고르고 대사를 쓰면 만들 수 있습니다.",
+        "seconds": "{seconds}초",
+        "syncFailed": "립싱크 실패: {error}",
+        "pinnedHint": "영상은 무음으로 만들어지고, 완성되면 이 음성에 립싱크됩니다.",
+        "willSync": "영상은 무음으로 만들어지고, 완성되면 대사에 립싱크됩니다."
+      },
+      "qa": {
+        "title": "샷 검사",
+        "check": "검사",
+        "again": "다시 검사",
+        "checking": "검사 중…",
+        "verdict": {
+          "ok": "문제 없음",
+          "check": "확인 필요"
+        },
+        "result": {
+          "ok": "정상",
+          "flag": "지적",
+          "skipped": "건너뜀"
+        },
+        "points": {
+          "people": "인물",
+          "outfit": "의상",
+          "scene": "장소",
+          "artifacts": "결함"
+        },
+        "skipped": "건너뜀: 비교할 참조 이미지가 없습니다.",
+        "hint": "비전 모델이 메인 버전의 세 프레임을 참조 이미지와 비교해 남는 인물, 의상, 장소, 눈에 띄는 결함을 확인합니다. 얼굴 일치는 판단하지 않으며 병합을 막지도 않습니다.",
+        "noVideo": "영상을 만들면 검사할 수 있습니다.",
+        "by": "검사 모델: {model}",
+        "checkNew": "{count, plural, other {영상 #개 검사}}",
+        "checkSelected": "선택 항목 검사 ({count})",
+        "allChecked": "검사 완료",
+        "batch": {
+          "progress": "샷 검사 중 {done}/{total}",
+          "summary": "검사 {started}, 실패 {failed}"
+        }
       }
     },
     "export": {
@@ -854,7 +979,19 @@
       "toVideo": "영상 제작으로 가기",
       "noVideo": "영상 없음",
       "previewShot": "샷 #{number} 미리 보기",
-      "shotPreview": "샷 #{number}"
+      "shotPreview": "샷 #{number}",
+      "look": "시리즈 룩",
+      "lookHint": "병합할 때마다 모든 에피소드 영상에 적용됩니다.",
+      "looks": {
+        "none": "없음",
+        "warm": "웜",
+        "cool": "쿨",
+        "teal_orange": "틸 앤 오렌지",
+        "faded": "페이디드",
+        "mono": "흑백"
+      },
+      "colorMatch": "키프레임에 색 맞추기",
+      "colorMatchHint": "각 클립의 색을 시작 키프레임 쪽으로 맞춰 컷이 자연스럽게 이어지게 합니다. 키프레임이 없는 클립은 그대로 둡니다."
     },
     "tasks": {
       "open": "생성 작업",
@@ -875,7 +1012,9 @@
       "kind": {
         "image": "이미지",
         "video": "영상",
-        "merge": "합치기"
+        "merge": "합치기",
+        "speech": "대사 음성",
+        "lipsync": "립싱크"
       },
       "owner": {
         "shot": "샷 {label}",

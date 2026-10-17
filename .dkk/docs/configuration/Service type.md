@@ -6,11 +6,11 @@
 
 ## Summary
 
-text, image or video — each stage needs exactly one active service of the type it uses.
+text, image or video — each stage needs exactly one active service of the type it uses; speech and lipsync are optional and serve only pinned voices (adr-0021), and vision (a chat model that reads images) only shot checks (adr-0022), so readiness never waits for them.
 
 ## Meaning
 
-text, image or video — each stage needs exactly one active service of the type it uses.
+text, image or video — each stage needs exactly one active service of the type it uses; speech and lipsync are optional and serve only pinned voices (adr-0021), and vision (a chat model that reads images) only shot checks (adr-0022), so readiness never waits for them.
 
 
 

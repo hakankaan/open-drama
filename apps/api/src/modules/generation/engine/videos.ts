@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { videoCapsFor, type AspectRatio, type Resolution, type VideoProviderCaps } from '@open-drama/contracts';
+import { VIDEO_TASK_TYPES, videoCapsFor, type AspectRatio, type Resolution, type VideoProviderCaps } from '@open-drama/contracts';
 import { db } from '../../../db/client';
 import { episodes, generationTasks, shots } from '../../../db/schema';
 import { env } from '../../../env';
@@ -11,7 +11,8 @@ import { videoAdapterFor } from '../adapters/registry';
 import { ProviderError, type FormatMention, type ResultMedia, type VideoAdapter } from '../adapters/types';
 import { ConfigError } from './errors';
 import { claimTask, completeTask, detach, generate, recordResultUrl, resolveGeneration, type ResolvedGeneration } from './lifecycle';
-import { normalizeReferenceImages, resolvePublicMediaUrls } from './references';
+import { autoLipSync } from './lipsync';
+import { normalizeFirstFrame, normalizeReferenceImages, resolvePublicMediaUrls } from './references';
 
 /** Video polling profile (adr-0005): every 10 s, at most 300 attempts. */
 export const VIDEO_POLL = { intervalMs: 10_000, attempts: 300, maxMs: 55 * 60_000 };
@@ -73,21 +74,33 @@ export interface SubmitVideoInput {
   /** Only for a model that takes one; recorded on the task so a retake can reuse it (adr-0017). */
   seed?: number;
   negativePrompt: string;
+  /** The stored still the video starts from, for a model that takes a first frame; no reference images go with it. */
+  firstFrame?: string;
+  /**
+   * Finds the first frame when it does not exist yet (a continued shot waits for the shot before it): runs before the
+   * task takes an episode slot, and resolves to null when the task is no longer wanted. Its errors fail the task.
+   */
+  firstFrameFrom?: (taskId: number) => Promise<string | null>;
   /** Recorded on the task for the UI (slots, unmatched mentions). */
   params: Record<string, unknown>;
 }
 
-/** Stores the result and makes it the shot's current video (AttachShotVideoOnGeneration); a deleted shot is left alone. */
+/**
+ * Stores the result and makes it the shot's current video (AttachShotVideoOnGeneration); a deleted shot is left alone.
+ * A silent video made for pinned voices goes on to its lip sync (adr-0021).
+ */
 export async function completeVideo(taskId: number, shotId: number, media: ResultMedia, serviceBaseUrl: string | undefined) {
   recordResultUrl(taskId, media.url);
   const path = media.file ? media.file : media.url ? await storeRemoteFile(media.url, 'video', serviceBaseUrl) : null;
   if (!path) throw new ProviderError('The provider returned no video');
   const durationSeconds = await assertVideo(path);
   await deriveRenditions(path, 'video');
-  completeTask(taskId, { localPath: path, durationSeconds }, (tx) =>
+  const done = completeTask(taskId, { localPath: path, durationSeconds }, (tx) =>
     tx.update(shots).set({ videoPath: path, videoDurationSeconds: durationSeconds }).where(eq(shots.id, shotId)).run(),
   );
   logger.info({ taskId, shotId, path, durationSeconds }, 'video task completed');
+  const params = db.select({ params: generationTasks.params }).from(generationTasks).where(eq(generationTasks.id, taskId)).get()?.params;
+  if (done && typeof params?.autoLipSync === 'string') autoLipSync(taskId, shotId, params.autoLipSync);
 }
 
 /**
@@ -121,6 +134,7 @@ async function run(taskId: number, resolved: ResolvedVideo, input: SubmitVideoIn
     generateAudio: input.generateAudio,
     seed: input.seed,
     negativePrompt: input.negativePrompt,
+    firstFrame: input.firstFrame ? await normalizeFirstFrame(input.firstFrame) : undefined,
   };
   // Preparing the references can take a while too: check once more right before the provider is paid.
   if (!stillWanted(taskId, input.shotId)) return;
@@ -151,13 +165,20 @@ export function submitShotVideo(resolved: ResolvedVideo, input: SubmitVideoInput
         references: { images: input.referenceImages.length, videos: input.referenceVideos.length, audios: input.referenceAudios.length },
       },
     },
-    { column: generationTasks.shotId, id: input.shotId, busyMessage: 'A video is already being generated for this shot' },
+    {
+      column: generationTasks.shotId,
+      id: input.shotId,
+      busyTypes: VIDEO_TASK_TYPES,
+      busyMessage: 'A video is already being generated or lip-synced for this shot',
+    },
   );
   logger.info({ taskId, provider: resolved.provider, model: resolved.model, shotId: input.shotId }, 'video task submitted');
-  detach(taskId, 'video', () =>
-    perEpisode(input.episodeId, () => run(taskId, resolved, input), () =>
+  detach(taskId, 'video', async () => {
+    const firstFrame = input.firstFrameFrom ? await input.firstFrameFrom(taskId) : input.firstFrame;
+    if (input.firstFrameFrom && firstFrame === null) return;
+    await perEpisode(input.episodeId, () => run(taskId, resolved, { ...input, firstFrame: firstFrame ?? undefined }), () =>
       logger.info({ taskId, episodeId: input.episodeId, limit: env.OPEN_DRAMA_VIDEO_CONCURRENCY }, 'video task waiting for a slot'),
-    ),
-  );
+    );
+  });
   return taskId;
 }

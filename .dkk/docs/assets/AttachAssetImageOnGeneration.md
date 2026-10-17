@@ -24,4 +24,4 @@ Triggered by generation.ImageGenerated (a cross-context event, see flow AssetSta
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | accepted |

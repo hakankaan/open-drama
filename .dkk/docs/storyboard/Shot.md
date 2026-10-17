@@ -6,7 +6,7 @@
 
 ## Summary
 
-One storyboard segment of an episode. Owns its description, atmosphere, duration, bindings, prompts (image and video) with the video prompt's staleness, reference media and the current video plus its generation history (each version with its model, seed and the references it left out).
+One storyboard segment of an episode. Owns its description, atmosphere, duration, bindings, prompts (the keyframe's, stored as the image prompt, and the video's) with the video prompt's staleness, reference media, its keyframe, whether it continues the shot before it in one take, its spoken line with its speaker and line audio, and the current video plus its generation history (each version with its model, seed, the references it left out, the keyframe or the previous shot's frame it started from, and whether it is a lip sync of another version), and the vision service's check of the current video.
 
 
 
@@ -19,6 +19,13 @@ One storyboard segment of an episode. Owns its description, atmosphere, duration
 - videoPromptStale is set when a field the video prompt was written from changes after it was written (duration, description, atmosphere, framing, scene or bound characters and props), since the prompt carries per-second timings; any write of the video prompt clears it, except a generated prompt whose sources changed while it was being written, which stays stale. A stale prompt is not blocked from generation; the video-prompt batch picks it up by default.
 - The current video is the most recent successful generation unless the creator picks another from history; the task behind the current video cannot be deleted from history.
 - Reference images beyond the video provider's limit are left out (bound assets first) and reported to the creator.
+- A shot with a keyframe starts its video from it on a model that takes a first frame, unless the request says otherwise or carries reference video or audio; such a request sends the keyframe alone, without reference images. The keyframe's own task cannot be deleted while it is the shot's keyframe, and only a stored file can be set as one.
+- A shot marked as continuing the previous one (the previous live shot by number) starts its video from that shot's last frame instead of its keyframe, on a model that takes a first frame and without reference video or audio; the first shot's mark means nothing, and at most two shots in a row continue the one before. Its request waits while the previous shot's video is generating and fails when that fails; one is refused while the previous shot has no video and none generating.
+- A shot has at most one speaker, one of its bound characters other than a narrator, and one line (at most 1000 characters, the words only). Unbinding the speaker, deleting it, or changing the line, the speaker or the speaker's voice or sample clears the line audio.
+- Line audio grows the shot to hold half a second of lead-in, the line and half a second after it (never shrinking it, at most 30 seconds) and marks the video prompt stale.
+- Under pinned voices a shot with a line needs its line audio before a video is requested, and the line after its lead-in must fit the length the model makes; the video is made silent, its prompt names who speaks with their face clearly visible (and says nobody speaks in a shot without a line), and LipSyncPinnedVideo syncs it once it is done.
+- A lip sync starts from the shot's current video, or the video a current lip sync was made from, never from a synced copy, and is refused when the line after its lead-in does not fit that video. Its result becomes the current video only while the shot still plays the source and has the same line audio.
+- A check belongs to the video it judged: it is stored only while the shot still plays that video, and is not shown once the shot plays another. It is a signal for the creator, never a gate on generation or the merge.
 
 
 ## Relationships
@@ -32,6 +39,13 @@ One storyboard segment of an episode. Owns its description, atmosphere, duration
 | Handles | `GenerateShotVideoPrompt` |
 | Handles | `RequestShotVideo` |
 | Handles | `AttachShotVideo` |
+| Handles | `RequestShotKeyframe` |
+| Handles | `AttachShotKeyframe` |
+| Handles | `RequestLineAudio` |
+| Handles | `AttachLineAudio` |
+| Handles | `RequestLipSync` |
+| Handles | `AttachLipSyncedVideo` |
+| Handles | `CheckShot` |
 | Emits | `ShotsSaved` |
 | Emits | `ShotCreated` |
 | Emits | `ShotUpdated` |
@@ -39,10 +53,21 @@ One storyboard segment of an episode. Owns its description, atmosphere, duration
 | Emits | `ShotVideoPromptSaved` |
 | Emits | `ShotVideoRequested` |
 | Emits | `ShotVideoAttached` |
+| Emits | `ShotKeyframeRequested` |
+| Emits | `ShotKeyframeAttached` |
+| Emits | `LineAudioRequested` |
+| Emits | `LineAudioAttached` |
+| Emits | `LipSyncRequested` |
+| Emits | `LipSyncedVideoAttached` |
+| Emits | `ShotChecked` |
 
 ## Linked ADRs
 
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0017](../../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |
-| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | accepted |
+| [adr-0019](../../adr/adr-0019.md) | Shot keyframes and the finishing pass | proposed |
+| [adr-0020](../../adr/adr-0020.md) | Continuous takes between shots | proposed |
+| [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |
+| [adr-0022](../../adr/adr-0022.md) | Shot checks by a vision model | proposed |

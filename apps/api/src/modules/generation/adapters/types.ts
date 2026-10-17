@@ -44,6 +44,30 @@ export interface VideoRecord {
   seed?: number;
   /** What the video must not show; adapters send it where the model takes one (adr-0017). */
   negativePrompt: string;
+  /** The picture the video starts from, as a data URL; set only for a model whose caps take one, and never with reference images. */
+  firstFrame?: string;
+}
+
+export interface SpeechRecord {
+  taskId: number;
+  /** The words to speak. */
+  text: string;
+  /** One of the model's voice names, or empty for its default; ignored when a voice sample is sent. */
+  voice: string;
+  /** A recording whose voice is cloned, as a URL the provider can fetch; set only for a model that clones. */
+  voiceSample?: string;
+  /** The content language (ISO 639-1). */
+  language: string;
+}
+
+export interface LipSyncRecord {
+  taskId: number;
+  /** The stored video whose mouths are re-synced, and the speech they follow (`static/…`); offline adapters read these. */
+  videoPath: string;
+  audioPath: string;
+  /** The same two as addresses the provider can fetch (URLs or data URIs); set for adapters that send requests. */
+  videoUrl?: string;
+  audioUrl?: string;
 }
 
 /** A provider result: an URL to download, inline base64 bytes, or a file an offline adapter already stored. */
@@ -104,6 +128,22 @@ export interface VideoAdapter extends Dialect<VideoRecord> {
    */
   describeModel?(model: string): Promise<{ caps: Partial<VideoProviderCaps>; formatMention?: FormatMention }>;
 }
+
+/**
+ * What a speech model offers: whether it takes a named voice and the names it lists (empty when it lists none), and
+ * whether it clones a recorded voice.
+ */
+export interface SpeechVoiceInfo {
+  named: boolean;
+  voices: string[];
+  cloning: boolean;
+}
+
+export interface SpeechAdapter extends Dialect<SpeechRecord> {
+  describeModel(model: string): Promise<SpeechVoiceInfo>;
+}
+
+export type LipSyncAdapter = Dialect<LipSyncRecord>;
 
 /** An error the provider reported, with its HTTP status when there was one. */
 export class ProviderError extends Error {

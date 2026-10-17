@@ -7,7 +7,7 @@ export const UploadedMedia = z.object({
 });
 export type UploadedMedia = z.infer<typeof UploadedMedia>;
 
-export const StorageBucket = z.enum(['database', 'images', 'videos', 'merged', 'uploads', 'temp', 'workspace', 'other']);
+export const StorageBucket = z.enum(['database', 'images', 'videos', 'audio', 'merged', 'uploads', 'temp', 'workspace', 'other']);
 export type StorageBucket = z.infer<typeof StorageBucket>;
 
 export const StorageUsage = z.object({

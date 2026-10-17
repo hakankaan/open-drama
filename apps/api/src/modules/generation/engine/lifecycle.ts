@@ -1,6 +1,6 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
-import type { ServiceType } from '@open-drama/contracts';
+import type { GenerationType } from '@open-drama/contracts';
 import { db } from '../../../db/client';
 import { generationTasks } from '../../../db/schema';
 import { nowIso } from '../../../db/schema/columns';
@@ -38,16 +38,23 @@ export interface ResolvedGeneration<A> {
   model: string;
 }
 
+const LABEL: Record<GenerationType, { what: string; plural: string }> = {
+  image: { what: 'Image', plural: 'images' },
+  video: { what: 'Video', plural: 'videos' },
+  speech: { what: 'Speech', plural: 'speech' },
+  lipsync: { what: 'Lip sync', plural: 'lip syncs' },
+};
+
 /**
  * The adapter and credentials for a task: explicit service → the episode's lock → the highest-priority active one.
  * When the episode's lock for the type is still empty (`lockFor`), the resolved service claims it here, before any
  * work is dispatched, and a request that lost that claim to a concurrent one goes on with the winner (adr-0016).
  * A video request without a model pick in the episode's locked service runs the episode's pinned model, claiming
- * the pin on first use (adr-0017). With OPEN_DRAMA_STUB_PROVIDERS=1 the offline adapter serves every request and
- * nothing is locked or pinned.
+ * the pin on first use (adr-0017). Speech and lip sync are not locked per episode (adr-0021). With
+ * OPEN_DRAMA_STUB_PROVIDERS=1 the offline adapter serves every request and nothing is locked or pinned.
  */
 export function resolveGeneration<A>(
-  type: Exclude<ServiceType, 'text'>,
+  type: GenerationType,
   adapterFor: (provider: string) => A | null,
   opts: { explicitId?: number; lockedId?: number | null; lockFor?: number; model?: string },
 ): ResolvedGeneration<A> {
@@ -57,15 +64,15 @@ export function resolveGeneration<A>(
     return { adapter, config: null, serviceId: null, provider: 'stub', model: `stub-${type}` };
   }
   let resolved = resolveService(type, { explicitId: opts.explicitId, lockedId: opts.lockedId });
-  if (!resolved) throw precondition(`Add an active ${type} service with an API key in Settings before generating ${type}s`);
+  if (!resolved) throw precondition(`Add an active ${type} service with an API key in Settings before generating ${LABEL[type].plural}`);
   let lockedId = opts.lockedId;
-  if (opts.lockFor !== undefined && lockedId == null) {
+  if (opts.lockFor !== undefined && lockedId == null && (type === 'image' || type === 'video')) {
     lockedId = claimServiceLock(opts.lockFor, type, resolved.row.id);
     if (lockedId !== resolved.row.id) resolved = resolveService(type, { lockedId }) ?? resolved;
   }
   const { row } = resolved;
   const adapter = adapterFor(row.provider);
-  if (!adapter) throw precondition(`${type === 'image' ? 'Image' : 'Video'} generation through ${row.provider} is not available yet`);
+  if (!adapter) throw precondition(`${LABEL[type].what} generation through ${row.provider} is not available yet`);
   const pins = type === 'video' && opts.lockFor !== undefined && !opts.model && row.id === lockedId;
   const model = opts.model || (pins ? claimVideoModel(opts.lockFor!, row.models) : row.models[0]) || '';
   if (!model) throw precondition(`The ${type} service ${row.name} lists no model; add one in Settings`);
@@ -81,18 +88,20 @@ export function resolveGeneration<A>(
 }
 
 /**
- * Inserts a task row unless the owner already has a task of the type processing (409). The check and the insert
- * share one transaction.
+ * Inserts a task row unless the owner already has a task of the type (or of `busyTypes`, the types that write the
+ * same thing) processing (409). The check and the insert share one transaction.
  */
 export function claimTask(
-  values: typeof generationTasks.$inferInsert & { type: 'image' | 'video' },
-  owner: { column: SQLiteColumn; id: number; busyMessage: string },
+  values: typeof generationTasks.$inferInsert & { type: GenerationType },
+  owner: { column: SQLiteColumn; id: number; busyMessage: string; busyTypes?: readonly GenerationType[] },
 ): number {
   return db.transaction((tx) => {
     const running = tx
       .select({ id: generationTasks.id })
       .from(generationTasks)
-      .where(and(eq(generationTasks.type, values.type), eq(owner.column, owner.id), eq(generationTasks.status, 'processing')))
+      .where(
+        and(inArray(generationTasks.type, owner.busyTypes ?? [values.type]), eq(owner.column, owner.id), eq(generationTasks.status, 'processing')),
+      )
       .get();
     if (running) throw conflict(owner.busyMessage, { taskId: running.id });
     return tx.insert(generationTasks).values(values).returning({ id: generationTasks.id }).get().id;

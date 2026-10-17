@@ -1,0 +1,9 @@
+name: AttachLineAudioOnGeneration
+description: >-
+  Triggered by a completed speech task tagged with a shot — makes the audio that shot's line audio while the line, the
+  speaker and the speaker's voice are what the request spoke.
+then:
+  commands:
+    - AttachLineAudio
+adr_refs:
+  - adr-0021

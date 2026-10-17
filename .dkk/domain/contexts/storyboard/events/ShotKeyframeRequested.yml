@@ -1,0 +1,20 @@
+name: ShotKeyframeRequested
+description: A keyframe image was requested for a shot with its framed prompt and ordered reference images.
+fields:
+  - name: shotId
+    type: ID
+  - name: dramaId
+    type: ID
+  - name: prompt
+    type: string
+  - name: imageServiceId
+    type: ID
+  - name: model
+    type: string
+  - name: aspectRatio
+    type: string
+  - name: referenceImageUrls
+    type: string[]
+raised_by: Shot
+adr_refs:
+  - adr-0019

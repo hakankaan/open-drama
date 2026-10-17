@@ -13,8 +13,11 @@ export const TaskSummary = z.object({
 });
 export type TaskSummary = z.infer<typeof TaskSummary>;
 
-export const GenerationType = z.enum(['image', 'video']);
+/** `speech`: a shot's line in its speaker's voice; `lipsync`: a shot's video re-synced to that line (adr-0021). */
+export const GenerationType = z.enum(['image', 'video', 'speech', 'lipsync']);
 export type GenerationType = z.infer<typeof GenerationType>;
+/** The tasks whose results are versions of a shot's video: generated, or lip-synced from one of those (adr-0021). */
+export const VIDEO_TASK_TYPES = ['video', 'lipsync'] as const satisfies readonly GenerationType[];
 
 /** GenerationTaskStatus: one task as the API shows it (the provider's result URL and task id stay internal). */
 export const GenerationTask = z.object({

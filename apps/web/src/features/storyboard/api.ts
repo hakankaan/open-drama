@@ -7,10 +7,17 @@ import {
   ShotCard,
   ShotVideo,
   ShotVideoStarted,
+  SpeechVoices,
+  TaskStarted,
   VideoPromptBatchStarted,
   VideoPromptResult,
   JobStarted,
+  Shot,
+  type CheckShot,
   type CreateShot,
+  type RequestLineAudio,
+  type RequestLipSync,
+  type RequestShotKeyframe,
   type RequestShotVideo,
   type StartVideoPromptBatch,
   type TextModelOverride,
@@ -25,12 +32,17 @@ export const storyboardKeys = {
   videos: (shotId: number) => ['storyboard', 'videos', shotId] as const,
 };
 
-/** Polling (Plan 3 §4.7): while a shot video generates, or the breakdown or prompt batch runs (their results land here). */
+/**
+ * Polling (Plan 3 §4.7): while a shot video, keyframe, line audio or lip sync generates, or the breakdown or prompt
+ * batch runs (their results land here).
+ */
 const active = (d: EpisodeShotList | undefined) =>
   !!d &&
   (d.breakdown?.status === 'running' ||
     d.videoPromptBatch?.status === 'running' ||
-    d.shots.some((s) => s.latestVideoTask?.status === 'processing'));
+    d.shots.some((s) =>
+      [s.latestVideoTask, s.latestKeyframeTask, s.latestLineAudioTask, s.latestLipSyncTask].some((t) => t?.status === 'processing'),
+    ));
 
 /** EpisodeShotList: the single source of every shot's state in the video stage. */
 export const useEpisodeShots = (episodeId: number) =>
@@ -131,6 +143,45 @@ export function useRequestShotVideo(episodeId: number) {
   const invalidate = useInvalidateEpisode(episodeId);
   return useMutation({ mutationFn: requestShotVideo, onSettled: invalidate });
 }
+
+/** RequestShotKeyframe without the refresh, for a batch that refreshes once at the end. */
+export const requestShotKeyframe = ({ id, ...body }: RequestShotKeyframe & { id: number }) =>
+  request(TaskStarted, 'POST', `/shots/${id}/keyframe`, body);
+
+/** RequestShotKeyframe: the shot follows the task through the polled list (latestKeyframeTask). */
+export function useRequestShotKeyframe(episodeId: number) {
+  const invalidate = useInvalidateEpisode(episodeId);
+  return useMutation({ mutationFn: requestShotKeyframe, onSettled: invalidate });
+}
+
+/** RequestLineAudio (adr-0021): the shot follows the task through the polled list (latestLineAudioTask). */
+export function useRequestLineAudio(episodeId: number) {
+  const invalidate = useInvalidateEpisode(episodeId);
+  return useMutation({
+    mutationFn: ({ id, ...body }: RequestLineAudio & { id: number }) => request(TaskStarted, 'POST', `/shots/${id}/line-audio`, body),
+    onSettled: invalidate,
+  });
+}
+
+/** RequestLipSync (adr-0021): the shot follows the task through the polled list (latestLipSyncTask). */
+export function useRequestLipSync(episodeId: number) {
+  const invalidate = useInvalidateEpisode(episodeId);
+  return useMutation({
+    mutationFn: ({ id, ...body }: RequestLipSync & { id: number }) => request(TaskStarted, 'POST', `/shots/${id}/lip-sync`, body),
+    onSettled: invalidate,
+  });
+}
+
+/** CheckShot (adr-0022): answers once the vision model has looked and the check is stored on the shot. */
+export const checkShot = ({ id, ...body }: CheckShot & { id: number }) => request(Shot, 'POST', `/shots/${id}/qa`, body);
+
+/** What the speech service reads lines in (adr-0021); the catalog behind it changes rarely. */
+export const useSpeechVoices = () =>
+  useQuery({
+    queryKey: ['storyboard', 'speech-voices'],
+    queryFn: () => request(SpeechVoices, 'GET', '/speech/voices'),
+    staleTime: 5 * 60_000,
+  });
 
 /** Completed videos of a shot. The key includes the latest task, so a finished generation refreshes the history. */
 export const useShotVideos = (shotId: number, latestTaskKey: string) =>

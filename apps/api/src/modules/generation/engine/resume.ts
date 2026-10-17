@@ -3,11 +3,13 @@ import { db } from '../../../db/client';
 import { generationTasks, modelServices, shots } from '../../../db/schema';
 import { logger } from '../../../http/logger';
 import { rememberSecret } from '../../../lib/secrets';
-import { imageAdapterFor, videoAdapterFor } from '../adapters/registry';
+import { imageAdapterFor, lipSyncAdapterFor, speechAdapterFor, videoAdapterFor } from '../adapters/registry';
 import type { ServiceConfig } from '../adapters/types';
 import { ConfigError } from './errors';
-import { assetOwnerOf, completeImage, IMAGE_POLL } from './images';
+import { completeImage, IMAGE_POLL, imageOwnerOf } from './images';
 import { detach, failTask, poll, type PollProfile } from './lifecycle';
+import { completeLipSync, LIPSYNC_POLL } from './lipsync';
+import { completeSpeech, SPEECH_POLL } from './speech';
 import { completeVideo, perEpisode, VIDEO_POLL } from './videos';
 
 type TaskRow = typeof generationTasks.$inferSelect;
@@ -22,17 +24,19 @@ type TaskRow = typeof generationTasks.$inferSelect;
 export function resumeInterrupted(): { resumed: number } {
   const tasks = db.select().from(generationTasks).where(eq(generationTasks.status, 'processing')).all();
   for (const task of tasks) {
-    const what = task.type === 'video' ? 'video' : 'image';
     try {
-      resume(task, what);
+      resume(task);
     } catch (err) {
-      failTask(task.id, err, what);
+      failTask(task.id, err, WHAT[task.type]);
     }
   }
   return { resumed: tasks.length };
 }
 
-function resume(task: TaskRow, what: 'video' | 'image') {
+const WHAT: Record<TaskRow['type'], string> = { image: 'image', video: 'video', speech: 'speech', lipsync: 'lip sync' };
+
+function resume(task: TaskRow) {
+  const what = WHAT[task.type];
   const providerTaskId = task.providerTaskId;
   if (!providerTaskId) throw new ConfigError('Interrupted by a server restart before the provider accepted it');
   const service = task.serviceId ? db.select().from(modelServices).where(eq(modelServices.id, task.serviceId)).get() : undefined;
@@ -48,8 +52,8 @@ function resume(task: TaskRow, what: 'video' | 'image') {
   });
   logger.info({ taskId: task.id, providerTaskId, provider: task.provider }, `${what} task resumed after restart`);
 
-  if (what === 'image') {
-    const owner = assetOwnerOf(task);
+  if (task.type === 'image') {
+    const owner = imageOwnerOf(task);
     const adapter = imageAdapterFor(task.provider);
     if (!owner || !adapter) throw new ConfigError('Interrupted by a server restart; this task cannot be resumed');
     detach(task.id, what, async () =>
@@ -58,8 +62,26 @@ function resume(task: TaskRow, what: 'video' | 'image') {
     return;
   }
   const shotId = task.shotId;
+  if (shotId === null) throw new ConfigError('Interrupted by a server restart; this task cannot be resumed');
+  // Speech and lip sync take no episode slot.
+  if (task.type === 'speech') {
+    const adapter = speechAdapterFor(task.provider);
+    if (!adapter) throw new ConfigError('Interrupted by a server restart; this task cannot be resumed');
+    detach(task.id, what, async () =>
+      completeSpeech(task.id, shotId, await poll(adapter, config, task.id, providerTaskId, budget(SPEECH_POLL), what), service.baseUrl),
+    );
+    return;
+  }
+  if (task.type === 'lipsync') {
+    const adapter = lipSyncAdapterFor(task.provider);
+    if (!adapter) throw new ConfigError('Interrupted by a server restart; this task cannot be resumed');
+    detach(task.id, what, async () =>
+      completeLipSync(task.id, shotId, await poll(adapter, config, task.id, providerTaskId, budget(LIPSYNC_POLL), what), service.baseUrl),
+    );
+    return;
+  }
   const adapter = videoAdapterFor(task.provider);
-  if (shotId === null || !adapter) throw new ConfigError('Interrupted by a server restart; this task cannot be resumed');
+  if (!adapter) throw new ConfigError('Interrupted by a server restart; this task cannot be resumed');
   const work = async () =>
     completeVideo(task.id, shotId, await poll(adapter, config, task.id, providerTaskId, budget(VIDEO_POLL), what), service.baseUrl);
   // Like a new request, a resumed video waits for its episode's slot; a shot deleted meanwhile has none to wait for.

@@ -6,7 +6,7 @@
 
 ## Summary
 
-The recommended text, image and video services were written from one key.
+The recommended services (text, image, video, and where offered speech, lip sync and vision) were written from one key.
 
 
 ## Fields
@@ -25,4 +25,6 @@ The recommended text, image and video services were written from one key.
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0022](../../adr/adr-0022.md) | Shot checks by a vision model | proposed |

@@ -4,6 +4,7 @@ import type { z } from 'zod';
 import {
   coverOf,
   isNarrator,
+  VIDEO_TASK_TYPES,
   type AssetKind,
   type CreateShot,
   type EpisodeShotList,
@@ -40,7 +41,11 @@ import { viewsOf } from '../assets/views';
 type ShotRow = typeof shots.$inferSelect;
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-export const toShot = ({ parkedByJobId: _p, createdByJobId: _c, ...row }: ShotRow): Shot => row;
+/** A check of an earlier video is not shown (adr-0022). */
+export const toShot = ({ parkedByJobId: _p, createdByJobId: _c, qa, ...row }: ShotRow): Shot => ({
+  ...row,
+  qa: qa && qa.videoPath === row.videoPath ? qa : null,
+});
 
 /** A live shot (parked shots belong to a running breakdown and are not addressable). */
 export function getShotRow(id: number): ShotRow {
@@ -179,6 +184,34 @@ function writeBindings(tx: Tx, shotId: number, episodeId: number, input: Binding
   return changed;
 }
 
+/**
+ * The speaker rule (adr-0021): the speaker is one of the shot's bound characters (never a narrator, who speaks over
+ * the picture rather than in it), and unbinding them clears it. A new line or speaker clears the line audio, which was
+ * spoken for the old one. Runs after the shot's bindings are written; `current` is null for a new shot.
+ */
+function speakerPatch(
+  tx: Tx,
+  shotId: number,
+  current: Pick<ShotRow, 'speakerId' | 'line'> | null,
+  input: { speakerId?: number | null; line?: string },
+): Partial<Pick<ShotRow, 'speakerId' | 'lineAudioPath' | 'lineAudioSeconds'>> {
+  const speakers = tx
+    .select({ id: characters.id, name: characters.name, role: characters.role })
+    .from(shotCharacters)
+    .innerJoin(characters, eq(characters.id, shotCharacters.characterId))
+    .where(and(eq(shotCharacters.shotId, shotId), isNull(characters.deletedAt)))
+    .all()
+    .filter((c) => !isNarrator(c.name, c.role))
+    .map((c) => c.id);
+  if (input.speakerId != null && !speakers.includes(input.speakerId)) {
+    throw invalid('The speaker must be one of the shot’s characters (not a narrator)', { speakerId: input.speakerId });
+  }
+  let speakerId = input.speakerId !== undefined ? input.speakerId : (current?.speakerId ?? null);
+  if (speakerId !== null && !speakers.includes(speakerId)) speakerId = null;
+  const respoken = current !== null && (speakerId !== current.speakerId || (input.line !== undefined && input.line !== current.line));
+  return { speakerId, ...(respoken ? { lineAudioPath: null, lineAudioSeconds: null } : {}) };
+}
+
 /** The shot fields a video prompt is written from, besides the bound characters and props. */
 const PROMPT_SOURCES = ['durationSeconds', 'description', 'atmosphere', 'shotType', 'angle', 'movement', 'sceneId'] as const;
 
@@ -230,7 +263,7 @@ export function markAssetPromptsStale(tx: Tx, asset: { kind: AssetKind; id: numb
 }
 
 /** The episode's duration is the sum of its live shot durations. */
-function recomputeDuration(tx: Tx, episodeId: number) {
+export function recomputeDuration(tx: Tx, episodeId: number) {
   const total = Number(tx.select({ s: sum(shots.durationSeconds) }).from(shots).where(liveOf(episodeId)).get()?.s ?? 0);
   tx.update(episodes).set({ durationSeconds: total }).where(eq(episodes.id, episodeId)).run();
 }
@@ -239,13 +272,24 @@ function recomputeDuration(tx: Tx, episodeId: number) {
 
 function toCards(rows: ShotRow[]): ShotCard[] {
   const bindings = loadBindings(rows);
-  const tasks = latestTasks('video', generationTasks.shotId, rows.map((r) => r.id));
-  return rows.map((r) => ({ ...toShot(r), bindings: bindings.get(r.id)!, latestVideoTask: tasks.get(r.id) ?? null }));
+  const ids = rows.map((r) => r.id);
+  const videos = latestTasks('video', generationTasks.shotId, ids);
+  const keyframes = latestTasks('image', generationTasks.shotId, ids);
+  const lines = latestTasks('speech', generationTasks.shotId, ids);
+  const syncs = latestTasks('lipsync', generationTasks.shotId, ids);
+  return rows.map((r) => ({
+    ...toShot(r),
+    bindings: bindings.get(r.id)!,
+    latestVideoTask: videos.get(r.id) ?? null,
+    latestKeyframeTask: keyframes.get(r.id) ?? null,
+    latestLineAudioTask: lines.get(r.id) ?? null,
+    latestLipSyncTask: syncs.get(r.id) ?? null,
+  }));
 }
 
 export const shotCard = (row: ShotRow): ShotCard => toCards([row])[0]!;
 
-/** EpisodeShotList: live shots in shot order with bindings and their latest video task, plus the storyboard jobs. */
+/** EpisodeShotList: live shots in shot order with bindings and their latest video and keyframe tasks, plus the storyboard jobs. */
 export function getEpisodeShots(episodeId: number): EpisodeShotList {
   getEpisodeRow(episodeId);
   const rows = liveShotRows(episodeId);
@@ -285,7 +329,7 @@ function checkReferenceMedia(media: ReferenceMedia | undefined) {
 export function createShot(input: z.output<typeof CreateShot>): ShotCard {
   const ep = getEpisodeRow(input.episodeId);
   assertNoBreakdown(ep.id);
-  const { episodeId, sceneId, characterIds, propIds, shotNumber, ...fields } = input;
+  const { episodeId, sceneId, characterIds, propIds, shotNumber, speakerId, ...fields } = input;
   const id = db.transaction((tx) => {
     assertBindable(tx, ep.dramaId, { sceneId, characterIds, propIds });
     const next = (tx.select({ n: max(shots.shotNumber) }).from(shots).where(liveOf(episodeId)).get()?.n ?? 0) + 1;
@@ -298,6 +342,7 @@ export function createShot(input: z.output<typeof CreateShot>): ShotCard {
       .returning({ id: shots.id })
       .get();
     writeBindings(tx, row.id, episodeId, { sceneId, characterIds, propIds });
+    if (speakerId != null) tx.update(shots).set(speakerPatch(tx, row.id, null, { speakerId })).where(eq(shots.id, row.id)).run();
     recomputeDuration(tx, episodeId);
     return row.id;
   });
@@ -313,20 +358,22 @@ export function updateShot(id: number, input: z.output<typeof UpdateShot>): Shot
 
 /**
  * UpdateShot as written by the creator or an agent tool: any field; bindings are validated and linked; `videoPath`
- * must be one of the shot's completed videos (picking from history), and brings that video's duration along.
+ * must be one of the shot's completed videos (picking from history), and brings that video's duration along; a
+ * keyframe must be a stored file.
  */
 export function writeShotUpdate(id: number, input: z.output<typeof UpdateShot>): ShotCard {
   const current = getShotRow(id);
   const ep = getEpisodeRow(current.episodeId);
   assertSomething(input);
   checkReferenceMedia(input.referenceMedia);
-  const { characterIds, propIds, videoPath, ...fields } = input;
+  if (input.keyframePath && !existsSync(toAbsolute(input.keyframePath))) throw invalid(`No stored file at ${input.keyframePath}`);
+  const { characterIds, propIds, videoPath, speakerId, ...fields } = input;
   let videoDurationSeconds: number | null | undefined;
   if (videoPath !== undefined) {
     const task = db
       .select({ durationSeconds: generationTasks.durationSeconds })
       .from(generationTasks)
-      .where(and(eq(generationTasks.shotId, id), eq(generationTasks.type, 'video'), eq(generationTasks.status, 'completed'), eq(generationTasks.localPath, videoPath)))
+      .where(and(eq(generationTasks.shotId, id), inArray(generationTasks.type, VIDEO_TASK_TYPES), eq(generationTasks.status, 'completed'), eq(generationTasks.localPath, videoPath)))
       .get();
     if (!task) throw invalid('That video is not one of this shot’s results');
     if (!existsSync(toAbsolute(videoPath))) throw invalid(`No stored file at ${videoPath}`);
@@ -337,7 +384,8 @@ export function writeShotUpdate(id: number, input: z.output<typeof UpdateShot>):
     const rebound = writeBindings(tx, id, ep.id, { sceneId: fields.sceneId, characterIds, propIds });
     const video = videoPath !== undefined ? { videoPath, videoDurationSeconds } : {};
     const stale = promptStaleness(current, fields, rebound);
-    tx.update(shots).set({ ...fields, ...video, ...stale, updatedAt: nowIso() }).where(eq(shots.id, id)).run();
+    const speaker = speakerPatch(tx, id, current, { speakerId, line: fields.line });
+    tx.update(shots).set({ ...fields, ...video, ...stale, ...speaker, updatedAt: nowIso() }).where(eq(shots.id, id)).run();
     if (fields.durationSeconds !== undefined) recomputeDuration(tx, ep.id);
   });
   touchDrama(ep.dramaId);
@@ -375,6 +423,9 @@ export interface ShotInput extends BindingInput {
   bgmPrompt?: string;
   soundEffect?: string;
   durationSeconds?: number;
+  continuesPrevious?: boolean;
+  speakerId?: number | null;
+  line?: string;
 }
 
 /**
@@ -405,12 +456,13 @@ export function saveShots(
         .run();
     }
     const numbers: number[] = [];
-    for (const { sceneId, characterIds, propIds, shotNumber, ...fields } of batch.shots) {
+    for (const { sceneId, characterIds, propIds, shotNumber, speakerId, ...fields } of batch.shots) {
       const existing = tx.select().from(shots).where(and(liveOf(episodeId), eq(shots.shotNumber, shotNumber))).get();
       const values = { ...fields, ...(sceneId !== undefined ? { sceneId } : {}) };
       if (existing) {
         const rebound = writeBindings(tx, existing.id, episodeId, { sceneId, characterIds, propIds });
-        tx.update(shots).set({ ...values, ...promptStaleness(existing, values, rebound) }).where(eq(shots.id, existing.id)).run();
+        const speaker = speakerPatch(tx, existing.id, existing, { speakerId, line: fields.line });
+        tx.update(shots).set({ ...values, ...promptStaleness(existing, values, rebound), ...speaker }).where(eq(shots.id, existing.id)).run();
       } else {
         const shotId = tx
           .insert(shots)
@@ -418,6 +470,7 @@ export function saveShots(
           .returning({ id: shots.id })
           .get().id;
         writeBindings(tx, shotId, episodeId, { sceneId, characterIds, propIds });
+        if (speakerId != null) tx.update(shots).set(speakerPatch(tx, shotId, null, { speakerId })).where(eq(shots.id, shotId)).run();
       }
       numbers.push(shotNumber);
     }

@@ -29,6 +29,9 @@
 | ImageModelProvider | external | An image generation endpoint (OpenAI images, Gemini image, Volcengine and similar) behind an image provider adapter. Returns a URL or inline base64, synchronously or through an async task. |
 | VideoModelProvider | external | A video generation endpoint (Seedance, MiniMax, Wan and similar) behind a video provider adapter. Accepts a prompt plus reference images, videos and audio, and returns a task id to poll. |
 | Assistant | external | The creator's AI assistant (Claude Code, Claude Desktop, claude.ai, Cursor, Codex CLI and other MCP clients) acting for the creator through the MCP endpoint with the server-issued token. It issues the same commands the Creator issues from the studio, bound by the assistant instructions and the server's refusals (revision tokens, replace and force flags, locks); it never sees an API key. |
+| SpeechModelProvider | external | A text-to-speech endpoint behind a speech provider adapter. Reads a shot's line in one of its named voices, or, for a model that clones, in the voice of the character's uploaded sample; returns the audio inline or as a task to poll. |
+| LipSyncModelProvider | external | A lip-sync endpoint behind a lip-sync provider adapter. Takes a generated video and the line's padded audio and returns the video with the speaker's mouth moving to it. |
+| VisionModelProvider | external | A chat model that reads images (OpenAI, Gemini, Ark or BytePlus, or a ModelRunner chat model that takes images), configured as a vision service. Looks at contact sheets of a shot's frames and references and answers the shot check as JSON. |
 
 ## Glossary Index
 
@@ -45,27 +48,31 @@
 | Breakdown | [storyboard](storyboard/index.md) | The storyboard-breaker agent run that replaces the episode's shots from the current script, saving in batches of at most 8 with idempotent upsert by shot number. |
 | Character view | [assets](assets/index.md) | One of a character's reference images (adr-0018): the headshot, a close-up of the head generated first, and the full body, side and back views drawn from it. A video call sends the views its model uses; the cover (headshot, else body, sheet, side, back) stands for the character where one image is shown. |
 | Content language | [configuration](configuration/index.md) | The language every agent must write in (scripts, extracted fields, prompts). Changes the prompt and skill variants loaded and appends a highest-priority language directive. |
+| Continuous take | [storyboard](storyboard/index.md) | Shots joined without a cut: a shot marked as continuing the previous one starts its video on that shot's last frame, so the action carries on, and the merge joins the two clips on that frame. At most two shots in a row continue the one before, since they see no reference image and faces drift. |
 | Data directory | [media](media/index.md) | The root holding the database, static media and the writable agent workspace; overridable by environment. |
 | Episode link | [assets](assets/index.md) | The many-to-many association saying an asset appears in an episode. Assets belong to the drama; links scope them to episodes. |
 | Establishing shot | [assets](assets/index.md) | The scene's reference image: a single wide, steady view of the place with nobody in it, laid out so the depth of the room, where people can enter, and the main furnishings are all readable at once. |
 | Extraction | [assets](assets/index.md) | An agent run that reads the episode script and upserts characters, scenes or props, deduplicating against what the drama already has and linking the results to the episode. |
 | Final prompt | [assets](assets/index.md) | The complete image prompt for an asset, written by the prompt generator agent from the asset's fields, with the drama's style prompt prepended on save. Editing the describing fields keeps the prompt but marks it stale until it is regenerated or edited by hand. |
 | Formatted script | [production](production/index.md) | The rewritten shooting script — scene headings (## S01 | INT/EXT · Location | Time), action paragraphs and dialogue lines, with no camera language. |
-| Generation task | [generation](generation/index.md) | One image or video generation request with its owner tags (character, scene or prop for images; shot for videos), provider, model, prompt, parameters, provider task id, result and status. |
+| Generation task | [generation](generation/index.md) | One image, video, speech or lip-sync request with its owner tags (character, scene or prop for images; shot for the rest), provider, model, prompt, parameters, provider task id, result and status. |
+| Keyframe | [storyboard](storyboard/index.md) | A still of a shot's opening moment, drawn from its characters, scene and props before any video is paid for. The studio shows every keyframe of the episode side by side to compare faces, outfits and light; on a video model that takes a first frame the shot's video starts from it, and the film's colour match aims each clip at it. |
 | Language directive | [agents](agents/index.md) | A highest-priority instruction block telling the agent to write all content in the configured language while never translating existing @mentioned asset names. |
+| Line | [storyboard](storyboard/index.md) | What a shot's one speaker says, as spoken, without quotes or stage directions. Its line audio is the line read by a speech model in the speaker's voice (adr-0021). |
 | Locked generation config | [production](production/index.md) | The image and video model service ids pinned onto an episode so later provider changes do not silently alter an in-progress episode. Each lock is taken at creation when its type has a usable service, else at the first generation of that type (adr-0016), from the highest-priority usable service. Falls back to the active service if the locked one is disabled. |
 | Media file | [media](media/index.md) | A file under the static storage root, addressed by a relative path such as static/images/<uuid>.png. Immutable once written. |
 | Merge | [compositing](compositing/index.md) | The asynchronous render job that produces a film; tracked with processing / completed / failed. |
-| Model service | [configuration](configuration/index.md) | A configured provider endpoint for one service type (text, image or video) with base URL, API key, an ordered list of models (first is the default), a priority and an active flag. Keys live in the database, never in files. |
+| Model service | [configuration](configuration/index.md) | A configured provider endpoint for one service type (text, image, video, speech, lip sync or vision) with base URL, API key, an ordered list of models (first is the default), a priority and an active flag. Keys live in the database, never in files. |
 | Near-name deduplication | [assets](assets/index.md) | Characters and props match by exact name or by the name with parenthesised qualifiers and whitespace removed; scenes match by normalised location plus time. |
-| Polling profile | [generation](generation/index.md) | The cadence and budget for polling a task type — images every 5 seconds up to 10 minutes, videos every 10 seconds up to 300 attempts. |
+| Pinned voices | [storyboard](storyboard/index.md) | A drama setting under which every line is spoken by a speech model in its character's voice and the shot's video is made silent and lip-synced to it, so a character sounds the same in every shot (adr-0021). |
+| Polling profile | [generation](generation/index.md) | The cadence and budget for polling a task type — images every 5 seconds up to 10 minutes, videos every 10 seconds up to 300 attempts, speech every 3 seconds up to 10 minutes, lip syncs every 5 seconds up to 30 minutes. |
 | Product shot | [assets](assets/index.md) | The prop's reference image: the object by itself in the style of a catalogue photograph, seen whole with true proportions against a neutral backdrop that tells no story. |
 | Project | [production](production/index.md) | The creator-facing name for a Drama aggregate — a short-drama project that fixes aspect ratio and visual style and owns episodes and shared assets. |
 | Prompt file | [agents](agents/index.md) | The agent's system prompt as Markdown with a small frontmatter (name, optional model override). Language variants sit next to the base file and fall back to it. |
 | Provider | [configuration](configuration/index.md) | The dialect a service speaks: the official endpoints of the supported model families (openai, gemini, volcengine, minimax, aliyun), plus byteplus (the international Ark, served by the Volcengine adapters) and modelrunner (its own queue adapter, adr-0013). Determines the adapter and the connectivity probe. |
 | Provider adapter | [generation](generation/index.md) | A per-provider module that builds the generate request, parses the generate and poll responses and extracts the result URL or inline data. The worker never speaks a provider's dialect directly. |
 | Public base URL | [media](media/index.md) | The externally reachable origin of the API, needed when a provider must fetch a local reference video or audio file. |
-| Quick setup | [configuration](configuration/index.md) | Writing a recommended text, image and video service in one step from a single API key of a compatible gateway. |
+| Quick setup | [configuration](configuration/index.md) | Writing a recommended text, image and video service (on ModelRunner also speech, lip sync and vision) in one step from a single API key of a compatible gateway. |
 | Raw content | [production](production/index.md) | The source text the creator pastes (novel chapter, outline, shot list) before any rewrite. |
 | Recap | [production](production/index.md) | A short account (at most 2000 characters) of what happened in an episode, written for the writers of the next episodes, not for viewers: what changed, where things stand, objects that will matter, open threads. Written by the recap writer after every saved script of a serial drama and editable by the creator. |
 | Reference binding | [storyboard](storyboard/index.md) | The characters, scene and props whose reference images are sent with the shot's video request, at most four characters and five assets per call (adr-0017); which views of each character go depends on the video model (adr-0018). Extra reference images, videos or audio can be uploaded per shot. |
@@ -74,7 +81,7 @@
 | Rendition | [media](media/index.md) | A derived file next to the original — a 400px WebP thumbnail for images, a 640px JPEG poster frame for videos — addressed by naming convention. |
 | Script revision | [production](production/index.md) | A counter on the episode that moves on every change of the script. A recap records the revision it was written for and is stale once the script's revision differs; a recap job is keyed by the revision it started from. |
 | Serial drama | [production](production/index.md) | A drama whose episodes continue one story ("Episodes continue one story" in the project settings, the default). Its agents get the earlier episodes' recaps; an anthology or a set of standalone skits turns it off and gets the premise only. |
-| Service type | [configuration](configuration/index.md) | text, image or video — each stage needs exactly one active service of the type it uses. |
+| Service type | [configuration](configuration/index.md) | text, image or video — each stage needs exactly one active service of the type it uses; speech and lipsync are optional and serve only pinned voices (adr-0021), and vision (a chat model that reads images) only shot checks (adr-0022), so readiness never waits for them. |
 | Skill | [agents](agents/index.md) | A SKILL.md document (frontmatter name and description plus a body) in a directory under the workspace. Every skill under an agent's prefix is injected in full into its instructions; new skill directories are discovered without restart. |
 | Stage rail | [production](production/index.md) | The per-episode progress indicator. It is derived from data (script present, assets ready, shots with videos, film rendered, status completed), never stored directly. |
 | Story outline | [production](production/index.md) | The drama's story as Markdown (at most 20000 characters): logline, cast, world and tone, the story in acts, the season shape (suggested episode count and length) and, for a serial, the threads that carry across episodes. Written by the story writer or by hand on the story tab; the planner splits it into episodes and every agent reads it in the SeriesContext. |
@@ -88,7 +95,7 @@
 
 ## Decisions
 
-16 accepted · 2 proposed
+17 accepted · 5 proposed
 
 | ADR | Title | Status |
 |-----|-------|--------|
@@ -109,7 +116,11 @@
 | [adr-0015](../adr/adr-0015.md) | Story development agents | accepted |
 | [adr-0016](../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
 | [adr-0017](../adr/adr-0017.md) | Video prompt discipline, seeds and a pinned video model | proposed |
-| [adr-0018](../adr/adr-0018.md) | Character reference views | proposed |
+| [adr-0018](../adr/adr-0018.md) | Character reference views | accepted |
+| [adr-0019](../adr/adr-0019.md) | Shot keyframes and the finishing pass | proposed |
+| [adr-0020](../adr/adr-0020.md) | Continuous takes between shots | proposed |
+| [adr-0021](../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |
+| [adr-0022](../adr/adr-0022.md) | Shot checks by a vision model | proposed |
 
 → [Full decision log](adr/index.md)
 

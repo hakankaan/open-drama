@@ -1,0 +1,19 @@
+name: AttachLipSyncedVideo
+description: >-
+  Store a completed lip sync with the padded line as its sound and make it the shot's current video. Issued by the
+  generation write-back.
+fields:
+  - name: shotId
+    type: ID
+  - name: videoPath
+    type: string
+  - name: taskId
+    type: ID
+actor: GenerationWorker
+handled_by: Shot
+rejections:
+  - >-
+    The shot no longer plays the video the sync was asked for, or its line audio changed (the result only joins the
+    shot's history)
+adr_refs:
+  - adr-0021

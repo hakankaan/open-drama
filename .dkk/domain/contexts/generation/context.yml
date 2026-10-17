@@ -1,12 +1,12 @@
 name: generation
 description: >-
-  Provider-agnostic image and video generation. Every generation, whoever asked for it, is a task row with one lifecycle
+  Provider-agnostic image, video, speech and lip-sync generation. Every generation, whoever asked for it, is a task row with one lifecycle
   — submitted, dispatched to a provider through an adapter, polled until it settles, persisted to local media and
   written back to its owner.
 glossary:
   - term: Generation task
     definition: >-
-      One image or video generation request with its owner tags (character, scene or prop for images; shot for videos),
+      One image, video, speech or lip-sync request with its owner tags (character, scene or prop for images; shot for the rest),
       provider, model, prompt, parameters, provider task id, result and status.
   - term: Provider adapter
     definition: >-
@@ -15,7 +15,7 @@ glossary:
   - term: Polling profile
     definition: >-
       The cadence and budget for polling a task type — images every 5 seconds up to 10 minutes, videos every 10 seconds
-      up to 300 attempts.
+      up to 300 attempts, speech every 3 seconds up to 10 minutes, lip syncs every 5 seconds up to 30 minutes.
   - term: Reference normalisation
     definition: >-
       Turning local media paths into what a provider can consume — compressed data URLs for images, public URLs (via the

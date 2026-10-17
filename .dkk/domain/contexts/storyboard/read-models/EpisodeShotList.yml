@@ -1,27 +1,41 @@
 name: EpisodeShotList
-description: The video-production stage — every shot of the episode in order with description, atmosphere, duration, bound scene/characters/props (with their reference images and readiness), video prompt, current video (with poster), generation status and history, plus the breakdown job state.
+description: >-
+  The video-production stage — every shot of the episode in order with description, atmosphere, duration, bound
+  scene/characters/props (with their reference images and readiness), speaker, line and line audio, video prompt,
+  current video (with poster) and its check, generation, keyframe, line-audio and lip-sync status and history, plus the
+  breakdown job state.
 fields:
-- name: episodeId
-  type: ID
-- name: shots
-  type: ShotCard[]
-  description: each card carries latestVideoTask (status, error class, taskId) — the single source of the shot's generating / failed state
-- name: breakdown
-  type: JobStatus
-- name: generatedCount
-  type: number
-- name: totalDurationSeconds
-  type: number
+  - name: episodeId
+    type: ID
+  - name: shots
+    type: ShotCard[]
+    description: >-
+      each card carries latestVideoTask (status, error class, taskId) — the single source of the shot's generating /
+      failed state
+  - name: breakdown
+    type: JobStatus
+  - name: generatedCount
+    type: number
+  - name: totalDurationSeconds
+    type: number
 subscribes_to:
-- ShotsSaved
-- ShotCreated
-- ShotUpdated
-- ShotDeleted
-- ShotVideoPromptSaved
-- ShotVideoRequested
-- ShotVideoAttached
-- StoryboardBreakdownRequested
-- StoryboardBreakdownCompleted
-- StoryboardBreakdownFailed
+  - ShotsSaved
+  - ShotCreated
+  - ShotUpdated
+  - ShotDeleted
+  - ShotVideoPromptSaved
+  - ShotVideoRequested
+  - ShotVideoAttached
+  - LineAudioRequested
+  - LineAudioAttached
+  - LipSyncRequested
+  - LipSyncedVideoAttached
+  - ShotChecked
+  - StoryboardBreakdownRequested
+  - StoryboardBreakdownCompleted
+  - StoryboardBreakdownFailed
 used_by:
-- Creator
+  - Creator
+adr_refs:
+  - adr-0021
+  - adr-0022

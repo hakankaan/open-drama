@@ -6,7 +6,7 @@
 
 ## Summary
 
-A short-drama project — the root under which episodes, characters, scenes and props live. Fixes the aspect ratio and the visual style used by every image and video prompt, and whether its episodes continue one story (serial).
+A short-drama project — the root under which episodes, characters, scenes and props live. Fixes the aspect ratio and the visual style used by every image and video prompt, whether its episodes continue one story (serial), and the series look laid over every film (none, warm, cool, teal_orange, faded or mono), and whether its voices are pinned (adr-0021).
 
 
 
@@ -17,6 +17,7 @@ A short-drama project — the root under which episodes, characters, scenes and 
 - Deletion is a soft delete; episodes, assets and generation records stay on disk but become unreachable.
 - serial defaults to true. When false (an anthology, standalone skits), the agents get the premise but no episode recaps and no recap is written.
 - outline is Markdown of at most 20000 characters (empty until written), the story the episodes are planned from. The story writer replaces it only through SaveOutline inside an outline job; the creator edits it from the story tab through UpdateDrama, which is refused while an outline job runs, and from an assistant through SaveOutline with the revision it read. outlineRevision increments on every change (adr-0016). It joins the SeriesContext of every agent, serial or not. The story writer does not start while the planner reads the outline.
+- pinnedVoices defaults to false. When true, every spoken line is read by the speech service in its character's voice and the shot's video is made silent and lip-synced to it; turning it off keeps the line audio and lip syncs made.
 
 
 ## Relationships
@@ -39,3 +40,5 @@ A short-drama project — the root under which episodes, characters, scenes and 
 | [adr-0014](../../adr/adr-0014.md) | Series continuity through episode recaps | accepted |
 | [adr-0015](../../adr/adr-0015.md) | Story development agents | accepted |
 | [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
+| [adr-0019](../../adr/adr-0019.md) | Shot keyframes and the finishing pass | proposed |
+| [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |

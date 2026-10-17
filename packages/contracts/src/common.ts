@@ -2,9 +2,13 @@ import { z } from 'zod';
 
 // The enum table (adr-0007): the vocabulary of the whole system. The domain model uses the same words.
 
-export const ServiceType = z.enum(['text', 'image', 'video']);
+export const ServiceType = z.enum(['text', 'image', 'video', 'speech', 'lipsync', 'vision']);
 export type ServiceType = z.infer<typeof ServiceType>;
 export const SERVICE_TYPES = ServiceType.options;
+/** The types every run needs; speech and lip sync serve only pinned voices (adr-0021) and never block readiness. */
+export const RequiredServiceType = ServiceType.extract(['text', 'image', 'video']);
+export type RequiredServiceType = z.infer<typeof RequiredServiceType>;
+export const REQUIRED_SERVICE_TYPES = RequiredServiceType.options;
 
 export const Resolution = z.enum(['480p', '720p', '1080p']);
 export type Resolution = z.infer<typeof Resolution>;
@@ -59,6 +63,10 @@ export const PROVIDERS_BY_TYPE: Record<ServiceType, readonly ProviderName[]> = {
   text: ['openai', 'gemini', 'volcengine', 'byteplus', 'modelrunner'],
   image: ['openai', 'gemini', 'volcengine', 'byteplus', 'modelrunner'],
   video: ['volcengine', 'minimax', 'aliyun', 'byteplus', 'modelrunner'],
+  speech: ['modelrunner'],
+  lipsync: ['modelrunner'],
+  // A chat model that reads images, for shot checks (adr-0022).
+  vision: ['openai', 'gemini', 'volcengine', 'byteplus', 'modelrunner'],
 };
 
 /** Providers whose adapters are not available yet; the UI shows them disabled. */

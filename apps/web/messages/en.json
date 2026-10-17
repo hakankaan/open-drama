@@ -50,7 +50,10 @@
   "serviceType": {
     "text": "text",
     "image": "image",
-    "video": "video"
+    "video": "video",
+    "speech": "speech",
+    "lipsync": "lip sync",
+    "vision": "vision"
   },
   "status": {
     "draft": "Not started",
@@ -164,7 +167,10 @@
       "types": {
         "text": "Text",
         "image": "Image",
-        "video": "Video"
+        "video": "Video",
+        "speech": "Speech",
+        "lipsync": "Lip sync",
+        "vision": "Vision"
       },
       "ready": "Ready",
       "missing": "Missing",
@@ -177,7 +183,7 @@
       "deleteConfirm": "Delete service",
       "quick": {
         "title": "Quick setup with {gateway}",
-        "body": "One {gateway} API key sets up a text, an image and a video service at once. You can edit them afterwards.",
+        "body": "One {gateway} API key sets up the services below at once. You can edit them afterwards.",
         "getKey": "Get a key",
         "platform": "Platform",
         "recommended": "{gateway} (recommended)",
@@ -251,12 +257,15 @@
       "tour": {
         "replay": "Show the tour",
         "quickTitle": "Quick setup",
-        "quickBody": "One key sets up a text, an image and a video service in a single step.",
+        "quickBody": "One key sets up several services in a single step.",
         "servicesTitle": "Or add services one by one",
         "servicesBody": "Each type needs one active service with an API key. The highest-priority one is used unless an episode keeps its own.",
         "agentsTitle": "Tune the agents",
         "agentsBody": "The Agents tab holds the prompts and skills that write scripts, find assets, cut shots and write video prompts."
-      }
+      },
+      "optional": "Optional",
+      "optionalHint": "Only pinned voices use this: lines spoken by a speech model, and videos lip-synced to them. Everything else works without it.",
+      "visionHint": "Only shot checks use this: a chat model that reads images looks at frames of each video beside its references. Everything else works without it."
     },
     "general": {
       "language": "Language",
@@ -315,7 +324,8 @@
         "uploads": "Uploads",
         "temp": "Temporary",
         "workspace": "Workspace",
-        "other": "Other"
+        "other": "Other",
+        "audio": "Audio"
       },
       "unused": {
         "title": "Unused files",
@@ -491,6 +501,19 @@
         "back": "A view from behind, drawn from the headshot. Sent only to models that use turnaround views (Seedance 2.5), as one more image.",
         "sheet": "Several views in one image, made before characters had views. Most video models can read it as several people; once there is a headshot or full body, it is no longer sent."
       }
+    },
+    "voice": {
+      "title": "Voice",
+      "none": "No voice",
+      "notOffered": "Not offered by the speech model",
+      "unavailable": "The speech model’s voices could not be read; try again later.",
+      "noService": "Add a speech service in Settings to pick a voice.",
+      "clones": "{model} clones the sample when there is one, else reads in the voice picked.",
+      "named": "{model} reads in the voice picked; it does not clone samples.",
+      "removeSample": "Remove sample",
+      "replaceSample": "Replace sample",
+      "uploadSample": "Upload voice sample",
+      "sampleHint": "A clean recording of the character speaking, 10 to 30 seconds (mp3, wav, m4a or aac). Changing the voice or the sample clears the line audio of the shots they speak in."
     }
   },
   "project": {
@@ -503,7 +526,9 @@
     "edit": {
       "open": "Edit project",
       "title": "Edit project",
-      "description": "The visual style and the frame shape stay as created."
+      "description": "The visual style and the frame shape stay as created.",
+      "pinnedVoices": "Pinned voices",
+      "pinnedVoicesHint": "Each line is spoken by a speech model in its character’s voice, and the shot’s video is made silent and lip-synced to it, so a character sounds the same in every shot. Needs speech and lip-sync services."
     },
     "tabs": {
       "episodes": "Episodes",
@@ -624,7 +649,10 @@
       "default": "Default model",
       "text": "Text model",
       "image": "Image model",
-      "video": "Video model"
+      "video": "Video model",
+      "speech": "Speech model",
+      "lipsync": "Lip-sync model",
+      "vision": "Vision model"
     },
     "resolution": "Resolution {resolution}. Change resolution",
     "refresh": "Refresh",
@@ -747,6 +775,16 @@
         "atmosphere": "Atmosphere",
         "videoPrompt": "Video prompt"
       },
+      "continuity": {
+        "title": "Continuity",
+        "toggle": "Continues shot #{number} without a cut",
+        "hint": "The video starts on the last frame of shot #{number}, so the two play as one take. It is generated once that shot's video is ready, and no reference image is sent.",
+        "capped": "At most two shots in a row can continue the one before: they get no reference image, so faces drift.",
+        "noFirstFrame": "{model} takes no first frame, so this shot cannot continue the one before. Pick a model that does, or turn this off.",
+        "noMedia": "A shot that continues the one before takes no reference video or audio. Remove them, or turn this off.",
+        "waiting": "Shot #{number}'s video is still generating; this shot starts from its last frame once it is ready.",
+        "short": "Continues #{number}"
+      },
       "refs": {
         "title": "Reference assets",
         "goGenerate": "Generate {count, plural, one {# missing image} other {# missing images}}",
@@ -762,7 +800,9 @@
         "character": "Character",
         "prop": "Prop",
         "plan": "Sent to {model}: {list}",
-        "notSent": "Not sent: {names}. One call carries at most 4 people, 5 assets and {count, plural, one {# image} other {# images}} for this model; assets the prompt mentions go first."
+        "fromKeyframe": "{model} starts from the keyframe, so no reference image is sent.",
+        "notSent": "Not sent: {names}. One call carries at most 4 people, 5 assets and {count, plural, one {# image} other {# images}} for this model; assets the prompt mentions go first.",
+        "chained": "{model} starts from the last frame of shot #{number}, so no reference image is sent."
       },
       "extra": {
         "title": "Extra references",
@@ -803,7 +843,12 @@
         "regenerate": "Regenerate",
         "seed": "{model} · seed {seed}",
         "retakeSeed": "Retake with this seed",
-        "notSent": "Not sent with this version: past the per-call limit"
+        "notSent": "Not sent with this version: past the per-call limit",
+        "fromKeyframe": "Started from the keyframe.",
+        "notSentKeyframe": "Not sent with this version: it started from the keyframe",
+        "continued": "Started from the last frame of shot #{number}.",
+        "notSentChained": "Not sent with this version: it started from the last frame of the shot before",
+        "lipSynced": "Lip-synced"
       },
       "batch": {
         "progress": "Requesting videos {done}/{total}",
@@ -824,6 +869,86 @@
         "turnaround": "{model} also uses side and back views to keep a character's look as they turn. Missing for {names}.",
         "turnaroundAction": "Generate them ({count, plural, one {# image} other {# images}})",
         "dismiss": "Dismiss"
+      },
+      "keyframes": {
+        "title": "Keyframe",
+        "draw": "Draw keyframe",
+        "redraw": "Redraw",
+        "drawing": "Drawing",
+        "remove": "Remove",
+        "none": "No keyframe yet. A keyframe is a still of the shot's opening, drawn from its characters, scene and props; the video starts from it.",
+        "alt": "Keyframe of shot #{number}",
+        "used": "The video starts from this keyframe; no reference images are sent with it.",
+        "unsupported": "{model} takes no first frame, so the video is made from the reference images.",
+        "defaultModel": "The episode's video model",
+        "prompt": "Keyframe prompt",
+        "promptHint": "Leave it empty to compose one from the shot's framing, the first beat of its video prompt and its location.",
+        "notUsed": "The keyframe was not used: this model takes no first frame, or the shot carries reference video or audio.",
+        "alreadyDrawing": "A keyframe is already being drawn for this shot.",
+        "sheet": "Keyframes {done}/{total}",
+        "sheetTitle": "Keyframes",
+        "sheetBody": "Compare faces, outfits and light across the episode before generating videos. Click a shot to open it.",
+        "open": "Open shot #{number}",
+        "failed": "The last keyframe failed",
+        "close": "Close",
+        "drawMissing": "Draw {count, plural, one {# missing keyframe} other {# missing keyframes}}",
+        "batch": {
+          "progress": "Requesting keyframes {done}/{total}",
+          "summary": "{started} started, {already} already drawing, {failed} failed"
+        },
+        "continued": "This shot continues shot #{number}, so its video starts from that shot's last frame, not from the keyframe."
+      },
+      "voice": {
+        "dialogue": "Dialogue",
+        "speaker": "Speaker",
+        "nobody": "Nobody speaks",
+        "line": "Line",
+        "linePlaceholder": "What the speaker says, as spoken",
+        "lineHint": "One speaker per shot. Write only the words, without quotes or stage directions.",
+        "title": "Line audio",
+        "pinned": "Pinned voices",
+        "speak": "Speak line",
+        "respeak": "Speak again",
+        "speaking": "Speaking…",
+        "lipSync": "Lip sync",
+        "syncing": "Lip-syncing…",
+        "noLine": "Pick a speaker and write their line in the editor to speak it.",
+        "seconds": "{seconds} s",
+        "syncFailed": "Lip sync failed: {error}",
+        "pinnedHint": "Videos are made silent and lip-synced to this audio once they are done.",
+        "willSync": "The video is made silent and lip-synced to the line once it is done."
+      },
+      "qa": {
+        "title": "Shot check",
+        "check": "Check",
+        "again": "Check again",
+        "checking": "Checking…",
+        "verdict": {
+          "ok": "Looks fine",
+          "check": "Needs a look"
+        },
+        "result": {
+          "ok": "Fine",
+          "flag": "Flagged",
+          "skipped": "Skipped"
+        },
+        "points": {
+          "people": "People",
+          "outfit": "Outfits",
+          "scene": "Setting",
+          "artifacts": "Defects"
+        },
+        "skipped": "Skipped: no reference to compare with.",
+        "hint": "A vision model looks at three frames of the main version beside the references: extra people, outfits, the setting and visible defects. It does not judge faces, and never holds up the merge.",
+        "noVideo": "Generate a video to check it.",
+        "by": "Checked by {model}",
+        "checkNew": "Check {count, plural, one {# video} other {# videos}}",
+        "checkSelected": "Check selected ({count})",
+        "allChecked": "Videos checked",
+        "batch": {
+          "progress": "Checking shots {done}/{total}",
+          "summary": "{started} checked, {failed} failed"
+        }
       }
     },
     "export": {
@@ -854,7 +979,19 @@
       "toVideo": "Go to video production",
       "noVideo": "No video",
       "previewShot": "Preview shot #{number}",
-      "shotPreview": "Shot #{number}"
+      "shotPreview": "Shot #{number}",
+      "look": "Series look",
+      "lookHint": "Graded over every episode's film when it is merged.",
+      "looks": {
+        "none": "None",
+        "warm": "Warm",
+        "cool": "Cool",
+        "teal_orange": "Teal and orange",
+        "faded": "Faded",
+        "mono": "Black and white"
+      },
+      "colorMatch": "Match colour to keyframes",
+      "colorMatchHint": "Nudges each clip towards the keyframe it started from, so cuts agree. Clips without a keyframe stay as they are."
     },
     "tasks": {
       "open": "Generation tasks",
@@ -875,7 +1012,9 @@
       "kind": {
         "image": "Image",
         "video": "Video",
-        "merge": "Merge"
+        "merge": "Merge",
+        "speech": "Line audio",
+        "lipsync": "Lip sync"
       },
       "owner": {
         "shot": "Shot {label}",

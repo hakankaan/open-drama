@@ -6,11 +6,12 @@ import type { Drama } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Field, Input, Textarea } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { useToastError } from '@/lib/errors';
 import { useUpdateDrama } from '../api';
 import { SerialField } from '../launcher/create-project-dialog';
 
-/** Title, synopsis and the serial switch; the style and frame shape stay as created. */
+/** Title, synopsis, the serial switch and pinned voices (adr-0021); the style and frame shape stay as created. */
 export function EditProjectDialog({ drama, onClose }: { drama: Drama; onClose: () => void }) {
   const t = useTranslations('project.edit');
   const tl = useTranslations('launcher.create');
@@ -20,6 +21,7 @@ export function EditProjectDialog({ drama, onClose }: { drama: Drama; onClose: (
   const [title, setTitle] = useState(drama.title);
   const [description, setDescription] = useState(drama.description);
   const [serial, setSerial] = useState(drama.serial);
+  const [pinnedVoices, setPinnedVoices] = useState(drama.pinnedVoices);
   const [touched, setTouched] = useState(false);
 
   const submit = async (e: React.SubmitEvent<HTMLFormElement>) => {
@@ -27,7 +29,7 @@ export function EditProjectDialog({ drama, onClose }: { drama: Drama; onClose: (
     setTouched(true);
     if (!title.trim()) return;
     try {
-      await update.mutateAsync({ id: drama.id, title: title.trim(), description: description.trim(), serial });
+      await update.mutateAsync({ id: drama.id, title: title.trim(), description: description.trim(), serial, pinnedVoices });
       onClose();
     } catch (err) {
       toastError(err);
@@ -52,6 +54,13 @@ export function EditProjectDialog({ drama, onClose }: { drama: Drama; onClose: (
             />
           </Field>
           <SerialField checked={serial} onCheckedChange={setSerial} disabled={update.isPending} />
+          <div className="flex flex-col gap-1.5">
+            <label className="flex items-center gap-2 text-[13px] font-medium text-ink-2">
+              <Switch checked={pinnedVoices} onCheckedChange={setPinnedVoices} disabled={update.isPending} label={t('pinnedVoices')} />
+              {t('pinnedVoices')}
+            </label>
+            <p className="text-xs text-muted">{t('pinnedVoicesHint')}</p>
+          </div>
           <DialogFooter>
             <Button variant="ghost" onClick={onClose} disabled={update.isPending}>
               {tc('cancel')}

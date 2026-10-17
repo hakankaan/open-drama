@@ -22,6 +22,10 @@ export const characters = sqliteTable(
     bodyPath: text(),
     sidePath: text(),
     backPath: text(),
+    // The voice the speech model reads the character's lines in (one of its voices); '' for none (adr-0021).
+    voice: text().notNull().default(''),
+    // An uploaded recording of the voice, cloned by speech models that take one, and sent as reference audio (adr-0021).
+    voiceSamplePath: text(),
     sortOrder: integer().notNull().default(0),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

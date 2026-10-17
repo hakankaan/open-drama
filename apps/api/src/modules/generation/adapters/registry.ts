@@ -2,11 +2,12 @@ import { env } from '../../../env';
 import { aliyunVideo } from './aliyun-video';
 import { geminiImage } from './gemini-image';
 import { minimaxVideo } from './minimax-video';
-import { modelrunnerImage, modelrunnerVideo } from './modelrunner';
+import { modelrunnerImage, modelrunnerLipSync, modelrunnerSpeech, modelrunnerVideo } from './modelrunner';
 import { openaiImage } from './openai-image';
 import { stubImage } from './stub-image';
+import { stubLipSync, stubSpeech } from './stub-speech';
 import { stubVideo } from './stub-video';
-import type { ImageAdapter, VideoAdapter } from './types';
+import type { ImageAdapter, LipSyncAdapter, SpeechAdapter, VideoAdapter } from './types';
 import { volcengineImage } from './volcengine-image';
 import { volcengineVideo } from './volcengine-video';
 
@@ -37,4 +38,16 @@ export function imageAdapterFor(provider: string): ImageAdapter | null {
 export function videoAdapterFor(provider: string): VideoAdapter | null {
   if (env.OPEN_DRAMA_STUB_PROVIDERS) return stubVideo;
   return VIDEO[provider] ?? null;
+}
+
+/** The speech adapter for a provider (adr-0021); offline with OPEN_DRAMA_STUB_PROVIDERS=1. */
+export function speechAdapterFor(provider: string): SpeechAdapter | null {
+  if (env.OPEN_DRAMA_STUB_PROVIDERS) return stubSpeech;
+  return provider === 'modelrunner' ? modelrunnerSpeech : null;
+}
+
+/** The lip-sync adapter for a provider (adr-0021); offline with OPEN_DRAMA_STUB_PROVIDERS=1. */
+export function lipSyncAdapterFor(provider: string): LipSyncAdapter | null {
+  if (env.OPEN_DRAMA_STUB_PROVIDERS) return stubLipSync;
+  return provider === 'modelrunner' ? modelrunnerLipSync : null;
 }

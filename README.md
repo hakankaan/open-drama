@@ -49,7 +49,7 @@ The API runs on `127.0.0.1:4000` and the web server on `0.0.0.0:${WEB_PORT:-3000
 | Variable | When to set it |
 |---|---|
 | `OPEN_DRAMA_DATA_DIR` | keep data somewhere other than `./data` |
-| `PUBLIC_BASE_URL` | a video provider must fetch one of your uploaded reference videos or audio files; it needs a public https address |
+| `PUBLIC_BASE_URL` | a provider must fetch one of your files: uploaded reference videos or audio, a character's voice sample to clone, or a video and its line for a lip sync (without it, a lip sync sends files of up to 25 MB inline); it needs a public https address |
 | `OPEN_DRAMA_ALLOWED_HOSTS` | you open Open Drama by a name other than `localhost` or an IP address, such as `studio.lan` or your reverse proxy's domain (comma-separated) |
 | `HOST` | only if the API must listen beyond localhost, which it normally should not |
 | `OPEN_DRAMA_VIDEO_CONCURRENCY` | how many shot videos one episode generates at once (default 4); the rest wait their turn |
@@ -57,7 +57,7 @@ The API runs on `127.0.0.1:4000` and the web server on `0.0.0.0:${WEB_PORT:-3000
 | `OPEN_DRAMA_ASSISTANT=0` | turn the assistant endpoint (`/mcp`) off |
 | `OPEN_DRAMA_ASSISTANT_TOKEN` | choose the assistant token yourself (32+ characters) instead of the one the server generates and prints at first start |
 | `OPEN_DRAMA_WEB_UI=0` | run the API alone, without the web studio, and use it from an assistant (see below) |
-| `OPEN_DRAMA_MODELRUNNER_API_KEY` | seed a text, an image and a video service from one ModelRunner key at start, for a server without a studio to paste it into |
+| `OPEN_DRAMA_MODELRUNNER_API_KEY` | seed a text, an image and a video service (and the optional speech, lip-sync and vision services) from one ModelRunner key at start, for a server without a studio to paste it into |
 
 ## Use it from an AI assistant
 
@@ -92,8 +92,8 @@ Raw content  ──►  Script  ──►  Assets  ──►  Storyboard & Video
 - **Story development** – the story-writer agent drafts a story outline from your synopsis (or write it yourself on the Story tab); the episode-planner agent cuts the next episodes from it, each with a title, a synopsis and a beat sheet; the episode-writer agent expands a beat sheet into the script. Written episodes feed later plans through their recaps.
 - **Series continuity** – a project whose episodes continue one story gets a recap of every episode, written by the recap-writer agent after the script is saved and editable by you; the script and storyboard agents of later episodes receive the project synopsis and the earlier recaps. Turn it off per project for anthologies.
 - **Assets stage** – the extractor agent pulls characters, scenes and plot-critical props out of the script, deduplicated across the whole drama. Each asset gets an AI-written final prompt and reference images: a character a headshot and a full body drawn from it (plus side and back views for models that use them), a scene an empty establishing shot, a prop a white-background product shot. The video stage sends each model the character views it handles and says what it left out. Upload your own images instead if you prefer.
-- **Storyboard & video stage** – the storyboard-breaker agent splits the script into 8–15 s shots with sub-shot descriptions, bindings and video prompts. Review prompts with `@mentions` of your assets, pick the video model and resolution, generate shot videos singly or in batch, retry failures.
-- **Merge & export** – select shots, let FFmpeg concatenate them into the episode film, play, download, mark done.
+- **Storyboard & video stage** – the storyboard-breaker agent splits the script into 8–15 s shots with sub-shot descriptions, bindings and video prompts. Review prompts with `@mentions` of your assets, pick the video model and resolution, generate shot videos singly or in batch, retry failures. Draw a keyframe per shot first and compare them all side by side; on a model that takes a first frame, the video starts from it. Mark a shot as continuing the one before and its video starts on that shot's last frame, one take without a cut.
+- **Merge & export** – select shots, let FFmpeg join them into the episode film in one frame and frame rate, with each clip's colour nudged towards its keyframe, continuous takes joined on their shared frame, an optional series look and levelled sound; play, download, mark done.
 - **Bring your own models** – text, image and video providers are configured in the UI: the official endpoints of the supported model families (OpenAI, Gemini, Volcengine Ark, MiniMax, Alibaba Wan) plus BytePlus ModelArk and ModelRunner. Keys live in the local database, never in files.
 - **Editable agents** – every agent's system prompt and skills are Markdown files you can edit from Settings, with per-language variants.
 

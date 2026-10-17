@@ -1,5 +1,5 @@
 import { and, count, eq, inArray, isNull } from 'drizzle-orm';
-import { isNarrator, type TextModelOverride } from '@open-drama/contracts';
+import { isNarrator, VIDEO_TASK_TYPES, type TextModelOverride } from '@open-drama/contracts';
 import type { z } from 'zod';
 import { db } from '../../../db/client';
 import { characters, episodeCharacters, episodeProps, episodeScenes, films, generationTasks, shots } from '../../../db/schema';
@@ -59,7 +59,7 @@ export async function startBreakdown(episodeId: number, opts: z.input<typeof Tex
       ? db
           .select({ id: generationTasks.id })
           .from(generationTasks)
-          .where(and(eq(generationTasks.type, 'video'), eq(generationTasks.status, 'processing'), inArray(generationTasks.shotId, ids)))
+          .where(and(inArray(generationTasks.type, [...VIDEO_TASK_TYPES, 'speech']), eq(generationTasks.status, 'processing'), inArray(generationTasks.shotId, ids)))
           .get()
       : undefined;
     if (generating) throw conflict('Shot videos are still generating; break down once they have finished');

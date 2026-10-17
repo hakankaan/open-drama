@@ -6,7 +6,7 @@
 
 ## Summary
 
-When a merge starts, probe every clip, run FFmpeg's concat filter into the merged media directory (each clip fitted into the first clip's frame and frame rate, letterboxed, cut to the length it was generated at when the provider returned a few frames more, with a stereo track trimmed to that length or silence when it has none; re-encoded to H.264/AAC with faststart), probe the film's duration, then complete or fail the merge.
+When a merge starts, probe every clip, run FFmpeg's concat filter into the merged media directory (each clip graded towards its keyframe when colour match is on — half the way, bounded — then fitted into the drama's frame at the episode's resolution, or the first clip's for an adaptive drama, at 24 fps, letterboxed, cut to the length it was generated at when the provider returned a few frames more, with a stereo track trimmed to that length or silence when it has none; a clip that continues the one before it, from the same video, joins it on the frame it started from: the one before ends on that frame, the continuing clip starts a frame in and takes its grade, adr-0020; the drama's series look over the joined picture), level the mix to -16 LUFS with two-pass loudnorm, re-encode to H.264/AAC with faststart, probe the film's duration, then complete or fail the merge.
 
 
 
@@ -22,4 +22,7 @@ When a merge starts, probe every clip, run FFmpeg's concat filter into the merge
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0019](../../adr/adr-0019.md) | Shot keyframes and the finishing pass | proposed |
+| [adr-0020](../../adr/adr-0020.md) | Continuous takes between shots | proposed |

@@ -24,4 +24,4 @@ When an asset image is requested, submit an image generation task tagged with th
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [adr-0018](../../adr/adr-0018.md) | Character reference views | proposed |
+| [adr-0018](../../adr/adr-0018.md) | Character reference views | accepted |

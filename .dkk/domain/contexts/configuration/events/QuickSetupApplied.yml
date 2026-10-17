@@ -1,7 +1,10 @@
-# Domain event — something that happened in the domain.
 name: QuickSetupApplied
-description: The recommended text, image and video services were written from one key.
+description: >-
+  The recommended services (text, image, video, and where offered speech, lip sync and vision) were written from one
+  key.
 fields:
   - name: serviceIds
-    type: "ID[]"
+    type: ID[]
 raised_by: ModelService
+adr_refs:
+  - adr-0022

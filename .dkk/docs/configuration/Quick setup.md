@@ -6,11 +6,11 @@
 
 ## Summary
 
-Writing a recommended text, image and video service in one step from a single API key of a compatible gateway.
+Writing a recommended text, image and video service (on ModelRunner also speech, lip sync and vision) in one step from a single API key of a compatible gateway.
 
 ## Meaning
 
-Writing a recommended text, image and video service in one step from a single API key of a compatible gateway.
+Writing a recommended text, image and video service (on ModelRunner also speech, lip sync and vision) in one step from a single API key of a compatible gateway.
 
 
 

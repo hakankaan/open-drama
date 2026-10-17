@@ -8,7 +8,7 @@ import { logger } from '../../http/logger';
 import { invalidateStorageUsage } from './storage-usage';
 
 /** Buckets holding kept media. temp/ is emptied at boot and holds renders in progress, so it is never swept. */
-const BUCKETS = ['uploads', 'images', 'videos', 'merged'] as const;
+const BUCKETS = ['uploads', 'images', 'videos', 'audio', 'merged'] as const;
 
 /** Files written in the last day are never orphans: a result is stored before its row, an upload before it is attached. */
 const GRACE_MS = 24 * 60 * 60_000;

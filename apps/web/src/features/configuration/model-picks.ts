@@ -7,7 +7,7 @@ import { usePersistedState } from '@/lib/persisted-state';
 export type ModelPick = { serviceId: number; model: string } | null;
 export type ModelPicks = Record<ServiceType, ModelPick>;
 
-const EMPTY: ModelPicks = { text: null, image: null, video: null };
+const EMPTY: ModelPicks = { text: null, image: null, video: null, speech: null, lipsync: null, vision: null };
 
 /** The creator's model picks per type, kept in the browser (Plan 3 §2 UI state); one store for the whole tab. */
 export function useModelPicks() {

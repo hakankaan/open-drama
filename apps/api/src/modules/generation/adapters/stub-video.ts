@@ -8,9 +8,9 @@ import { renderPlaceholder, stubDelayOrFail } from './stub-image';
 import { ProviderError, type VideoAdapter } from './types';
 
 /**
- * Offline video adapter (OPEN_DRAMA_STUB_PROVIDERS=1): a placeholder frame with the rendered prompt, looped by
- * FFmpeg into an H.264/AAC clip of the requested length. Mentions render as `Name [image N]` so the slot mapping
- * is visible in the frame. `#fail` in the prompt is rejected as moderation.
+ * Offline video adapter (OPEN_DRAMA_STUB_PROVIDERS=1): a placeholder frame with the rendered prompt, or the first frame
+ * when one is sent, looped by FFmpeg into an H.264/AAC clip of the requested length. Mentions render as
+ * `Name [image N]` so the slot mapping is visible in the frame. `#fail` in the prompt is rejected as moderation.
  */
 export const stubVideo: VideoAdapter = {
   provider: 'stub',
@@ -19,9 +19,10 @@ export const stubVideo: VideoAdapter = {
     await stubDelayOrFail(record.prompt);
     const seed = record.seed !== undefined ? `, seed ${record.seed}` : '';
     const title = `STUB VIDEO, task ${record.taskId}, ${record.durationSeconds}s, ${record.resolution}, ${record.referenceImages.length} ref images${seed}`;
-    const frame = join(env.storageRoot, 'temp', `${randomUUID()}.png`);
+    const first = record.firstFrame && /^data:image\/\w+;base64,(.+)$/.exec(record.firstFrame)?.[1];
+    const frame = join(env.storageRoot, 'temp', `${randomUUID()}.${first ? 'jpg' : 'png'}`);
     const out = join(env.storageRoot, 'videos', `${randomUUID()}.mp4`);
-    await writeFile(frame, await renderPlaceholder(title, record.prompt, record.aspectRatio, record.taskId));
+    await writeFile(frame, first ? Buffer.from(first, 'base64') : await renderPlaceholder(title, record.prompt, record.aspectRatio, record.taskId));
     try {
       const result = await run(
         ffmpegBin(),
@@ -29,6 +30,7 @@ export const stubVideo: VideoAdapter = {
           '-y', '-loop', '1', '-framerate', '12', '-i', frame,
           '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo',
           '-t', String(record.durationSeconds),
+          '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
           '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
           '-c:a', 'aac', '-b:a', '96k', '-shortest', '-movflags', '+faststart', out,
         ],

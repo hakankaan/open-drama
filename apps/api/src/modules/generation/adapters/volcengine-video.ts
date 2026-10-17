@@ -17,8 +17,9 @@ const failure = (task: SeedanceTask) => {
 };
 
 /**
- * Ark Seedance 2.x (Volcengine, and BytePlus ModelArk through the registry): one multimodal task (`content[]` with the text, then reference images, videos and
- * audio by role), polled by task id. The resolution arrives already fitted to the model's tiers.
+ * Ark Seedance 2.x (Volcengine, and BytePlus ModelArk through the registry): one multimodal task (`content[]` with the
+ * text, then a first frame or reference images, videos and audio by role), polled by task id. The resolution arrives
+ * already fitted to the model's tiers.
  */
 export const volcengineVideo: VideoAdapter = {
   provider: 'volcengine',
@@ -31,6 +32,8 @@ export const volcengineVideo: VideoAdapter = {
     }
     const content: unknown[] = [];
     if (record.prompt) content.push({ type: 'text', text: record.prompt });
+    // A first frame goes as an image with its own role and never beside reference images (a separate scenario).
+    if (record.firstFrame) content.push({ type: 'image_url', image_url: { url: record.firstFrame }, role: 'first_frame' });
     for (const url of record.referenceImages) content.push({ type: 'image_url', image_url: { url }, role: 'reference_image' });
     for (const url of record.referenceVideos) content.push({ type: 'video_url', video_url: { url }, role: 'reference_video' });
     for (const url of record.referenceAudios) content.push({ type: 'audio_url', audio_url: { url }, role: 'reference_audio' });

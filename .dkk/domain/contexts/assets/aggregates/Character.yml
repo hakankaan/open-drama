@@ -2,7 +2,9 @@ name: Character
 description: >-
   A person in the drama with appearance and styling descriptions, an optional role, a final prompt describing the
   person, and reference views: a headshot, a full body, optional side and back views, and a multi-view sheet kept from
-  before views or uploaded (adr-0018). Shared across the drama's episodes through episode links.
+  before views or uploaded (adr-0018), and the voice its lines are spoken in: one of the speech model's voices and a
+  recording of its voice, cloned by speech models that clone (adr-0021). Shared across the drama's episodes through
+  episode links.
 handles:
   commands:
     - CreateCharacter
@@ -33,5 +35,10 @@ invariants:
   - >-
     Body, side and back views are generated from the headshot as their reference image; a generated headshot of a
     character without one is drawn from its sheet.
+  - >-
+    A voice must be one of the default speech model's voices when there is a speech service. Changing the voice or the
+    voice sample, or deleting the character, clears the line audio of the shots it speaks in; deleting it also removes
+    it as their speaker.
 adr_refs:
   - adr-0018
+  - adr-0021

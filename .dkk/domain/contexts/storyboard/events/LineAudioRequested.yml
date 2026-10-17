@@ -1,0 +1,16 @@
+name: LineAudioRequested
+description: A shot's line was sent to the speech service in its speaker's voice (named, or cloned from a sample).
+fields:
+  - name: shotId
+    type: ID
+  - name: speakerId
+    type: ID
+  - name: voice
+    type: string
+  - name: cloned
+    type: boolean
+  - name: language
+    type: string
+raised_by: Shot
+adr_refs:
+  - adr-0021
