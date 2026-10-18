@@ -4,6 +4,7 @@ import { env } from '../env';
 import { readAssistantDoc } from '../modules/agents/workspace/assistant';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
+import { registerAssetTools } from './tools/assets';
 import { registerConfigurationTools } from './tools/configuration';
 import { registerDramaTools } from './tools/dramas';
 import { registerEpisodeTools } from './tools/episodes';
@@ -27,6 +28,7 @@ export function createMcpServer(lang: ContentLanguage, disconnected?: AbortSigna
   registerDramaTools(server);
   registerEpisodeTools(server);
   registerStoryTools(server);
+  registerAssetTools(server);
   registerJobTools(server, disconnected);
   registerPrompts(server, lang);
   registerResources(server, lang);

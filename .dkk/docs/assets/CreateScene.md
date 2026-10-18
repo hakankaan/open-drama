@@ -34,4 +34,6 @@ Manually add a scene (location, time, description, lighting) to a drama, optiona
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

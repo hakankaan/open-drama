@@ -5,6 +5,7 @@ import { db } from '../../../db/client';
 import { characters, props, scenes } from '../../../db/schema';
 import { invalid, notFound } from '../../../http/errors';
 import { logger } from '../../../http/logger';
+import { withAssetClaim } from '../../assets/claims';
 import { withStylePrefix } from '../../assets/extraction';
 import { getEpisodeRow } from '../../production/episodes';
 import { runAgentUntilSaved } from '../runtime/run-agent';
@@ -52,19 +53,30 @@ export function episodeForAsset(dramaId: number, episodeId: number) {
   return ep;
 }
 
+type PromptOpts = { episodeId?: number } & z.input<typeof TextModelOverride>;
+
+/** The asset, checked against the episode its prompt is written in, and its prompt when up to date. */
+function promptState(kind: AssetKind, id: number, episodeId: number | undefined) {
+  const asset = loadAssetForPrompt(kind, id);
+  if (episodeId !== undefined) episodeForAsset(asset.dramaId, episodeId);
+  return { asset, upToDate: asset.finalPrompt && !asset.finalPromptStale ? asset.finalPrompt : null };
+}
+
 /**
  * Generate*FinalPrompt: the prompt generator writes and saves the prompt (style prefix added by the save tool).
  * An up-to-date prompt is returned as is unless `force`. The agent runs in the episode's context when one is given
- * and in the drama's otherwise (adr-0024): the prompt describes the asset, not an episode.
+ * and in the drama's otherwise (adr-0024): the prompt describes the asset, not an episode. The run holds the
+ * asset's claim, so it is refused (409) while an image, a description or another prompt of the asset is in progress.
  */
-export async function generateFinalPrompt(
-  kind: AssetKind,
-  id: number,
-  opts: { episodeId?: number; force?: boolean } & z.input<typeof TextModelOverride>,
-): Promise<string> {
-  const asset = loadAssetForPrompt(kind, id);
-  if (opts.episodeId !== undefined) episodeForAsset(asset.dramaId, opts.episodeId);
-  if (!opts.force && asset.finalPrompt && !asset.finalPromptStale) return asset.finalPrompt;
+export async function generateFinalPrompt(kind: AssetKind, id: number, opts: PromptOpts & { force?: boolean }): Promise<string> {
+  const { asset, upToDate } = promptState(kind, id, opts.episodeId);
+  if (upToDate && !opts.force) return upToDate;
+  return withAssetClaim(kind, id, () => writeFinalPrompt(kind, asset, opts));
+}
+
+/** Runs the prompt generator on the asset and returns the saved prompt; the caller holds the asset's claim. */
+async function writeFinalPrompt(kind: AssetKind, asset: AssetPromptState, opts: PromptOpts): Promise<string> {
+  const { id } = asset;
   await runAgentUntilSaved(
     {
       agentType: 'prompt_generator',
@@ -92,14 +104,14 @@ export function fallbackPrompt(kind: AssetKind, asset: AssetPromptState): string
   return withStylePrefix(asset.dramaId, body);
 }
 
-/** The prompt to generate an image with: the up-to-date final prompt, a fresh one, or the local fallback. */
-export async function ensureFinalPrompt(
-  kind: AssetKind,
-  id: number,
-  opts: { episodeId?: number } & z.input<typeof TextModelOverride>,
-): Promise<string> {
+/**
+ * The prompt to generate an image with: the up-to-date final prompt, a fresh one, or the local fallback. Called by
+ * the image request, which already holds the asset's claim.
+ */
+export async function ensureFinalPrompt(kind: AssetKind, id: number, opts: PromptOpts): Promise<string> {
   try {
-    const prompt = await generateFinalPrompt(kind, id, opts);
+    const { asset, upToDate } = promptState(kind, id, opts.episodeId);
+    const prompt = upToDate ?? (await writeFinalPrompt(kind, asset, opts));
     if (prompt.trim()) return prompt;
   } catch (err) {
     logger.warn({ kind, id, err: (err as Error).message }, 'final prompt agent failed; using the local prompt');

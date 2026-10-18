@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { TextModelOverride } from './agents';
+import { AssetKind, CharacterCard, DescribeAsset, EpisodeCharacterCard, GenerateFinalPrompt, PropCard, SceneCard, StartDesign, StartExtraction } from './assets';
 import { AddModelService, UpdateModelService } from './configuration';
-import { ContentLanguage, DesignTarget, Id, JobKind, JobStatus, RequiredServiceType, ServiceType, Timestamp } from './common';
+import { ContentLanguage, DesignTarget, ExtractionTarget, Id, JobKind, JobStatus, RequiredServiceType, ServiceType, Timestamp } from './common';
 import { AgentJob } from './jobs';
 import { EpisodeView, ScriptFromContent, UpdateDrama, UpdateEpisode } from './production';
 
@@ -208,3 +209,99 @@ export type CatalogBrowse = z.infer<typeof CatalogBrowse>;
 
 /** A job as the assistant lists it in get_jobs, with its kind's scope spelled out. */
 export const JobRef = z.object({ id: z.number().int(), kind: JobKind, status: JobStatus, startedAt: Timestamp });
+
+// Assets tools (adr-0024): the studio's asset commands and agent runs, without the paid image requests, which wait for
+// the paid-generation opt-in of adr-0016.
+
+const assetKind = AssetKind.describe('character, scene or prop');
+const assetId = Id.describe('The asset id, from list_assets');
+
+export const ListAssetsInput = z.strictObject({
+  dramaId,
+  episodeId: Id.optional().describe("Only the assets linked to this episode, with what each character wears in it"),
+});
+
+/** list_assets: the project's library, or one episode's linked assets with each character's outfit there (adr-0023). */
+export const AssetList = z.object({
+  dramaId: z.number().int(),
+  episodeId: z.number().int().nullable(),
+  characters: z.array(EpisodeCharacterCard.partial({ outfit: true, outfitPath: true, latestOutfitTask: true })),
+  scenes: z.array(SceneCard),
+  props: z.array(PropCard),
+  studioPath: z.string(),
+});
+export type AssetList = z.infer<typeof AssetList>;
+
+/**
+ * The text fields of the three kinds side by side, each naming the kind it belongs to. The tool then validates them
+ * with the kind's own contract schema, which keeps its limits and refuses a field of another kind, as the studio's
+ * body validation does.
+ */
+const assetText = {
+  name: z.string().optional().describe("character, prop: the name (a character as the outline's Cast names them)"),
+  role: z.string().optional().describe('character: their part in the story in a few words'),
+  appearance: z.string().optional().describe('character: age, build, face, hair, the traits a viewer recognises at once; no clothes'),
+  styling: z.string().optional().describe('character: the clothes, colours and accessories they usually wear'),
+  description: z.string().optional().describe('character: one sentence of context; prop: the physical object only (shape, material, colour, size, wear)'),
+  location: z.string().optional().describe('scene: the place, as a script heading names it'),
+  time: z.string().optional().describe('scene: the time of day'),
+  prompt: z.string().optional().describe('scene: the set dressing (architecture, materials, furniture, weather; no people)'),
+  lighting: z.string().optional().describe('scene: the light sources, colour and mood'),
+  type: z.string().optional().describe('prop: what kind of object it is (lantern, letter, weapon)'),
+};
+
+export const CreateAssetInput = z.strictObject({
+  kind: assetKind,
+  dramaId,
+  episodeId: Id.optional().describe('Also link it to this episode of the project'),
+  ...assetText,
+});
+export type CreateAssetInput = z.infer<typeof CreateAssetInput>;
+
+/** No revision token: assets have none, and the studio's update is last-write-wins too (adr-0024). */
+export const UpdateAssetInput = z.strictObject({
+  kind: assetKind,
+  id: assetId,
+  ...assetText,
+  finalPrompt: z.string().nullable().optional().describe('The image prompt itself, written by hand (it is then up to date); null clears it'),
+});
+export type UpdateAssetInput = z.infer<typeof UpdateAssetInput>;
+
+/** The consent layer of adr-0016: the service refuses the same way in both interfaces, the flag is the creator's word. */
+export const DeleteAssetInput = z.strictObject({
+  kind: assetKind,
+  id: assetId,
+  confirm: z.boolean().default(false).describe('Set true only after the creator agreed to delete it: it leaves every episode and shot of the project, with its images'),
+});
+
+export const DesignAssetsInput = StartDesign.extend({
+  dramaId,
+  target: DesignTarget.describe('characters, scenes or props: one job per kind, the three can run side by side'),
+}).strict();
+export const ExtractAssetsInput = StartExtraction.extend({
+  episodeId,
+  target: ExtractionTarget.describe('characters, scenes or props: one job per kind, the three can run side by side'),
+}).strict();
+
+export const DescribeAssetInput = DescribeAsset.extend({
+  kind: assetKind,
+  id: assetId,
+  replace: z.boolean().default(false).describe('Set true only after the creator agreed to rewrite every describing field; without it only the empty ones are filled'),
+}).strict();
+
+/** write_final_prompt: `replace` (the assistant's word for the studio's `force`) rewrites a prompt that is up to date. */
+export const WriteFinalPromptInput = GenerateFinalPrompt.omit({ force: true })
+  .extend({
+    kind: assetKind,
+    id: assetId,
+    episodeId: Id.optional().describe("Write it in this episode's context; without one, in the project's"),
+    replace: z.boolean().default(false).describe('Set true only after the creator agreed to rewrite an up-to-date prompt (one they wrote by hand included); a missing or stale one needs nothing'),
+  })
+  .strict();
+
+/** create_asset, update_asset, describe_asset: the asset's card, as list_assets shows it. */
+export const AssetResult = z.object({ kind: AssetKind, asset: z.union([CharacterCard, SceneCard, PropCard]), studioPath: z.string() });
+export type AssetResult = z.infer<typeof AssetResult>;
+
+export const AssetDeleted = z.object({ kind: AssetKind, id: z.number().int(), studioPath: z.string() });
+export const FinalPromptWritten = z.object({ kind: AssetKind, id: z.number().int(), finalPrompt: z.string(), studioPath: z.string() });

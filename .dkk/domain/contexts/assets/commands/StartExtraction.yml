@@ -21,3 +21,4 @@ rejections:
   - Episode has no script
 adr_refs:
   - adr-0008
+  - adr-0016

@@ -1,4 +1,3 @@
-# Command — an instruction to change domain state.
 name: CreateCharacter
 description: Manually add a character to a drama, optionally linking it to an episode.
 fields:
@@ -21,3 +20,5 @@ actor: Creator
 handled_by: Character
 rejections:
   - Empty name
+adr_refs:
+  - adr-0016

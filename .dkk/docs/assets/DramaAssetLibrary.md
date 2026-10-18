@@ -39,4 +39,5 @@ The drama-wide asset library tab on the project page — every character, scene 
 
 | ADR | Title | Status |
 |-----|-------|--------|
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
 | [adr-0024](../../adr/adr-0024.md) | Assets designed from the story | proposed |

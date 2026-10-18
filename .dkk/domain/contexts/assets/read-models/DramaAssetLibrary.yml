@@ -25,4 +25,5 @@ subscribes_to:
 used_by:
   - Creator
 adr_refs:
+  - adr-0016
   - adr-0024

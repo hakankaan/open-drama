@@ -2,8 +2,7 @@ name: EpisodeAssets
 description: >-
   The assets stage of the workbench — characters, scenes and props linked to the episode with their fields, final
   prompt, reference image (plus thumbnail), readiness (ready / generating / pending) and the extraction job status per
-  type; each character also carries its outfit in the episode, the outfit picture and the latest outfit task
-  (adr-0023).
+  type; each character also carries its outfit in the episode, the outfit picture and the latest outfit task (adr-0023).
 fields:
   - name: episodeId
     type: ID
@@ -33,4 +32,5 @@ subscribes_to:
 used_by:
   - Creator
 adr_refs:
+  - adr-0016
   - adr-0023

@@ -12,7 +12,7 @@ import { studioPath, tool } from '../errors';
 // a job already running is returned instead of started again (alreadyRunning). wait_for_job reports the outcome.
 
 const Started = JobStarted.extend({ studioPath: z.string() });
-const BILLS = 'Starts a server job that bills the configured text service once; wait_for_job returns its outcome.';
+export const BILLS = 'Starts a server job that bills the configured text service once; wait_for_job returns its outcome.';
 
 const episodeStarted = (episodeId: number, started: { jobId: number; alreadyRunning: boolean }) => {
   const row = getEpisodeRow(episodeId);

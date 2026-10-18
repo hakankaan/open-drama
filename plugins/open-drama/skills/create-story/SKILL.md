@@ -1,6 +1,6 @@
 ---
 name: create-story
-description: "Take a premise to a project with a story outline and planned episodes, reviewing each step with the creator."
+description: "Take a premise to a project with a story outline, planned episodes and a designed cast, reviewing each step with the creator."
 argument-hint: "[premise]"
 ---
 
@@ -35,7 +35,22 @@ numbers; say so and let the creator choose). wait_for_job; its outcome lists the
 number, title, synopsis. A beat sheet the creator wants changed: read_episode (beats), edit, save_beats. An
 episode they do not want: delete_episode after they confirm.
 
-## 6. Next
+## 6. Design the cast, places and props
+Offer to design the project's assets from the outline: the characters it names, the places of its world and the
+few props its threads turn on. Each kind is one agent run, billed like the outline; existing assets keep what they
+have. When the creator agrees: design_assets for characters, scenes and props (they run side by side), then
+wait_for_job on each. The outcome counts what was saved and filled and names what was skipped or did not fit; say
+so when a name is missing. Present them from list_assets: each character's name, role and look in one line, each
+place with its time of day, each prop. Changes the creator words: update_asset, after reading the asset. One to
+redo: describe_asset with replace: true after they agreed. One they add: create_asset with the name, then
+describe_asset. One they do not want: delete_asset with confirm: true after they agreed.
+
+The pictures are drawn in the studio, not here, and cost image credits: send the creator to the project's Assets
+tab (the studio address with the studioPath of list_assets), where each asset gets its image prompt and its
+reference images, before any episode is written. write_final_prompt shows an image prompt here first when they want
+to read it. Without a studio, say the images wait until one runs.
+
+## 7. Next
 Offer to write the scripts (the "Write the episodes" skill) or to stop here. Give the studio link if there is a studio.
 
 

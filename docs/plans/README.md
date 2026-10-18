@@ -29,7 +29,7 @@ Iteration 1 video adapters (M3) are Seedance via Volcengine, then MiniMax, then 
 
 ## Parity inventory (`adr-0016`)
 
-Every command and query of the domain model, its REST route and its MCP tool. A use case is done when both exist, or when it falls under one of the three exceptions: **S** secrets (a key never travels over MCP), **B** binary media, **I** one interface's own state. "it. 2" marks the production floor and the editing use cases that iteration 2 delivers; until then the assistant covers configuration and the story room only.
+Every command and query of the domain model, its REST route and its MCP tool. A use case is done when both exist, or when it falls under one of the three exceptions: **S** secrets (a key never travels over MCP), **B** binary media, **I** one interface's own state. "it. 2" marks the production floor and the editing use cases that iteration 2 delivers; until then the assistant covers configuration, the story room and the text side of the assets (`adr-0024`).
 
 | Context | Command / read model | REST | MCP tool |
 |---|---|---|---|
@@ -70,7 +70,11 @@ Every command and query of the domain model, its REST route and its MCP tool. A 
 | agents | AgentCatalog, SkillCatalog | `GET /agents`, `GET /skills` | it. 2 (resources) |
 | agents | SaveAgentPrompt / ResetAgentPrompt / CreateSkill / UpdateSkill / DeleteSkill | `PUT`/`DELETE /agents/:type/prompt`, `/skills` | it. 2 `update_agent_prompt`, `update_agent_skill`, … |
 | agents | RunAgent (chat) | `POST /agents/:type/chat` | it. 2 |
-| assets | EpisodeAssets, DramaAssetLibrary; Create/Update/Delete Character, Prop, Scene; StartExtraction; DesignAssets (`POST /dramas/:id/design`, `adr-0024`); DescribeAsset (`POST /{characters,scenes,props}/:id/describe`, `adr-0024`); Generate…FinalPrompt; Request…Image (paid); SetEpisodeOutfit, RequestOutfitImage (paid, `adr-0023`) | assets routes | it. 2 `set_episode_outfit`, `list_assets`, `extract_assets`, `design_assets`, `describe_asset`, `create_asset`, `update_asset`, `delete_asset`, `write_final_prompt`, `generate_asset_image` (also the outfit picture) |
+| assets | EpisodeAssets, DramaAssetLibrary | `GET /episodes/:id/assets`, `GET /dramas/:id/assets` | `list_assets` (with `episodeId` for an episode's assets and outfits) |
+| assets | Create/Update/Delete Character, Prop, Scene | `POST` / `PATCH` / `DELETE /{characters,scenes,props}` | `create_asset` / `update_asset` (no revision: last write wins, as in the studio; media paths, voice and sort order stay with the studio, B/I) / `delete_asset` (with `confirm`) |
+| assets | StartExtraction; DesignAssets (`adr-0024`) | `POST /episodes/:id/extract`; `POST /dramas/:id/design` | `extract_assets`; `design_assets` (outcome `design` in `wait_for_job`) |
+| assets | DescribeAsset (`adr-0024`); Generate…FinalPrompt | `POST /{characters,scenes,props}/:id/describe`; `…/:id/final-prompt` | `describe_asset` (with `replace`); `write_final_prompt` (with `replace` for the route's `force`, `episodeId` optional) |
+| assets | Request…Image (paid); SetEpisodeOutfit, RequestOutfitImage (paid, `adr-0023`) | `…/:id/image`; `PATCH /characters/:id/outfit`, `…/outfit/image` | it. 2 (paid opt-in) `generate_asset_image` (also the outfit picture), `set_episode_outfit` |
 | storyboard | EpisodeShotList, VideoPromptBatchStatus; BreakdownStoryboard; Create/Update/Delete Shot; GenerateShotVideoPrompt, StartVideoPromptBatch; RequestShotVideo (paid; `seed` for retakes, `adr-0017`) | storyboard routes | it. 2 `breakdown_storyboard`, `list_shots`, `create_shot`, `update_shot`, `delete_shot`, `generate_video_prompts`, `generate_shot_videos` |
 | generation | EpisodeGenerationTasks, GenerationTaskStatus, DeleteGenerationTask | generation routes | it. 2 `list_generation_tasks` |
 | compositing | MergeShots, EpisodeFilms, LatestMergeStatus | compositing routes | it. 2 `merge_episode`, `get_films` (URLs under `/static`) |

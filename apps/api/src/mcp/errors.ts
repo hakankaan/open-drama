@@ -67,6 +67,6 @@ export function tool<In extends z.ZodObject, Out extends z.ZodType<Record<string
 
 /** Where the studio shows a thing, for an assistant that has a studio address to prefix it with. */
 export const studioPath = {
-  drama: (dramaId: number) => `/drama/${dramaId}`,
+  drama: (dramaId: number, tab?: 'story' | 'assets') => (tab ? `/drama/${dramaId}?tab=${tab}` : `/drama/${dramaId}`),
   episode: (dramaId: number, episodeNumber: number) => `/drama/${dramaId}/episode/${episodeNumber}`,
 };

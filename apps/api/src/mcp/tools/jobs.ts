@@ -14,7 +14,7 @@ export function registerJobTools(server: McpServer, disconnected?: AbortSignal) 
     'get_jobs',
     {
       title: 'Get the jobs',
-      description: "A project's latest outline and plan jobs and, with an episodeId, that episode's latest job per kind (write, rewrite, recap, extraction, breakdown, video prompts).",
+      description: "A project's latest outline and plan jobs and its latest design job per kind and, with an episodeId, that episode's latest job per kind (write, rewrite, recap, extraction per kind, breakdown, video prompts).",
       input: GetJobsInput,
       output: z.object({ drama: DramaJobs, episode: EpisodeJobs.nullable() }),
       readOnly: true,

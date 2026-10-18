@@ -22,6 +22,7 @@ Run the prompt-generator agent to write the white-background product-shot final 
 ## Rules & Invariants
 
 - Agent finished without saving a prompt
+- The prop is claimed while the agent would run (its image, description or another prompt in progress, 409); an up-to-date prompt without force is returned as is
 
 
 ## Relationships
@@ -35,4 +36,5 @@ Run the prompt-generator agent to write the white-background product-shot final 
 
 | ADR | Title | Status |
 |-----|-------|--------|
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
 | [adr-0024](../../adr/adr-0024.md) | Assets designed from the story | proposed |

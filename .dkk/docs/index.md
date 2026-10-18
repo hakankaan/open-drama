@@ -544,7 +544,7 @@ sequenceDiagram
 
 ### AssistantStoryCreation
 
-The creator works from their AI assistant instead of the studio (adr-0016). The assistant loads the create-story skill, checks readiness, creates the project, has the story writer draft the outline, lets the creator review and edit it in the conversation, plans the episodes, then writes each episode in order with its recap; every stage is reviewed in the conversation before the next starts. The studio, if it runs, shows the same project.
+The creator works from their AI assistant instead of the studio (adr-0016). The assistant loads the create-story skill, checks readiness, creates the project, has the story writer draft the outline, lets the creator review and edit it in the conversation, plans the episodes, has the asset designer design the cast, places and props from the outline and sends the creator to the studio's asset library for their images (adr-0024), then writes each episode in order with its recap; every stage is reviewed in the conversation before the next starts. The studio, if it runs, shows the same project.
 
 ```mermaid
 sequenceDiagram
@@ -553,6 +553,7 @@ sequenceDiagram
     participant ctx_production as production
     participant actor_Creator as Creator
     participant actor_AgentRuntime as AgentRuntime
+    participant ctx_assets as assets
 
     ctx_configuration-->>ctx_configuration: [Read] ConfigurationReadiness
     actor_Creator->>ctx_production: CreateDrama
@@ -563,6 +564,9 @@ sequenceDiagram
     actor_AgentRuntime->>ctx_production: SaveOutline
     actor_Creator->>ctx_production: PlanEpisodes
     ctx_production-->>ctx_production: PlannedEpisodesAdded
+    actor_Creator->>ctx_assets: DesignAssets
+    ctx_assets-->>ctx_assets: AssetDesignCompleted
+    ctx_assets-->>ctx_assets: [Read] DramaAssetLibrary
     actor_Creator->>ctx_production: WriteEpisodeScript
     ctx_production-->>ctx_production: EpisodeWriteCompleted
     ctx_production->>ctx_production: [Policy] WriteRecapAfterScript
@@ -580,8 +584,11 @@ sequenceDiagram
 | 7 | `production.SaveOutline` | command |
 | 8 | `production.PlanEpisodes` | command |
 | 9 | `production.PlannedEpisodesAdded` | event |
-| 10 | `production.WriteEpisodeScript` | command |
-| 11 | `production.EpisodeWriteCompleted` | event |
-| 12 | `production.WriteRecapAfterScript` | policy |
-| 13 | `production.EpisodeJobs` | read_model |
+| 10 | `assets.DesignAssets` | command |
+| 11 | `assets.AssetDesignCompleted` | event |
+| 12 | `assets.DramaAssetLibrary` | read_model |
+| 13 | `production.WriteEpisodeScript` | command |
+| 14 | `production.EpisodeWriteCompleted` | event |
+| 15 | `production.WriteRecapAfterScript` | policy |
+| 16 | `production.EpisodeJobs` | read_model |
 

@@ -8,4 +8,5 @@ handled_by: Scene
 rejections:
   - An image of the scene is being generated (409, delete it once the task has finished)
 adr_refs:
+  - adr-0016
   - adr-0024

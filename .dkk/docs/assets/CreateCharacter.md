@@ -35,4 +35,6 @@ Manually add a character to a drama, optionally linking it to an episode.
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |

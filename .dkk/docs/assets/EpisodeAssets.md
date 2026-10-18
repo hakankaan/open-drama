@@ -45,4 +45,5 @@ The assets stage of the workbench — characters, scenes and props linked to the
 
 | ADR | Title | Status |
 |-----|-------|--------|
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
 | [adr-0023](../../adr/adr-0023.md) | Per-episode outfits | proposed |

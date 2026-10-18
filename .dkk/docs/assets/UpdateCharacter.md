@@ -39,5 +39,6 @@ Edit a character's fields, manually set its final prompt, attach or remove an up
 
 | ADR | Title | Status |
 |-----|-------|--------|
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
 | [adr-0018](../../adr/adr-0018.md) | Character reference views | accepted |
 | [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |

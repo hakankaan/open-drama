@@ -11,7 +11,7 @@ Open Drama is built on **Next.js** (web) and **Node.js** (API), with a documente
 Open Drama is one server with two interfaces, and either works without the other.
 
 - **The web studio**: the pages at port 3000, from the first paste to the finished film.
-- **Your AI assistant**: the same server speaks MCP at `POST /mcp`, so Claude Code, Claude Desktop, Cursor or any other MCP client can run the story room from a conversation: create a project, write the outline, plan the episodes, write and review the scripts and recaps, and configure providers (never their keys). The assistant gets the same skills a studio user has as slash-commands (`/open-drama:create-story`, `/open-drama:write-episodes`, …). See [Use it from an AI assistant](#use-it-from-an-ai-assistant).
+- **Your AI assistant**: the same server speaks MCP at `POST /mcp`, so Claude Code, Claude Desktop, Cursor or any other MCP client can run the story room from a conversation: create a project, write the outline, plan the episodes, design the cast, places and props from the outline, write and review the scripts and recaps, and configure providers (never their keys); the reference images are drawn in the studio. The assistant gets the same skills a studio user has as slash-commands (`/open-drama:create-story`, `/open-drama:write-episodes`, …). See [Use it from an AI assistant](#use-it-from-an-ai-assistant).
 
 ## Quick start
 

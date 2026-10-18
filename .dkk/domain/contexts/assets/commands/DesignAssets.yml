@@ -23,4 +23,5 @@ rejections:
   - No outline yet (412, write the outline first)
   - The outline is being written (409)
 adr_refs:
+  - adr-0016
   - adr-0024

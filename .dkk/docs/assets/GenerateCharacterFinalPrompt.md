@@ -22,6 +22,7 @@ Run the prompt-generator agent to write the final prompt for a character, descri
 ## Rules & Invariants
 
 - Agent finished without saving a prompt
+- The character is claimed while the agent would run (its image, outfit image, description or another prompt in progress, 409); an up-to-date prompt without force is returned as is
 
 
 ## Relationships
@@ -35,5 +36,6 @@ Run the prompt-generator agent to write the final prompt for a character, descri
 
 | ADR | Title | Status |
 |-----|-------|--------|
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
 | [adr-0018](../../adr/adr-0018.md) | Character reference views | accepted |
 | [adr-0024](../../adr/adr-0024.md) | Assets designed from the story | proposed |

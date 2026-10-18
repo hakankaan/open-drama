@@ -4,7 +4,8 @@ import { conflict } from '../../http/errors';
 /**
  * Assets with a request in flight that reads their fields and writes back: an image request, from its final prompt
  * (the prompt agent may run) to the task's submission, not the drawing itself; an outfit image request; a describe
- * run. One process, so an in-memory claim suffices. A bulk save (extraction, design) skips a claimed asset instead
+ * run; a final prompt written on its own (the studio's button, the assistant's `write_final_prompt`), while the agent
+ * runs. One process, so an in-memory claim suffices. A bulk save (extraction, design) skips a claimed asset instead
  * of changing it under that request (adr-0024).
  */
 const claimed = new Set<string>();

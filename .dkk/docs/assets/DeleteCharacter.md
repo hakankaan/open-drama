@@ -31,4 +31,5 @@ Soft-delete a character; it disappears from every episode of the drama and from 
 
 | ADR | Title | Status |
 |-----|-------|--------|
+| [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
 | [adr-0024](../../adr/adr-0024.md) | Assets designed from the story | proposed |

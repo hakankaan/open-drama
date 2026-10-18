@@ -193,7 +193,9 @@ flows:
         type: command
       - ref: assets.SaveExtractedCharacters
         type: command
-        note: Also SaveExtractedScenes / SaveExtractedProps; an asset designed from the story (flow AssetDesign) is linked here by its name, and a character the script shows in other clothes is dressed for the episode (adr-0024)
+        note: >-
+          Also SaveExtractedScenes / SaveExtractedProps; an asset designed from the story (flow AssetDesign) is linked
+          here by its name, and a character the script shows in other clothes is dressed for the episode (adr-0024)
       - ref: assets.CharactersExtracted
         type: event
       - ref: assets.ExtractionCompleted
@@ -227,7 +229,9 @@ flows:
     steps:
       - ref: assets.DesignAssets
         type: command
-        note: Refused without an outline (412) and while the outline is being written (409); a duplicate start returns the running job
+        note: >-
+          Refused without an outline (412) and while the outline is being written (409); a duplicate start returns the
+          running job
       - ref: assets.AssetDesignRequested
         type: event
         note: The outline revision the run starts from is recorded on the job
@@ -235,10 +239,14 @@ flows:
         type: policy
       - ref: agents.RunAgent
         type: command
-        note: asset_designer with the run's tool allowlist (read_story_for_design, read_existing_<kind>, save_designed_<kind>)
+        note: >-
+          asset_designer with the run's tool allowlist (read_story_for_design, read_existing_<kind>,
+          save_designed_<kind>)
       - ref: assets.SaveDesignedCharacters
         type: command
-        note: Also SaveDesignedScenes / SaveDesignedProps; one call with the whole set, capped at 12 / 10 / 5 with the overflow named back
+        note: >-
+          Also SaveDesignedScenes / SaveDesignedProps; one call with the whole set, capped at 12 / 10 / 5 with the
+          overflow named back
       - ref: assets.DesignedAssetsSaved
         type: event
       - ref: assets.AssetDesignCompleted
@@ -248,7 +256,9 @@ flows:
         note: The Story tab shows the counts and the stale note when the outline moved on, and links to the library
       - ref: assets.DescribeAsset
         type: command
-        note: One asset made by hand, described in the request; the run is offered read_story_for_design, read_existing_<kind> and describe_<kind>, never the bulk save
+        note: >-
+          One asset made by hand, described in the request; the run is offered read_story_for_design,
+          read_existing_<kind> and describe_<kind>, never the bulk save
       - ref: assets.AssetDescribed
         type: event
   - name: StoryboardAndVideoStage
@@ -397,8 +407,10 @@ flows:
     description: >-
       The creator works from their AI assistant instead of the studio (adr-0016). The assistant loads the create-story
       skill, checks readiness, creates the project, has the story writer draft the outline, lets the creator review and
-      edit it in the conversation, plans the episodes, then writes each episode in order with its recap; every stage is
-      reviewed in the conversation before the next starts. The studio, if it runs, shows the same project.
+      edit it in the conversation, plans the episodes, has the asset designer design the cast, places and props from the
+      outline and sends the creator to the studio's asset library for their images (adr-0024), then writes each episode
+      in order with its recap; every stage is reviewed in the conversation before the next starts. The studio, if it
+      runs, shows the same project.
     steps:
       - ref: configuration.ConfigurationReadiness
         type: read_model
@@ -424,6 +436,19 @@ flows:
         note: plan_episodes once the outline is approved; episodes are created without locked services
       - ref: production.PlannedEpisodesAdded
         type: event
+      - ref: assets.DesignAssets
+        type: command
+        note: >-
+          design_assets per kind once the plan is reviewed, the three side by side; wait_for_job reports what each
+          saved, filled, skipped or could not fit
+      - ref: assets.AssetDesignCompleted
+        type: event
+      - ref: assets.DramaAssetLibrary
+        type: read_model
+        note: >-
+          list_assets to present the cast, places and props; edits through update_asset, describe_asset (replace) and
+          delete_asset (confirm); the images are drawn in the studio's asset library, since generate_asset_image waits
+          for the paid-generation setting
       - ref: production.WriteEpisodeScript
         type: command
         note: write_episode_script per episode, in order; refused while an earlier recap is pending
@@ -437,3 +462,4 @@ flows:
         note: wait_for_job on the recap before the next episode is written
     adr_refs:
       - adr-0016
+      - adr-0024

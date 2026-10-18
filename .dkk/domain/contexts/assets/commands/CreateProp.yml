@@ -1,4 +1,3 @@
-# Command — an instruction to change domain state.
 name: CreateProp
 description: Manually add a prop (name, type, physical description) to a drama, optionally linking it to an episode.
 fields:
@@ -17,3 +16,5 @@ actor: Creator
 handled_by: Prop
 rejections:
   - Empty name
+adr_refs:
+  - adr-0016

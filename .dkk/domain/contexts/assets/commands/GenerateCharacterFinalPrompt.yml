@@ -19,6 +19,8 @@ actor: Creator
 handled_by: Character
 rejections:
   - Agent finished without saving a prompt
+  - The character is claimed while the agent would run (its image, outfit image, description or another prompt in progress, 409); an up-to-date prompt without force is returned as is
 adr_refs:
+  - adr-0016
   - adr-0018
   - adr-0024

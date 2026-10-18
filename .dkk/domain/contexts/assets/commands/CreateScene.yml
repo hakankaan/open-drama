@@ -1,4 +1,3 @@
-# Command — an instruction to change domain state.
 name: CreateScene
 description: Manually add a scene (location, time, description, lighting) to a drama, optionally linking it to an episode.
 fields:
@@ -19,3 +18,5 @@ actor: Creator
 handled_by: Scene
 rejections:
   - Empty location
+adr_refs:
+  - adr-0016

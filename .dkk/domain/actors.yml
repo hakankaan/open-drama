@@ -148,17 +148,22 @@ actors:
     capabilities:
       - Create projects and episodes, write and edit outlines, beat sheets, scripts and recaps through the tools
       - Start and wait for the outline, plan, write, rewrite and recap jobs; cancel one when the creator asks
+      - >-
+        Design the project's characters, scenes and props from the outline, describe, create, edit and delete them,
+        extract them from a script and write their image prompts (adr-0024); their images are drawn in the studio until
+        the paid-generation setting exists
       - Configure model services (without ever handling a key), style presets and the content language
       - Follow the assistant skills (set-up, create-story, write-episodes, adapt-source, review-story) stage by stage
     failure_modes:
       - Saves over text the creator changed meanwhile (refused by the revision token)
       - >-
-        Replaces or deletes without the creator's agreement (refused without replace or force; the client asks the
-        creator first)
+        Replaces or deletes without the creator's agreement (refused without replace, force or confirm; the client asks
+        the creator first)
       - Asks the creator for an API key in the conversation (the instructions forbid it; the tools have no key field)
       - Spends the text provider's budget on repeated agent runs without pausing for review
     adr_refs:
       - adr-0016
+      - adr-0024
   - name: SpeechModelProvider
     type: external
     description: >-
