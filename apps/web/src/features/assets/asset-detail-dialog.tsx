@@ -79,6 +79,8 @@ export function AssetDetailDialog({
   const describable: readonly string[] = DESCRIBABLE_FIELDS[item.kind];
   const emptyDescribable = describable.filter((k) => !(record[k] ?? '').trim());
   const describing = generation?.describePending ?? false;
+  // A save is refused while a description, a prompt or an image request holds the asset's claim (adr-0024).
+  const busy = describing || (generation?.promptPending ?? false) || (generation?.imagePending ?? false);
   const [confirmDescribe, setConfirmDescribe] = useState(false);
   const describe = async (replace: boolean) => {
     const next = await generation?.onDescribe(replace);
@@ -253,7 +255,7 @@ export function AssetDetailDialog({
               <Button variant="ghost" onClick={onClose} disabled={update.isPending}>
                 {tc('cancel')}
               </Button>
-              <Button type="submit" variant="primary" loading={update.isPending} disabled={!dirty || describing}>
+              <Button type="submit" variant="primary" loading={update.isPending} disabled={!dirty || busy}>
                 {tc('save')}
               </Button>
             </DialogFooter>

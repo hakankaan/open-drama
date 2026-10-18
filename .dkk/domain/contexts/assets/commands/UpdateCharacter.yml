@@ -31,7 +31,9 @@ actor: Creator
 handled_by: Character
 rejections:
   - Views change while an image of the character is generating
+  - An image, a prompt or a description of the character is in progress (409)
 adr_refs:
   - adr-0016
   - adr-0018
   - adr-0021
+  - adr-0024

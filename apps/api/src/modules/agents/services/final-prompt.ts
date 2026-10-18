@@ -65,13 +65,15 @@ function promptState(kind: AssetKind, id: number, episodeId: number | undefined)
 /**
  * Generate*FinalPrompt: the prompt generator writes and saves the prompt (style prefix added by the save tool).
  * An up-to-date prompt is returned as is unless `force`. The agent runs in the episode's context when one is given
- * and in the drama's otherwise (adr-0024): the prompt describes the asset, not an episode. The run holds the
- * asset's claim, so it is refused (409) while an image, a description or another prompt of the asset is in progress.
+ * and in the drama's otherwise (adr-0024): the prompt describes the asset, not an episode. The call holds the
+ * asset's claim, the up-to-date answer included, so it is refused (409) while an image, a description or another
+ * prompt of the asset is in progress, rather than answering with a prompt a description is about to make stale.
  */
 export async function generateFinalPrompt(kind: AssetKind, id: number, opts: PromptOpts & { force?: boolean }): Promise<string> {
-  const { asset, upToDate } = promptState(kind, id, opts.episodeId);
-  if (upToDate && !opts.force) return upToDate;
-  return withAssetClaim(kind, id, () => writeFinalPrompt(kind, asset, opts));
+  return withAssetClaim(kind, id, async () => {
+    const { asset, upToDate } = promptState(kind, id, opts.episodeId);
+    return upToDate && !opts.force ? upToDate : writeFinalPrompt(kind, asset, opts);
+  });
 }
 
 /** Runs the prompt generator on the asset and returns the saved prompt; the caller holds the asset's claim. */

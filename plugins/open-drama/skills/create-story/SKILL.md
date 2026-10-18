@@ -42,8 +42,9 @@ have. When the creator agrees: design_assets for characters, scenes and props (t
 wait_for_job on each. The outcome counts what was saved and filled and names what was skipped or did not fit; say
 so when a name is missing. Present them from list_assets: each character's name, role and look in one line, each
 place with its time of day, each prop. Changes the creator words: update_asset, after reading the asset. One to
-redo: describe_asset with replace: true after they agreed. One they add: create_asset with the name, then
-describe_asset. One they do not want: delete_asset with confirm: true after they agreed.
+redo: describe_asset with replace: true after they agreed. One they add: create_asset with a name (a character
+or a prop) or a location and time of day (a scene), then describe_asset. One they do not want: delete_asset with
+confirm: true after they agreed.
 
 The pictures are drawn in the studio, not here, and cost image credits: send the creator to the project's Assets
 tab (the studio address with the studioPath of list_assets), where each asset gets its image prompt and its

@@ -47,9 +47,11 @@ outdated.
   serial is not written while an earlier episode's recap is still being written.
 - A saved outline, script or fresh recap is replaced only with `replace: true`; an episode holding a script, shots
   or a film is deleted only with `force: true`; a stale revision is refused with CONFLICT.
-- An asset's filled describing fields and an up-to-date image prompt are rewritten only with `replace: true`; an
-  asset is deleted only with `confirm: true`, and not while one of its images is being drawn. Assets carry no
-  revision: the last write wins, so read before you edit.
+- `describe_asset` rewrites an asset's filled describing fields, and `write_final_prompt` an up-to-date image
+  prompt, only with `replace: true`; `update_asset` has no flag and writes the creator's own words over the fields
+  it names. An asset is deleted only with `confirm: true`, and not while one of its images is being drawn. Assets
+  carry no revision: the last write wins, so read before you edit; an edit, a description or a prompt is refused
+  with CONFLICT while an image, a prompt or a description of the asset is in progress.
 - Image and video services are locked to an episode at its first generation, so later changes in the settings do
   not alter an episode half-way through.
 - Jobs survive a restart as failed rows; `wait_for_job` reports the outcome of a settled one.

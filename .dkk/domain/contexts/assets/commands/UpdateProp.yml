@@ -17,5 +17,8 @@ fields:
     type: string
 actor: Creator
 handled_by: Prop
+rejections:
+  - An image, a prompt or a description of the prop is in progress (409)
 adr_refs:
   - adr-0016
+  - adr-0024

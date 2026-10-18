@@ -258,7 +258,7 @@ export const CreateAssetInput = z.strictObject({
 });
 export type CreateAssetInput = z.infer<typeof CreateAssetInput>;
 
-/** No revision token: assets have none, and the studio's update is last-write-wins too (adr-0024). */
+/** No revision token: assets have none, and the studio's update is last-write-wins too (adr-0024); like it, refused (CONFLICT) while an image, a prompt or a description of the asset is in progress. */
 export const UpdateAssetInput = z.strictObject({
   kind: assetKind,
   id: assetId,

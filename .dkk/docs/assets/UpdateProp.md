@@ -20,6 +20,9 @@ Edit a prop's fields, set its final prompt manually, or attach an uploaded or ge
 | `finalPrompt` | `string` | — |
 | `imagePath` | `string` | — |
 
+## Rules & Invariants
+
+- An image, a prompt or a description of the prop is in progress (409)
 
 
 ## Relationships
@@ -34,3 +37,4 @@ Edit a prop's fields, set its final prompt manually, or attach an uploaded or ge
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
+| [adr-0024](../../adr/adr-0024.md) | Assets designed from the story | proposed |

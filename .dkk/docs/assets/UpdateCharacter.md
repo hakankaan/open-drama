@@ -26,6 +26,7 @@ Edit a character's fields, manually set its final prompt, attach or remove an up
 ## Rules & Invariants
 
 - Views change while an image of the character is generating
+- An image, a prompt or a description of the character is in progress (409)
 
 
 ## Relationships
@@ -42,3 +43,4 @@ Edit a character's fields, manually set its final prompt, attach or remove an up
 | [adr-0016](../../adr/adr-0016.md) | Two user interfaces over one service layer | accepted |
 | [adr-0018](../../adr/adr-0018.md) | Character reference views | accepted |
 | [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |
+| [adr-0024](../../adr/adr-0024.md) | Assets designed from the story | proposed |

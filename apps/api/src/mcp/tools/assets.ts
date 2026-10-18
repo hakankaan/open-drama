@@ -114,7 +114,7 @@ export function registerAssetTools(server: McpServer) {
     {
       title: 'Update an asset',
       description:
-        "Changes the fields given and keeps the rest. The last write wins, as in the studio: read the asset with list_assets first. A changed describing field keeps the final prompt and marks it stale; a new name makes the shot prompts that mention it stale; a new styling or lighting makes the keyframes drawn from it stale. Images are attached in the studio.",
+        "Changes the fields given and keeps the rest. The last write wins, as in the studio: read the asset with list_assets first. A changed describing field keeps the final prompt and marks it stale; a new name makes the shot prompts that mention it stale; a new styling or lighting makes the keyframes drawn from it stale. Refused (CONFLICT) while an image, a prompt or a description of the asset is in progress, as the studio's save is. Images are attached in the studio.",
       input: UpdateAssetInput,
       output: AssetResult,
       idempotent: true,

@@ -41,6 +41,7 @@ import { getDramaRow, touchDrama } from '../production/dramas';
 import { getEpisodeRow } from '../production/episodes';
 import { markAssetPromptsStale, type Tx } from '../storyboard/service';
 import { boundShots, markKeyframesStale } from '../storyboard/staleness';
+import { assertUnclaimed } from './claims';
 import { changed, promptPatch } from './fields';
 import { normaliseName, sceneKey } from './names';
 import { VIEW_COLUMN, viewColumns, viewsOf } from './views';
@@ -211,7 +212,13 @@ export function createCharacter(input: z.output<typeof CreateCharacter>): Charac
   return characterCard(row, null);
 }
 
+/** The creator's edit; refused while a run holds the character's claim (adr-0024). */
 export function updateCharacter(id: number, input: z.output<typeof UpdateCharacter>): CharacterCard {
+  assertUnclaimed('character', id);
+  return applyCharacterUpdate(id, input);
+}
+
+function applyCharacterUpdate(id: number, input: z.output<typeof UpdateCharacter>): CharacterCard {
   const current = getCharacterRow(id);
   assertSomething(input);
   if (input.name !== undefined) assertUniqueCharacter(current.dramaId, input.name, id);
@@ -305,7 +312,13 @@ export function createScene(input: z.output<typeof CreateScene>): SceneCard {
   return { ...strip(row), latestImageTask: null };
 }
 
+/** The creator's edit; refused while a run holds the scene's claim (adr-0024). */
 export function updateScene(id: number, input: z.output<typeof UpdateScene>): SceneCard {
+  assertUnclaimed('scene', id);
+  return applySceneUpdate(id, input);
+}
+
+function applySceneUpdate(id: number, input: z.output<typeof UpdateScene>): SceneCard {
   const current = getSceneRow(id);
   assertSomething(input);
   if (input.location !== undefined || input.time !== undefined) {
@@ -388,7 +401,13 @@ export function createProp(input: z.output<typeof CreateProp>): PropCard {
   return { ...strip(row), latestImageTask: null };
 }
 
+/** The creator's edit; refused while a run holds the prop's claim (adr-0024). */
 export function updateProp(id: number, input: z.output<typeof UpdateProp>): PropCard {
+  assertUnclaimed('prop', id);
+  return applyPropUpdate(id, input);
+}
+
+function applyPropUpdate(id: number, input: z.output<typeof UpdateProp>): PropCard {
   const current = getPropRow(id);
   assertSomething(input);
   if (input.name !== undefined) assertUniqueProp(current.dramaId, input.name, id);
@@ -433,12 +452,13 @@ export function getAsset(kind: AssetKind, id: number): AssetCard {
   return { ...strip(getPropRow(id)), latestImageTask: latestImageTasks('prop', [id]).get(id) ?? null };
 }
 
+/** A run's own write of the asset it holds the claim of: the manual update without the claim check. */
 const updateAsset = (kind: AssetKind, id: number, patch: Record<string, string>): AssetCard =>
   kind === 'character'
-    ? updateCharacter(id, patch as z.output<typeof UpdateCharacter>)
+    ? applyCharacterUpdate(id, patch as z.output<typeof UpdateCharacter>)
     : kind === 'scene'
-      ? updateScene(id, patch as z.output<typeof UpdateScene>)
-      : updateProp(id, patch as z.output<typeof UpdateProp>);
+      ? applySceneUpdate(id, patch as z.output<typeof UpdateScene>)
+      : applyPropUpdate(id, patch as z.output<typeof UpdateProp>);
 
 /** An asset's describable fields (DESCRIBABLE_FIELDS) split by whether they hold text yet. */
 export function describableFields(kind: AssetKind, id: number): { empty: string[]; filled: string[] } {
@@ -449,8 +469,9 @@ export function describableFields(kind: AssetKind, id: number): { empty: string[
 
 /**
  * DescribeAsset's write (adr-0024): of the fields the designer sent, the describable ones, kept to the empty ones
- * unless the run may replace; an identity field is never among them. It goes through the manual update, so the
- * final prompt goes stale and the keyframes drawn from a styling or a lighting with it. Nothing to write is the
+ * unless the run may replace; an identity field is never among them. It goes through the manual update's write,
+ * under the claim the run holds, so the final prompt goes stale and the keyframes drawn from a styling or a
+ * lighting with it. Nothing to write is the
  * agent's mistake, named back to it so the run can send the right fields.
  */
 export function writeDescription(kind: AssetKind, id: number, fields: Record<string, string | undefined>, replace: boolean) {
