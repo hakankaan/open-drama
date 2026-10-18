@@ -465,8 +465,7 @@
       "scene": "シーンはまだありません。シーンとは、ある時間帯のある場所のことです。",
       "prop": "小道具はまだありません。ストーリーの展開に関わる物だけを登録します。"
     },
-    "needEpisode": "先にエピソードを作成してください。プロンプトはエピソードの文脈に沿って書かれます。",
-    "alreadyGenerating": "このアセットの画像はすでに生成中です。",
+    "alreadyGenerating": "このアセットでは画像、プロンプト、または描写がすでに進行中です。",
     "saveFirst": "先に編集内容を保存してください。",
     "generatePrompt": "プロンプトを作成",
     "regeneratePrompt": "プロンプトを再作成",
@@ -531,7 +530,14 @@
       "headshotFirst": "先に顔のアップを生成するかアップロードしてください。衣装はそれをもとに描きます",
       "saveFirst": "入力欄の外をクリックして、先に衣装を保存してください",
       "alreadyDrawing": "このキャラクターの画像はすでに描画中です。"
-    }
+    },
+    "describe": "AIで描写",
+    "describeAgain": "もう一度描写",
+    "describeWithAi": "AIで描写して作成",
+    "describeHint": "空の項目をストーリーから埋めます。入力済みの項目はそのままです。",
+    "describeAgainTitle": "{name}をもう一度描写しますか？",
+    "describeAgainBody": "デザイナーがストーリーからすべての描写項目を書き直します。名前は残り、画像プロンプトは古くなります。",
+    "described": "{name}をストーリーから描写しました。"
   },
   "project": {
     "notFound": "このプロジェクトは存在しないか、削除されています。",
@@ -587,7 +593,25 @@
       "running": "構成を書いています。通常1分以内に終わります。",
       "failed": "構成の作成に失敗しました: {error}",
       "saved": "構成を保存しました。",
-      "plan": "エピソードを計画"
+      "plan": "エピソードを計画",
+      "design": "キャラクター・シーン・小道具を設計",
+      "designTitle": "ストーリーから資産を設計しますか？",
+      "designBody": "AI がアウトラインからキャラクター、シーン、小道具を設計します。種類ごとにテキストモデルを 1 回、計 3 回実行します。既存の資産は項目をそのまま保ち、空欄だけが補われます。画像はまだ生成されません。",
+      "designNeedsOutline": "先にアウトラインを書いてください。資産はそこから設計されます。",
+      "designSaveFirst": "先にアウトラインを保存してください。資産は保存済みのアウトラインから設計されます。",
+      "designRunning": "{target}を設計中…",
+      "designDone": "{target}：新規 {saved} 件、補完 {filled} 件。",
+      "designSkipped": "スキップ：{names}。",
+      "designOverflow": "上限を超えたため未保存：{names}。",
+      "designFailed": "{target}の設計に失敗しました：{error}",
+      "designCancelled": "{target}の設計をキャンセルしました。保存済みの内容は残ります。",
+      "designStale": "設計後にアウトラインが変更されています。",
+      "designOpenAssets": "資産ライブラリを開く",
+      "targets": {
+        "characters": "キャラクター",
+        "scenes": "シーン",
+        "props": "小道具"
+      }
     },
     "plan": {
       "title": "エピソードを計画",

@@ -1,10 +1,31 @@
 import { z } from 'zod';
-import { ExtractionTarget, MediaPath, Timestamp } from './common';
+import { DesignTarget, ExtractionTarget, MediaPath, Timestamp } from './common';
 import { TaskSummary } from './generation';
 import { AgentJob } from './jobs';
 
 export const AssetKind = z.enum(['character', 'scene', 'prop']);
 export type AssetKind = z.infer<typeof AssetKind>;
+
+/**
+ * The fields each kind's final prompt is written from (adr-0024): a change to one of them, by hand, by an extraction
+ * or by a design run, keeps the prompt and marks it stale. Identity fields (a name, a location and time) are not here:
+ * they rename what shots mention, which is a different staleness.
+ */
+export const PROMPT_FIELDS = {
+  character: ['role', 'appearance', 'styling', 'description'],
+  scene: ['prompt', 'lighting'],
+  prop: ['type', 'description'],
+} as const satisfies Record<AssetKind, readonly string[]>;
+
+/**
+ * The fields a describe run may write (adr-0024): what describes the asset, which is exactly what its final prompt is
+ * written from, so the two lists are one. The identity fields (a name, a location and time) are never written by an
+ * agent.
+ */
+export const DESCRIBABLE_FIELDS = PROMPT_FIELDS;
+
+/** How many assets one design run may save per kind (adr-0024): an outline's cast and world, not a catalogue. */
+export const DESIGN_CAPS: Record<DesignTarget, number> = { characters: 12, scenes: 10, props: 5 };
 
 const base = {
   id: z.number().int(),
@@ -208,9 +229,35 @@ export const StartExtraction = z.object({
 });
 export type StartExtraction = z.input<typeof StartExtraction>;
 
-/** Generate*FinalPrompt: runs the prompt generator in the episode's context; synchronous. */
+/**
+ * DesignAssets (adr-0024): the asset designer makes the drama's characters, scenes or props from its story, one job per
+ * kind. Refused without an outline and while the outline is being written.
+ */
+export const StartDesign = z.object({
+  target: DesignTarget,
+  model: z.string().trim().max(200).optional(),
+  textServiceId: z.number().int().positive().optional(),
+});
+export type StartDesign = z.input<typeof StartDesign>;
+
+/**
+ * DescribeAsset (adr-0024): the asset designer writes one existing asset's describable fields from the story, in the
+ * request. Without replace it fills the empty ones and is refused when none is empty; with replace (adr-0016) it
+ * rewrites every one. The identity fields are never written. The asset is claimed for the run, like for its image.
+ */
+export const DescribeAsset = z.object({
+  replace: z.boolean().optional(),
+  model: z.string().trim().max(200).optional(),
+  textServiceId: z.number().int().positive().optional(),
+});
+export type DescribeAsset = z.input<typeof DescribeAsset>;
+
+/**
+ * Generate*FinalPrompt: runs the prompt generator, in the episode's context when one is given and in the drama's
+ * otherwise (the project page's library, adr-0024); synchronous.
+ */
 export const GenerateFinalPrompt = z.object({
-  episodeId: z.number().int().positive(),
+  episodeId: z.number().int().positive().optional(),
   force: z.boolean().optional(),
   model: z.string().trim().max(200).optional(),
   textServiceId: z.number().int().positive().optional(),
@@ -221,10 +268,12 @@ export const FinalPromptResult = z.object({ finalPrompt: z.string() });
 
 /**
  * Request*Image: ensures the final prompt (text model), then submits an image task (image model). A character
- * generates the given views in order, the headshot first (adr-0018); default headshot and full body.
+ * generates the given views in order, the headshot first (adr-0018); default headshot and full body. With an
+ * episode the task runs in its locked image service (claiming the lock at first use); without one it runs in the
+ * explicit service, else the highest-priority active one, and no lock is claimed (adr-0024).
  */
 export const RequestAssetImage = z.object({
-  episodeId: z.number().int().positive(),
+  episodeId: z.number().int().positive().optional(),
   views: z
     .array(GeneratedView)
     .min(1)

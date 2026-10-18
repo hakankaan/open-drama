@@ -4,13 +4,16 @@ description: >-
   person, and reference views: a headshot, a full body, optional side and back views, and a multi-view sheet kept from
   before views or uploaded (adr-0018), and the voice its lines are spoken in: one of the speech model's voices and a
   recording of its voice, cloned by speech models that clone (adr-0021). Shared across the drama's episodes through
-  episode links, each of which may give it another outfit and a full-body picture of it for that episode (adr-0023).
+  episode links, each of which may give it another outfit and a full-body picture of it for that episode (adr-0023), set
+  by the creator or by the extractor from the episode's script (adr-0024).
 handles:
   commands:
     - CreateCharacter
     - UpdateCharacter
     - DeleteCharacter
     - SaveExtractedCharacters
+    - SaveDesignedCharacters
+    - DescribeAsset
     - GenerateCharacterFinalPrompt
     - SaveCharacterFinalPrompt
     - RequestCharacterImage
@@ -22,6 +25,7 @@ emits:
     - CharacterUpdated
     - CharacterDeleted
     - CharactersExtracted
+    - AssetDescribed
     - CharacterFinalPromptSaved
     - CharacterImageRequested
     - CharacterImageAttached
@@ -46,10 +50,11 @@ invariants:
     it as their speaker.
   - >-
     In an episode where it wears an outfit, its shots send the headshot and the outfit picture as the full body, never
-    the side, back or (while a headshot exists) sheet views, and its prompts describe the outfit instead of the
-    styling. An outfit picture lands only while the outfit is still the one it was drawn for; while it is drawn, the
-    character's views and that picture cannot be changed.
+    the side, back or (while a headshot exists) sheet views, and its prompts describe the outfit instead of the styling.
+    An outfit picture lands only while the outfit is still the one it was drawn for; while it is drawn, the character's
+    views and that picture cannot be changed.
 adr_refs:
   - adr-0018
   - adr-0021
   - adr-0023
+  - adr-0024

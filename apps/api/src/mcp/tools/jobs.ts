@@ -32,7 +32,7 @@ export function registerJobTools(server: McpServer, disconnected?: AbortSignal) 
     {
       title: 'Wait for a job',
       description:
-        'Waits up to timeoutSeconds (default 30, at most 300; 0 reads at once) for the job to settle and returns it with its outcome: the outline size and revision, the episodes a plan added, the script and the recap job a write started, the recap size (sizes and revisions as the texts are now). A job still running comes back with settled: false; call again. A failed job carries its error.',
+        'Waits up to timeoutSeconds (default 30, at most 300; 0 reads at once) for the job to settle and returns it with its outcome: the outline size and revision, the episodes a plan added, the script and the recap job a write started, the recap size (sizes and revisions as the texts are now), what a design saved and filled with the names it skipped or could not fit and the outline revision it read. A job still running comes back with settled: false; call again. A failed job carries its error.',
       input: WaitForJob,
       output: JobWaitResult,
       readOnly: true,

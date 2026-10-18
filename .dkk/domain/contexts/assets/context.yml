@@ -45,6 +45,7 @@ glossary:
       The prop's reference image: the object by itself in the style of a catalogue photograph, seen whole with true
       proportions against a neutral backdrop that tells no story.
 adr_refs:
+  - adr-0024
   - adr-0001
   - adr-0002
   - adr-0003

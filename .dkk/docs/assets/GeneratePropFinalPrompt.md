@@ -14,7 +14,7 @@ Run the prompt-generator agent to write the white-background product-shot final 
 | Name | Type | Description |
 |------|------|-------------|
 | `propId` | `ID` | — |
-| `episodeId` | `ID` | — |
+| `episodeId` | `ID` | Optional (adr-0024); with one the agent runs in the episode's context, without one in the drama's |
 | `force` | `boolean` | — |
 | `model` | `string` | — |
 | `textServiceId` | `ID` | — |
@@ -33,4 +33,6 @@ Run the prompt-generator agent to write the white-background product-shot final 
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0024](../../adr/adr-0024.md) | Assets designed from the story | proposed |

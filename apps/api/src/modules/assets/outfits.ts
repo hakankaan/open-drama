@@ -10,9 +10,11 @@ import { outfitTasksOf, submitImage } from '../generation/engine/images';
 import { latestTasks } from '../generation/tasks';
 import { touchDrama } from '../production/dramas';
 import { getEpisodeRow } from '../production/episodes';
+import type { Tx } from '../generation/engine/lifecycle';
 import { boundShots, markKeyframesStale } from '../storyboard/staleness';
-import { withStylePrefix } from './extraction';
+import { withAssetClaim } from './claims';
 import { episodeCharacterCards } from './service';
+import { withStylePrefix } from './style';
 
 /** The framing of an outfit picture: the full-body view's, dressed as the prompt says rather than as the reference. */
 const FRAMING =
@@ -43,6 +45,39 @@ function cardOf(characterId: number, episodeId: number): EpisodeCharacterCard {
   return episodeCharacterCards(episodeId, [{ row: character, outfit: link.outfit, outfitPath: link.outfitPath }])[0]!;
 }
 
+/** One episode link's outfit and picture. */
+type OutfitLink = { outfit: string; outfitPath: string | null };
+
+/**
+ * The outfit mutation inside a transaction: the link's text and picture, and the keyframes of the episode's shots with
+ * the character stale when either changed (adr-0019). Shared by SetEpisodeOutfit and the extractor's dressing.
+ */
+function writeEpisodeOutfit(tx: Tx, episodeId: number, characterId: number, current: OutfitLink, next: OutfitLink) {
+  tx.update(episodeCharacters)
+    .set(next)
+    .where(and(eq(episodeCharacters.episodeId, episodeId), eq(episodeCharacters.characterId, characterId)))
+    .run();
+  if (next.outfit !== current.outfit || next.outfitPath !== current.outfitPath) {
+    markKeyframesStale(tx, boundShots(tx, { kind: 'character', id: characterId }, episodeId));
+  }
+}
+
+/**
+ * The extractor's dressing (adr-0024): the outfit the script shows on a character already on the drama, written in the
+ * save's own transaction and only while the episode's outfit for them is empty; a filled one, the creator's or an
+ * earlier run's, is kept with its picture. Returns whether it was written.
+ */
+export function setEpisodeOutfitIfEmpty(tx: Tx, episodeId: number, characterId: number, outfit: string): boolean {
+  const link = tx
+    .select({ outfit: episodeCharacters.outfit, outfitPath: episodeCharacters.outfitPath })
+    .from(episodeCharacters)
+    .where(and(eq(episodeCharacters.episodeId, episodeId), eq(episodeCharacters.characterId, characterId)))
+    .get();
+  if (!link || link.outfit.trim()) return false;
+  writeEpisodeOutfit(tx, episodeId, characterId, link, { outfit, outfitPath: null });
+  return true;
+}
+
 /**
  * SetEpisodeOutfit (adr-0023): what the character wears in the episode, and its full-body picture. A changed outfit
  * clears the picture (it shows the old one) unless the same request gives one; an empty outfit wears the character's
@@ -66,13 +101,7 @@ export function updateEpisodeOutfit(characterId: number, body: z.output<typeof U
     if (!existsSync(toAbsolute(patch.outfitPath))) throw invalid(`No stored file at ${patch.outfitPath}`);
   }
   const outfitPath = !outfit ? null : patch.outfitPath !== undefined ? patch.outfitPath : changed ? null : link.outfitPath;
-  db.transaction((tx) => {
-    tx.update(episodeCharacters)
-      .set({ outfit, outfitPath })
-      .where(and(eq(episodeCharacters.episodeId, ep.id), eq(episodeCharacters.characterId, characterId)))
-      .run();
-    if (changed || outfitPath !== link.outfitPath) markKeyframesStale(tx, boundShots(tx, { kind: 'character', id: characterId }, ep.id));
-  });
+  db.transaction((tx) => writeEpisodeOutfit(tx, ep.id, characterId, link, { outfit, outfitPath }));
   touchDrama(ep.dramaId);
   return cardOf(characterId, ep.id);
 }
@@ -82,9 +111,13 @@ export function updateEpisodeOutfit(characterId: number, body: z.output<typeof U
  * episode's image service (its lock claimed on first use, adr-0016), with a prompt made here from the character's
  * appearance and the outfit (no agent run). Refused without an outfit or a headshot (412), and while the character
  * has an image generating (409, one image per character at a time). The picture lands on the episode only while the
- * outfit is still the one it was drawn for.
+ * outfit is still the one it was drawn for. The character is claimed while the request is prepared and submitted, so
+ * a bulk save leaves its fields and this outfit alone meanwhile (adr-0024).
  */
-export function requestOutfitImage(characterId: number, body: z.output<typeof RequestOutfitImage>): TaskStarted {
+export const requestOutfitImage = (characterId: number, body: z.output<typeof RequestOutfitImage>) =>
+  withAssetClaim('character', characterId, async () => requestOutfitClaimed(characterId, body));
+
+function requestOutfitClaimed(characterId: number, body: z.output<typeof RequestOutfitImage>): TaskStarted {
   const { ep, character, link } = linkOf(characterId, body.episodeId);
   if (!link.outfit) throw precondition('Describe the outfit first');
   if (!character.headshotPath) throw precondition('Generate the character’s headshot first: the outfit is drawn on it');

@@ -25,6 +25,8 @@ A plot-critical object with a type and a physical description, a final white-bac
 | Handles | `UpdateProp` |
 | Handles | `DeleteProp` |
 | Handles | `SaveExtractedProps` |
+| Handles | `SaveDesignedProps` |
+| Handles | `DescribeAsset` |
 | Handles | `GeneratePropFinalPrompt` |
 | Handles | `SavePropFinalPrompt` |
 | Handles | `RequestPropImage` |
@@ -32,6 +34,7 @@ A plot-critical object with a type and a physical description, a final white-bac
 | Emits | `PropUpdated` |
 | Emits | `PropDeleted` |
 | Emits | `PropsExtracted` |
+| Emits | `AssetDescribed` |
 | Emits | `PropFinalPromptSaved` |
 | Emits | `PropImageRequested` |
 | Emits | `PropImageAttached` |

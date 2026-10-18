@@ -465,8 +465,7 @@
       "scene": "No scenes yet. Scenes are places at a time of day.",
       "prop": "No props yet. Only objects the plot depends on belong here."
     },
-    "needEpisode": "Create an episode first: prompts are written in an episode's context.",
-    "alreadyGenerating": "An image is already being generated for this asset.",
+    "alreadyGenerating": "An image, a prompt or a description is already in progress for this asset.",
     "saveFirst": "Save your edits first.",
     "generatePrompt": "Write prompt",
     "regeneratePrompt": "Rewrite prompt",
@@ -531,7 +530,14 @@
       "headshotFirst": "Generate or upload the headshot first: the outfit is drawn on it",
       "saveFirst": "Click outside the field to save the outfit first",
       "alreadyDrawing": "An image of this character is already being drawn."
-    }
+    },
+    "describe": "Describe",
+    "describeAgain": "Describe again",
+    "describeWithAi": "Describe with AI",
+    "describeHint": "Fills the empty fields from the story; the filled ones stay.",
+    "describeAgainTitle": "Describe {name} again?",
+    "describeAgainBody": "The designer rewrites every describing field from the story. The name stays, and the image prompt goes out of date.",
+    "described": "{name} described from the story."
   },
   "project": {
     "notFound": "This project does not exist or was deleted.",
@@ -587,7 +593,25 @@
       "running": "Writing the outline. This usually takes under a minute.",
       "failed": "The outline failed: {error}",
       "saved": "Outline saved.",
-      "plan": "Plan episodes"
+      "plan": "Plan episodes",
+      "design": "Design characters, scenes and props",
+      "designTitle": "Design the assets from the story?",
+      "designBody": "The AI designs the characters, the scenes and the props from the outline, one run of the text model per kind, three in all. Existing assets keep their fields and only empty ones are filled. No image is drawn yet.",
+      "designNeedsOutline": "Write the outline first: the assets are designed from it.",
+      "designSaveFirst": "Save the outline first: the assets are designed from the saved one.",
+      "designRunning": "Designing the {target}…",
+      "designDone": "{target}: {saved, plural, =0 {none new} one {# new} other {# new}}, {filled, plural, =0 {none filled in} one {# filled in} other {# filled in}}.",
+      "designSkipped": "Skipped: {names}.",
+      "designOverflow": "Over the limit, not saved: {names}.",
+      "designFailed": "Designing the {target} failed: {error}",
+      "designCancelled": "Designing the {target} was cancelled; what was saved stays.",
+      "designStale": "The outline has changed since these were designed.",
+      "designOpenAssets": "Open the asset library",
+      "targets": {
+        "characters": "characters",
+        "scenes": "scenes",
+        "props": "props"
+      }
     },
     "plan": {
       "title": "Plan episodes",

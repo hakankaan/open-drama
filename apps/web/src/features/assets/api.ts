@@ -16,6 +16,7 @@ import {
   type CreateCharacter,
   type CreateProp,
   type CreateScene,
+  type DescribeAsset,
   type ExtractionTarget,
   type GenerateFinalPrompt,
   type RequestAssetImage,
@@ -119,6 +120,12 @@ export const useDeleteAsset = (dramaId: number) =>
 export const useGenerateFinalPrompt = (dramaId: number) =>
   useAssetMutation(dramaId, ({ kind, id, body }: { kind: AssetKind; id: number; body: GenerateFinalPrompt }) =>
     request(FinalPromptResult, 'POST', `${PATH[kind]}/${id}/final-prompt`, body),
+  );
+
+/** DescribeAsset (adr-0024): the asset designer on one asset, in the request; resolves to the asset as described. */
+export const useDescribeAsset = (dramaId: number) =>
+  useAssetMutation(dramaId, ({ kind, id, body }: { kind: AssetKind; id: number; body: DescribeAsset }) =>
+    request(CARD[kind], 'POST', `${PATH[kind]}/${id}/describe`, body),
   );
 
 /** Request*Image without the refresh, for a batch that refreshes once at the end. */

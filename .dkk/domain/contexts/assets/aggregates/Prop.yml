@@ -6,6 +6,8 @@ handles:
   - UpdateProp
   - DeleteProp
   - SaveExtractedProps
+  - SaveDesignedProps
+  - DescribeAsset
   - GeneratePropFinalPrompt
   - SavePropFinalPrompt
   - RequestPropImage
@@ -15,6 +17,7 @@ emits:
   - PropUpdated
   - PropDeleted
   - PropsExtracted
+  - AssetDescribed
   - PropFinalPromptSaved
   - PropImageRequested
   - PropImageAttached

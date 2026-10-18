@@ -193,7 +193,7 @@ flows:
         type: command
       - ref: assets.SaveExtractedCharacters
         type: command
-        note: Also SaveExtractedScenes / SaveExtractedProps
+        note: Also SaveExtractedScenes / SaveExtractedProps; an asset designed from the story (flow AssetDesign) is linked here by its name, and a character the script shows in other clothes is dressed for the episode (adr-0024)
       - ref: assets.CharactersExtracted
         type: event
       - ref: assets.ExtractionCompleted
@@ -216,6 +216,41 @@ flows:
       - ref: assets.EpisodeAssets
         type: read_model
         note: Readiness per asset feeds the stage rail
+  - name: AssetDesign
+    description: >-
+      Before any episode exists, the asset designer turns the story outline into the drama's cast, places and props
+      (adr-0024): one job per kind, the three in parallel, each run offered the story, the kind's existing assets and
+      the kind's one save. Nothing is linked to an episode; the extractor links a designed asset when a script uses it
+      (flow AssetStage). The designed assets get their final prompts and reference images from the project page's
+      library, with no episode. An asset created by hand is described one at a time by the same designer, in the
+      request.
+    steps:
+      - ref: assets.DesignAssets
+        type: command
+        note: Refused without an outline (412) and while the outline is being written (409); a duplicate start returns the running job
+      - ref: assets.AssetDesignRequested
+        type: event
+        note: The outline revision the run starts from is recorded on the job
+      - ref: assets.RunAssetDesigner
+        type: policy
+      - ref: agents.RunAgent
+        type: command
+        note: asset_designer with the run's tool allowlist (read_story_for_design, read_existing_<kind>, save_designed_<kind>)
+      - ref: assets.SaveDesignedCharacters
+        type: command
+        note: Also SaveDesignedScenes / SaveDesignedProps; one call with the whole set, capped at 12 / 10 / 5 with the overflow named back
+      - ref: assets.DesignedAssetsSaved
+        type: event
+      - ref: assets.AssetDesignCompleted
+        type: event
+      - ref: assets.DramaAssetLibrary
+        type: read_model
+        note: The Story tab shows the counts and the stale note when the outline moved on, and links to the library
+      - ref: assets.DescribeAsset
+        type: command
+        note: One asset made by hand, described in the request; the run is offered read_story_for_design, read_existing_<kind> and describe_<kind>, never the bulk save
+      - ref: assets.AssetDescribed
+        type: event
   - name: StoryboardAndVideoStage
     description: >-
       The storyboard breaker agent splits the script into shots with descriptions, bindings and video prompts; the

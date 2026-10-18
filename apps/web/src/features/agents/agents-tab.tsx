@@ -156,18 +156,11 @@ function SkillCard({ skill, lang }: { skill: SkillSummary; lang: ContentLanguage
   );
 }
 
-const PREFIX: Record<AgentType, string> = {
-  script_rewriter: 'script-rewriter/',
-  extractor: 'extractor/',
-  storyboard_breaker: 'storyboard-breaker/',
-  prompt_generator: 'prompt-generator/',
-  recap_writer: 'recap-writer/',
-  episode_writer: 'episode-writer/',
-  story_writer: 'story-writer/',
-  episode_planner: 'episode-planner/',
-};
+/** A skill is the agent's when its id is one of the agent's prefixes or lies under one (the catalog lists them). */
+const belongsTo = (prefixes: string[], id: string) => prefixes.some((p) => id === p || id.startsWith(`${p}/`));
 
-function AddSkillDialog({ agent, onClose }: { agent: AgentType; onClose: () => void }) {
+/** A new skill goes under the agent's own directory, its first prefix. */
+function AddSkillDialog({ prefix, onClose }: { prefix: string; onClose: () => void }) {
   const t = useTranslations('settings.agents.add');
   const tc = useTranslations('common');
   const toastError = useToastError();
@@ -176,7 +169,7 @@ function AddSkillDialog({ agent, onClose }: { agent: AgentType; onClose: () => v
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [touched, setTouched] = useState(false);
-  const id = PREFIX[agent] + dir.trim();
+  const id = `${prefix}/${dir.trim()}`;
   const idError = !SkillId.safeParse(id).success || !dir.trim() ? t('invalidDir') : undefined;
 
   const submit = async (e: React.SubmitEvent<HTMLFormElement>) => {
@@ -227,7 +220,9 @@ export function AgentsTab() {
   const [view, setView] = useState<'prompt' | 'skills'>('prompt');
   const [adding, setAdding] = useState(false);
 
-  const agentSkills = (skills.data ?? []).filter((s) => s.agent === selected || s.id.startsWith(PREFIX[selected]));
+  const prefixes = (catalog.data ?? []).find((a) => a.type === selected)?.skillPrefixes ?? [];
+  // The agent's own skills and the ones it shares with another agent (adr-0024), as the server hands them to its runs.
+  const agentSkills = (skills.data ?? []).filter((s) => s.agent === selected || belongsTo(prefixes, s.id));
   return (
     <div className="flex flex-col gap-4">
       <p className="rounded-md bg-surface-2 px-3 py-2 text-[13px] text-ink-2">{t('languageNote', { language: LOCALE_LABELS[lang] })}</p>
@@ -283,7 +278,7 @@ export function AgentsTab() {
           )}
         </div>
       </div>
-      {adding ? <AddSkillDialog agent={selected} onClose={() => setAdding(false)} /> : null}
+      {adding && prefixes[0] ? <AddSkillDialog prefix={prefixes[0]} onClose={() => setAdding(false)} /> : null}
     </div>
   );
 }

@@ -1,0 +1,12 @@
+name: AssetDesignFailed
+description: The asset designer run failed or was cancelled for the kind; whatever its save had written stays.
+fields:
+  - name: dramaId
+    type: ID
+  - name: target
+    type: string
+  - name: error
+    type: string
+raised_by: DesignJob
+adr_refs:
+  - adr-0024

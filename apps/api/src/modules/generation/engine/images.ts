@@ -23,6 +23,14 @@ export const ASSET_TASK_OWNER = {
   prop: { table: props, column: generationTasks.propId, key: 'propId' },
 } as const;
 
+/** The image task of an asset still processing, if any: a second image, a description or a delete waits for it. */
+export const processingImageTask = (kind: AssetKind, id: number) =>
+  db
+    .select({ id: generationTasks.id })
+    .from(generationTasks)
+    .where(and(eq(generationTasks.type, 'image'), eq(ASSET_TASK_OWNER[kind].column, id), eq(generationTasks.status, 'processing')))
+    .get();
+
 /** What an image becomes: an asset's reference image, or a shot's keyframe. */
 export interface ImageOwner {
   kind: AssetKind | 'shot';

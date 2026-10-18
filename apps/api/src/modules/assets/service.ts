@@ -3,6 +3,7 @@ import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   coverOf,
+  DESCRIBABLE_FIELDS,
   isNarrator,
   type AssetKind,
   type CharacterCard,
@@ -33,13 +34,14 @@ import {
 } from '../../db/schema';
 import { assertSomething, conflict, invalid, notFound } from '../../http/errors';
 import { toAbsolute } from '../../lib/paths';
-import { ASSET_TASK_OWNER, notOutfitTasks, outfitTasksOf } from '../generation/engine/images';
+import { ASSET_TASK_OWNER, notOutfitTasks, outfitTasksOf, processingImageTask } from '../generation/engine/images';
 import { latestTasks } from '../generation/tasks';
 import { latestExtractionJobs } from '../jobs/run-job';
 import { getDramaRow, touchDrama } from '../production/dramas';
 import { getEpisodeRow } from '../production/episodes';
 import { markAssetPromptsStale, type Tx } from '../storyboard/service';
 import { boundShots, markKeyframesStale } from '../storyboard/staleness';
+import { changed, promptPatch } from './fields';
 import { normaliseName, sceneKey } from './names';
 import { VIEW_COLUMN, viewColumns, viewsOf } from './views';
 
@@ -164,21 +166,13 @@ function checkImagePath(path: string | null | undefined) {
 }
 
 /**
- * The finalPrompt rule shared by all three kinds: an explicit finalPrompt wins and clears the stale flag;
- * otherwise a change to a describing field keeps the prompt and marks it stale.
+ * An image task writes its result onto the asset when it completes, whatever happened meanwhile (adr-0024): the
+ * asset is neither deleted nor described under it.
  */
-function promptPatch(
-  current: { finalPrompt: string | null },
-  input: { finalPrompt?: string | null },
-  describingChanged: boolean,
-) {
-  if (input.finalPrompt !== undefined) return { finalPrompt: input.finalPrompt, finalPromptStale: false };
-  if (describingChanged && current.finalPrompt) return { finalPromptStale: true };
-  return {};
+export function assertNoImageInFlight(kind: AssetKind, id: number, action: string) {
+  const running = processingImageTask(kind, id);
+  if (running) throw conflict(`An image of this ${kind} is being generated; ${action} once the task has finished`, { taskId: running.id });
 }
-
-const changed = <T extends object>(current: T, input: Partial<T>, keys: (keyof T)[]) =>
-  keys.some((k) => input[k] !== undefined && input[k] !== current[k]);
 
 // Characters
 
@@ -240,7 +234,7 @@ export function updateCharacter(id: number, input: z.output<typeof UpdateCharact
     }
     return tx
       .update(characters)
-      .set({ ...fields, ...viewColumns(views), ...promptPatch(current, input, changed(current, input, ['appearance', 'styling'])) })
+      .set({ ...fields, ...viewColumns(views), ...promptPatch('character', current, input) })
       .where(eq(characters.id, id))
       .returning()
       .get();
@@ -252,6 +246,7 @@ export function updateCharacter(id: number, input: z.output<typeof UpdateCharact
 /** Soft delete; the character leaves every episode and shot of the drama. */
 export function deleteCharacter(id: number): { id: number } {
   const current = getCharacterRow(id);
+  assertNoImageInFlight('character', id, 'delete it');
   db.transaction((tx) => {
     markAssetPromptsStale(tx, { kind: 'character', id });
     staleKeyframes(tx, { kind: 'character', id });
@@ -332,7 +327,7 @@ export function updateScene(id: number, input: z.output<typeof UpdateScene>): Sc
     }
     return tx
       .update(scenes)
-      .set({ ...input, ...promptPatch(current, input, changed(current, input, ['prompt', 'lighting'])) })
+      .set({ ...input, ...promptPatch('scene', current, input) })
       .where(eq(scenes.id, id))
       .returning()
       .get();
@@ -344,6 +339,7 @@ export function updateScene(id: number, input: z.output<typeof UpdateScene>): Sc
 /** Soft delete; the scene leaves every episode, and shots that used it lose the binding. */
 export function deleteScene(id: number): { id: number } {
   const current = getSceneRow(id);
+  assertNoImageInFlight('scene', id, 'delete it');
   db.transaction((tx) => {
     markAssetPromptsStale(tx, { kind: 'scene', id });
     staleKeyframes(tx, { kind: 'scene', id });
@@ -403,7 +399,7 @@ export function updateProp(id: number, input: z.output<typeof UpdateProp>): Prop
     if (changed(current, input, ['imagePath'])) staleKeyframes(tx, { kind: 'prop', id });
     return tx
       .update(props)
-      .set({ ...input, ...promptPatch(current, input, changed(current, input, ['description'])) })
+      .set({ ...input, ...promptPatch('prop', current, input) })
       .where(eq(props.id, id))
       .returning()
       .get();
@@ -414,6 +410,7 @@ export function updateProp(id: number, input: z.output<typeof UpdateProp>): Prop
 
 export function deleteProp(id: number): { id: number } {
   const current = getPropRow(id);
+  assertNoImageInFlight('prop', id, 'delete it');
   db.transaction((tx) => {
     markAssetPromptsStale(tx, { kind: 'prop', id });
     staleKeyframes(tx, { kind: 'prop', id });
@@ -423,4 +420,54 @@ export function deleteProp(id: number): { id: number } {
   });
   touchDrama(current.dramaId);
   return { id };
+}
+
+// One asset by kind
+
+export type AssetCard = CharacterCard | SceneCard | PropCard;
+
+/** The card of one live asset, as the lists show it. */
+export function getAsset(kind: AssetKind, id: number): AssetCard {
+  if (kind === 'character') return characterCard(getCharacterRow(id), latestImageTasks('character', [id]).get(id));
+  if (kind === 'scene') return { ...strip(getSceneRow(id)), latestImageTask: latestImageTasks('scene', [id]).get(id) ?? null };
+  return { ...strip(getPropRow(id)), latestImageTask: latestImageTasks('prop', [id]).get(id) ?? null };
+}
+
+const updateAsset = (kind: AssetKind, id: number, patch: Record<string, string>): AssetCard =>
+  kind === 'character'
+    ? updateCharacter(id, patch as z.output<typeof UpdateCharacter>)
+    : kind === 'scene'
+      ? updateScene(id, patch as z.output<typeof UpdateScene>)
+      : updateProp(id, patch as z.output<typeof UpdateProp>);
+
+/** An asset's describable fields (DESCRIBABLE_FIELDS) split by whether they hold text yet. */
+export function describableFields(kind: AssetKind, id: number): { empty: string[]; filled: string[] } {
+  const row = getAsset(kind, id) as unknown as Record<string, unknown>;
+  const empty = DESCRIBABLE_FIELDS[kind].filter((k) => !String(row[k] ?? '').trim());
+  return { empty, filled: DESCRIBABLE_FIELDS[kind].filter((k) => !empty.includes(k)) };
+}
+
+/**
+ * DescribeAsset's write (adr-0024): of the fields the designer sent, the describable ones, kept to the empty ones
+ * unless the run may replace; an identity field is never among them. It goes through the manual update, so the
+ * final prompt goes stale and the keyframes drawn from a styling or a lighting with it. Nothing to write is the
+ * agent's mistake, named back to it so the run can send the right fields.
+ */
+export function writeDescription(kind: AssetKind, id: number, fields: Record<string, string | undefined>, replace: boolean) {
+  const { empty } = describableFields(kind, id);
+  const patch: Record<string, string> = {};
+  for (const key of DESCRIBABLE_FIELDS[kind]) {
+    const value = fields[key]?.trim();
+    if (value && (replace || empty.includes(key))) patch[key] = value;
+  }
+  const written = Object.keys(patch);
+  if (written.length === 0) {
+    throw invalid(
+      replace
+        ? `Nothing was written: send the fields to write afresh (${DESCRIBABLE_FIELDS[kind].join(', ')})`
+        : `Nothing was written: the filled fields are kept; send the empty ones (${empty.join(', ')})`,
+    );
+  }
+  const asset = updateAsset(kind, id, patch);
+  return { asset, written, kept: DESCRIBABLE_FIELDS[kind].filter((k) => !written.includes(k)) };
 }

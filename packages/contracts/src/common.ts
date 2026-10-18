@@ -33,11 +33,14 @@ export type TaskErrorClass = z.infer<typeof TaskErrorClass>;
 export const JobStatus = z.enum(['running', 'done', 'failed', 'cancelled']);
 export type JobStatus = z.infer<typeof JobStatus>;
 
-export const JobKind = z.enum(['rewrite', 'extraction', 'breakdown', 'videoPromptBatch', 'recap', 'write', 'outline', 'plan']);
+export const JobKind = z.enum(['rewrite', 'extraction', 'breakdown', 'videoPromptBatch', 'recap', 'write', 'outline', 'plan', 'design']);
 export type JobKind = z.infer<typeof JobKind>;
 
 export const ExtractionTarget = z.enum(['characters', 'scenes', 'props']);
 export type ExtractionTarget = z.infer<typeof ExtractionTarget>;
+/** What a design run makes from the story (adr-0024): the same three kinds an extraction catalogues. */
+export const DesignTarget = ExtractionTarget;
+export type DesignTarget = ExtractionTarget;
 
 export const AgentType = z.enum([
   'script_rewriter',
@@ -48,6 +51,7 @@ export const AgentType = z.enum([
   'episode_writer',
   'story_writer',
   'episode_planner',
+  'asset_designer',
 ]);
 export type AgentType = z.infer<typeof AgentType>;
 

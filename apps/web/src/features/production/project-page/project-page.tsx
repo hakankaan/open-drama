@@ -111,8 +111,8 @@ export function ProjectPage({ dramaId }: { dramaId: number }) {
       </div>
 
       {tab === 'episodes' ? <EpisodesTab drama={drama} jobs={jobs.data} onAdd={() => setAdding(true)} /> : null}
-      {tab === 'story' ? <StoryTab drama={drama} jobs={jobs.data} onPlan={() => setPlanning(true)} /> : null}
-      {tab === 'assets' ? <AssetLibrary dramaId={drama.id} episodeId={drama.episodes[0]?.id} /> : null}
+      {tab === 'story' ? <StoryTab drama={drama} jobs={jobs.data} onPlan={() => setPlanning(true)} onShowAssets={() => showTab('assets')} /> : null}
+      {tab === 'assets' ? <AssetLibrary dramaId={drama.id} /> : null}
       {adding ? <AddEpisodeDialog drama={drama} onClose={() => setAdding(false)} /> : null}
       {planning ? (
         <PlanEpisodesDialog

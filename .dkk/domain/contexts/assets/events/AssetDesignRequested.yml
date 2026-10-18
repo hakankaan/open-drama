@@ -1,0 +1,16 @@
+name: AssetDesignRequested
+description: A design job for one kind began on the drama (adr-0024), from the outline at the recorded revision.
+fields:
+  - name: dramaId
+    type: ID
+  - name: target
+    type: string
+  - name: outlineRevision
+    type: number
+  - name: model
+    type: string
+  - name: textServiceId
+    type: ID
+raised_by: DesignJob
+adr_refs:
+  - adr-0024

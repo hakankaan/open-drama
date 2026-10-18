@@ -25,6 +25,8 @@ A location at a time period with a set-dressing prompt and lighting, a final est
 | Handles | `UpdateScene` |
 | Handles | `DeleteScene` |
 | Handles | `SaveExtractedScenes` |
+| Handles | `SaveDesignedScenes` |
+| Handles | `DescribeAsset` |
 | Handles | `GenerateSceneFinalPrompt` |
 | Handles | `SaveSceneFinalPrompt` |
 | Handles | `RequestSceneImage` |
@@ -32,6 +34,7 @@ A location at a time period with a set-dressing prompt and lighting, a final est
 | Emits | `SceneUpdated` |
 | Emits | `SceneDeleted` |
 | Emits | `ScenesExtracted` |
+| Emits | `AssetDescribed` |
 | Emits | `SceneFinalPromptSaved` |
 | Emits | `SceneImageRequested` |
 | Emits | `SceneImageAttached` |

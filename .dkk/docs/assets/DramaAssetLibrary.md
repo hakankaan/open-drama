@@ -6,7 +6,7 @@
 
 ## Summary
 
-The drama-wide asset library tab on the project page — every character, scene and prop of the drama regardless of episode, with image, final prompt and edit/generate affordances.
+The drama-wide asset library tab on the project page — every character, scene and prop of the drama regardless of episode, with image, final prompt and edit/generate/delete affordances. Prompts and images are generated from here without an episode, in the project's image service (adr-0024), so a cast can be drawn before episode 1.
 
 
 ## Fields
@@ -37,4 +37,6 @@ The drama-wide asset library tab on the project page — every character, scene 
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0024](../../adr/adr-0024.md) | Assets designed from the story | proposed |

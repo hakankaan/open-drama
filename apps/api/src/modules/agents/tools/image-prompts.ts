@@ -3,11 +3,14 @@ import { z } from 'zod';
 import { db } from '../../../db/client';
 import { characters, props, scenes } from '../../../db/schema';
 import { withStylePrefix } from '../../assets/extraction';
-import { defineTool } from '../runtime/tool';
+import { defineDramaTool } from '../runtime/tool';
 
 const ids = z.object({ ids: z.array(z.number().int()).max(50).optional().describe('Ids to read; omit for all') });
 
-export const readCharacters = defineTool({
+// An asset's prompt describes the asset, not an episode, so these are drama tools: the prompt generator writes it
+// with or without an episode (adr-0024). Its shot tools stay episode tools.
+
+export const readCharacters = defineDramaTool({
   id: 'read_characters',
   description: "Read characters of the drama with their describing fields.",
   input: ids,
@@ -20,7 +23,7 @@ export const readCharacters = defineTool({
   }),
 });
 
-export const readScenes = defineTool({
+export const readScenes = defineDramaTool({
   id: 'read_scenes',
   description: 'Read scenes of the drama with their set dressing and lighting.',
   input: ids,
@@ -33,7 +36,7 @@ export const readScenes = defineTool({
   }),
 });
 
-export const readProps = defineTool({
+export const readProps = defineDramaTool({
   id: 'read_props',
   description: 'Read props of the drama with their physical description.',
   input: ids,
@@ -49,7 +52,7 @@ export const readProps = defineTool({
 const prompt = z.string().min(10).max(8000);
 
 /** Save*FinalPrompt: the style fragment is prepended here, never by the model; the stale flag is cleared. */
-export const saveCharacterFinalPrompt = defineTool({
+export const saveCharacterFinalPrompt = defineDramaTool({
   id: 'save_character_final_prompt',
   description: 'Save the reference prompt of one character: a description of the person only (the studio frames it per image).',
   input: z.object({ characterId: z.number().int(), prompt }),
@@ -67,7 +70,7 @@ export const saveCharacterFinalPrompt = defineTool({
   },
 });
 
-export const saveSceneFinalPrompt = defineTool({
+export const saveSceneFinalPrompt = defineDramaTool({
   id: 'save_scene_final_prompt',
   description: 'Save the establishing-shot prompt of one scene (no people).',
   input: z.object({ sceneId: z.number().int(), prompt }),
@@ -85,7 +88,7 @@ export const saveSceneFinalPrompt = defineTool({
   },
 });
 
-export const savePropFinalPrompt = defineTool({
+export const savePropFinalPrompt = defineDramaTool({
   id: 'save_prop_final_prompt',
   description: 'Save the product-shot prompt of one prop.',
   input: z.object({ propId: z.number().int(), prompt }),

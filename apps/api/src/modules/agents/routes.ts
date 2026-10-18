@@ -35,6 +35,7 @@ export const agentsRoutes = new Hono()
           type,
           name: prompt.name,
           skillCount: ids.filter((id) => skillBelongsTo(AGENTS[type], id)).length,
+          skillPrefixes: AGENTS[type].skillPrefixes,
           model: prompt.model,
           promptSource: prompt.source,
         };
@@ -55,9 +56,11 @@ export const agentsRoutes = new Hono()
     const body = c.req.valid('json');
     const { type } = c.req.valid('param');
     if (AGENTS[type].jobOnly) throw invalid(`The ${AGENTS[type].name} runs only inside its job; start one from the project or the episode`);
-    // A drama-scoped agent runs on the project alone; an episode-scoped one needs an episode of that project.
+    // A drama-scoped agent runs on the project alone; an episode-scoped one needs an episode of that project; one of
+    // both scopes runs on the episode when given one (adr-0024).
     let episodeId: number | undefined;
-    if (AGENTS[type].scope === 'drama') {
+    const { scope } = AGENTS[type];
+    if (scope === 'drama' || (scope === 'both' && body.episodeId === undefined)) {
       getDramaRow(body.dramaId);
     } else {
       if (body.episodeId === undefined) throw invalid(`The ${AGENTS[type].name} runs on an episode; pass episodeId`);

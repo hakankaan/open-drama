@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ExtractionTarget, JobKind, JobStatus, Timestamp } from './common';
+import { DesignTarget, ExtractionTarget, JobKind, JobStatus, Timestamp } from './common';
 
 /** Which aggregate a job kind belongs to (adr-0015): a drama-scoped job carries no episode. */
 export type JobScope = 'drama' | 'episode';
@@ -12,9 +12,10 @@ export const JOB_SCOPE: Record<JobKind, JobScope> = {
   write: 'episode',
   outline: 'drama',
   plan: 'drama',
+  design: 'drama',
 };
 
-/** One agent job (rewrite, extraction per target, breakdown, video-prompt batch, recap, episode write), adr-0008. */
+/** One agent job (rewrite, extraction per target, breakdown, video-prompt batch, recap, episode write, outline, plan, design per target), adr-0008. */
 export const AgentJob = z.object({
   id: z.number().int(),
   kind: JobKind,
@@ -22,7 +23,7 @@ export const AgentJob = z.object({
   episodeId: z.number().int().nullable(),
   target: z.string(),
   status: JobStatus,
-  /** Per kind: steps and model once settled; a plan's request and written ids; a write/rewrite's `recapJobId` (adr-0016). */
+  /** Per kind: steps and model once settled; a plan's request and written ids; a write/rewrite's `recapJobId` (adr-0016); a design's `DesignProgress`. */
   progress: z.record(z.string(), z.unknown()),
   error: z.string().nullable(),
   startedAt: Timestamp,
@@ -57,5 +58,26 @@ export const DramaJobs = z.object({
   outline: AgentJob.nullable(),
   /** Its progress carries the request and the ids of the episodes added so far. */
   plan: AgentJob.nullable(),
+  /** The asset designer per kind (adr-0024); the three run in parallel. */
+  design: z.record(DesignTarget, AgentJob.nullable()),
 });
 export type DramaJobs = z.infer<typeof DramaJobs>;
+
+/**
+ * A design job's progress (adr-0024): the outline revision its read tool saw (so the studio can say the outline moved
+ * on since), then what its one save did. Every field is set by a tool, so each is optional until that tool ran.
+ */
+export const DesignProgress = z.object({
+  outlineRevision: z.number().int().optional(),
+  /** New assets inserted on the drama. */
+  saved: z.number().int().optional(),
+  /** Existing assets whose empty fields were filled. */
+  filled: z.number().int().optional(),
+  /** Names skipped: matching only a deleted asset, or an asset under claim while its image or prompt is made. */
+  skipped: z.array(z.string()).optional(),
+  /** Names beyond the per-run cap, not saved; the agent is told not to retry them. */
+  overflow: z.array(z.string()).optional(),
+  steps: z.number().int().optional(),
+  model: z.string().optional(),
+});
+export type DesignProgress = z.infer<typeof DesignProgress>;

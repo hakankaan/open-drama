@@ -1,11 +1,15 @@
 import type { AgentType } from '@open-drama/contracts';
-import type { AgentScope } from '../runtime/context';
+import type { AgentRunScope } from '../runtime/context';
 
 export interface AgentDefinition {
   type: AgentType;
   name: string;
-  /** A drama-scoped agent runs without an episode and carries drama tools only (adr-0015). */
-  scope: AgentScope;
+  /**
+   * A drama-scoped agent runs without an episode and carries drama tools only (adr-0015). An agent of either scope
+   * runs in the episode's context when one is given and in the drama's otherwise, where only its drama tools are
+   * offered (adr-0024).
+   */
+  scope: AgentRunScope;
   /** Prompt file base name under prompts/. */
   promptFile: string;
   /** Every skill whose id starts with one of these is injected into the instructions. */
@@ -50,7 +54,8 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
   },
   prompt_generator: {
     type: 'prompt_generator',
-    scope: 'episode',
+    // An asset's prompt needs no episode (the project page's library writes it without one); a shot's does.
+    scope: 'both',
     name: 'Prompt generator',
     promptFile: 'prompt_generator',
     skillPrefixes: ['prompt-generator'],
@@ -100,6 +105,18 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
     jobOnly: true,
     defaultPrompt:
       'Split the story outline into the requested number of episodes after the last existing one: each with a title, a synopsis and a beat sheet ending on the hook into the next. Call read_story_for_planning, then save_episodes in batches of at most 8 in story order, final: true on the last.',
+  },
+  asset_designer: {
+    type: 'asset_designer',
+    scope: 'drama',
+    name: 'Asset designer',
+    promptFile: 'asset_designer',
+    // The field rules are the extractor's, shared so the two write the same kind of asset (adr-0024).
+    skillPrefixes: ['asset-designer', 'extractor/fields'],
+    maxSteps: 8,
+    jobOnly: true,
+    defaultPrompt:
+      "Design the requested kind of asset (characters, scenes or props) for the whole project from its story outline, named exactly as the outline names them. Call read_story_for_design, then the matching read_existing tool, then save the whole set once with the matching save_designed tool; never overwrite what exists. When the request names one asset to describe, write that one with the matching describe tool and nothing else.",
   },
 };
 

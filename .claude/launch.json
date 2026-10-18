@@ -54,6 +54,33 @@
         "OPEN_DRAMA_DATA_DIR=data/api-off OPEN_DRAMA_STUB_PROVIDERS=1 OPEN_DRAMA_ASSISTANT=0 PORT=4502 pnpm --filter @open-drama/api dev"
       ],
       "port": 4502
+    },
+    {
+      "name": "stub-api-trace",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "OPEN_DRAMA_DATA_DIR=data/preview-trace OPEN_DRAMA_STUB_PROVIDERS=1 LOG_LEVEL=trace PORT=4310 pnpm --filter @open-drama/api dev"
+      ],
+      "port": 4310
+    },
+    {
+      "name": "check-api-nostub",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "OPEN_DRAMA_DATA_DIR=data/nostub-check LOG_LEVEL=trace PORT=4600 pnpm --filter @open-drama/api dev"
+      ],
+      "port": 4600
+    },
+    {
+      "name": "stub-api-trace-slow",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "OPEN_DRAMA_DATA_DIR=data/preview-trace OPEN_DRAMA_STUB_PROVIDERS=1 OPEN_DRAMA_STUB_DELAY_MS=1500 LOG_LEVEL=trace PORT=4311 pnpm --filter @open-drama/api dev"
+      ],
+      "port": 4311
     }
   ]
 }

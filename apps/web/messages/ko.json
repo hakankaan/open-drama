@@ -465,8 +465,7 @@
       "scene": "아직 씬이 없어요. 씬은 특정 시간대의 장소예요.",
       "prop": "아직 소품이 없어요. 줄거리에 꼭 필요한 물건만 여기에 넣어요."
     },
-    "needEpisode": "먼저 에피소드를 만들어 주세요. 프롬프트는 에피소드 맥락에 맞춰 작성돼요.",
-    "alreadyGenerating": "이 에셋의 이미지를 이미 생성하고 있어요.",
+    "alreadyGenerating": "이 에셋에 대한 이미지, 프롬프트 또는 묘사가 이미 진행 중입니다.",
     "saveFirst": "먼저 수정한 내용을 저장해 주세요.",
     "generatePrompt": "프롬프트 작성",
     "regeneratePrompt": "프롬프트 다시 쓰기",
@@ -531,7 +530,14 @@
       "headshotFirst": "먼저 얼굴 클로즈업을 생성하거나 업로드하세요. 의상은 그것을 바탕으로 그립니다",
       "saveFirst": "입력란 밖을 클릭해 의상을 먼저 저장하세요",
       "alreadyDrawing": "이 캐릭터의 이미지를 이미 그리고 있습니다."
-    }
+    },
+    "describe": "AI로 묘사",
+    "describeAgain": "다시 묘사",
+    "describeWithAi": "AI로 묘사하며 만들기",
+    "describeHint": "비어 있는 항목을 이야기에서 채웁니다. 채워진 항목은 그대로 둡니다.",
+    "describeAgainTitle": "{name}을(를) 다시 묘사할까요?",
+    "describeAgainBody": "디자이너가 이야기에서 모든 묘사 항목을 다시 씁니다. 이름은 유지되고 이미지 프롬프트는 오래된 것으로 표시됩니다.",
+    "described": "{name}을(를) 이야기에서 묘사했습니다."
   },
   "project": {
     "notFound": "존재하지 않거나 삭제된 프로젝트예요.",
@@ -587,7 +593,25 @@
       "running": "개요를 쓰고 있어요. 보통 1분이 안 걸려요.",
       "failed": "개요 작성에 실패했어요: {error}",
       "saved": "개요를 저장했어요.",
-      "plan": "에피소드 계획"
+      "plan": "에피소드 계획",
+      "design": "캐릭터·장면·소품 설계",
+      "designTitle": "스토리에서 자산을 설계할까요?",
+      "designBody": "AI가 아웃라인을 바탕으로 캐릭터, 장면, 소품을 설계합니다. 종류마다 텍스트 모델을 한 번씩, 총 세 번 실행합니다. 기존 자산은 필드를 유지하고 빈 필드만 채워집니다. 이미지는 아직 생성되지 않습니다.",
+      "designNeedsOutline": "먼저 아웃라인을 작성하세요. 자산은 아웃라인에서 설계됩니다.",
+      "designSaveFirst": "먼저 아웃라인을 저장하세요. 자산은 저장된 아웃라인에서 설계됩니다.",
+      "designRunning": "{target} 설계 중…",
+      "designDone": "{target}: 새로 {saved}개, 채움 {filled}개.",
+      "designSkipped": "건너뜀: {names}.",
+      "designOverflow": "한도를 넘어 저장되지 않음: {names}.",
+      "designFailed": "{target} 설계 실패: {error}",
+      "designCancelled": "{target} 설계가 취소되었습니다. 저장된 내용은 남습니다.",
+      "designStale": "설계 이후 아웃라인이 바뀌었습니다.",
+      "designOpenAssets": "자산 라이브러리 열기",
+      "targets": {
+        "characters": "캐릭터",
+        "scenes": "장면",
+        "props": "소품"
+      }
     },
     "plan": {
       "title": "에피소드 계획",

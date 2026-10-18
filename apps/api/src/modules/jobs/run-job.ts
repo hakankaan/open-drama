@@ -1,5 +1,5 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
-import { JOB_SCOPE, type AgentJob, type DramaJobs, type EpisodeJobs, type JobKind, type JobStarted } from '@open-drama/contracts';
+import { DesignTarget, JOB_SCOPE, type AgentJob, type DramaJobs, type EpisodeJobs, type JobKind, type JobStarted } from '@open-drama/contracts';
 import { db } from '../../db/client';
 import { agentJobs } from '../../db/schema';
 import { nowIso } from '../../db/schema/columns';
@@ -145,6 +145,21 @@ export function runJob(
   return inserted;
 }
 
+/**
+ * Adds to a job's progress what one tool learned (a design run's outline revision, then its save counts), in one
+ * transaction with the read, so two tools of the run never write over each other; a settled job is left alone.
+ */
+export function mergeProgress(jobId: number, patch: Record<string, unknown>): void {
+  db.transaction((tx) => {
+    const row = tx.select({ progress: agentJobs.progress, status: agentJobs.status }).from(agentJobs).where(eq(agentJobs.id, jobId)).get();
+    if (!row || row.status !== 'running') return;
+    tx.update(agentJobs).set({ progress: { ...row.progress, ...patch } }).where(eq(agentJobs.id, jobId)).run();
+  });
+}
+
+/** A job's progress as it is now (a tool's writes included), for the hooks that write the final one. */
+export const currentProgress = (jobId: number): Record<string, unknown> => getJobRow(jobId).progress;
+
 /** A job by id, however it is scoped; 404 when there is none. */
 export function getJobRow(jobId: number): Row {
   const row = db.select().from(agentJobs).where(eq(agentJobs.id, jobId)).get();
@@ -254,18 +269,23 @@ export const latestExtractionJobs = (episodeId: number): EpisodeJobs['extraction
   props: view(latest(episodeId, 'extraction', 'props')),
 });
 
-/** The latest drama-scoped job of a kind (no episode). */
-const latestOfDrama = (dramaId: number, kind: JobKind) =>
+/** The latest drama-scoped job of a kind (no episode), per target where the kind has one. */
+const latestOfDrama = (dramaId: number, kind: JobKind, target = '') =>
   db
     .select()
     .from(agentJobs)
-    .where(and(eq(agentJobs.dramaId, dramaId), isNull(agentJobs.episodeId), eq(agentJobs.kind, kind)))
+    .where(and(eq(agentJobs.dramaId, dramaId), isNull(agentJobs.episodeId), eq(agentJobs.kind, kind), eq(agentJobs.target, target)))
     .orderBy(desc(agentJobs.id))
     .get();
 
-/** DramaJobs: the latest outline and plan job of the drama (adr-0015). */
+/** DramaJobs: the latest outline and plan job of the drama (adr-0015), and its latest design job per kind (adr-0024). */
 export function getDramaJobs(dramaId: number): DramaJobs {
-  return { dramaId, outline: view(latestOfDrama(dramaId, 'outline')), plan: view(latestOfDrama(dramaId, 'plan')) };
+  return {
+    dramaId,
+    outline: view(latestOfDrama(dramaId, 'outline')),
+    plan: view(latestOfDrama(dramaId, 'plan')),
+    design: Object.fromEntries(DesignTarget.options.map((t) => [t, view(latestOfDrama(dramaId, 'design', t))])) as DramaJobs['design'],
+  };
 }
 
 /** EpisodeJobs: the latest job per kind (per target for extraction, any target for recap). */

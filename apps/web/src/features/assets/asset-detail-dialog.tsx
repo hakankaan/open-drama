@@ -4,8 +4,9 @@ import { Copy, ImageOff, Sparkles, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import type { CharacterView, EpisodeCharacterCard, GeneratedView } from '@open-drama/contracts';
+import { DESCRIBABLE_FIELDS, type CharacterView, type EpisodeCharacterCard, type GeneratedView } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Field, Input, Textarea } from '@/components/ui/input';
 import { Tag } from '@/components/ui/tag';
@@ -18,10 +19,12 @@ import { CharacterViewsPanel } from './character-views';
 import { CharacterVoice } from './character-voice';
 import { ASSET_FIELDS } from './fields';
 import { titleOf, type AnyAsset } from './model';
+import type { Described } from './use-asset-generation';
 
 /**
  * Full field editing. Only changed fields are sent; an edited final prompt is sent as finalPrompt and wins over
- * the stale flag the other edits would set.
+ * the stale flag the other edits would set. The asset designer fills the empty describing fields from the story,
+ * or, after a confirmation, writes every one afresh (adr-0024); the fields are locked meanwhile.
  */
 export function AssetDetailDialog({
   item,
@@ -38,13 +41,16 @@ export function AssetDetailDialog({
   /** A character's upload goes to the view given (adr-0018). */
   onUpload: (view?: CharacterView) => void;
   uploading: boolean;
-  /** Prompt and image generation, available when an episode gives the agent its context. */
+  /** Prompt and image generation, in the episode's context from the studio and in the drama's from the library (adr-0024). */
   generation?: {
     onGeneratePrompt: () => Promise<string | null>;
     promptPending: boolean;
     /** A character draws the views given, else its headshot and the views drawn from it. */
     onGenerateImage: (views?: GeneratedView[]) => void;
     imagePending: boolean;
+    /** DescribeAsset: the empty describing fields, or every one with `replace`; null when refused or failed. */
+    onDescribe: (replace: boolean) => Promise<Described>;
+    describePending: boolean;
   };
   /** Opened from an episode: the character as that episode dresses it (adr-0023). */
   outfit?: { character: EpisodeCharacterCard; episodeId: number };
@@ -68,6 +74,20 @@ export function AssetDetailDialog({
   );
   const promptChanged = prompt.trim() !== (item.asset.finalPrompt ?? '');
   const dirty = Object.keys(changed).length > 0 || promptChanged;
+
+  // The describing fields the designer may write (adr-0024): the empty ones are filled, every one is rewritten on request.
+  const describable: readonly string[] = DESCRIBABLE_FIELDS[item.kind];
+  const emptyDescribable = describable.filter((k) => !(record[k] ?? '').trim());
+  const describing = generation?.describePending ?? false;
+  const [confirmDescribe, setConfirmDescribe] = useState(false);
+  const describe = async (replace: boolean) => {
+    const next = await generation?.onDescribe(replace);
+    setConfirmDescribe(false);
+    if (!next) return;
+    const fresh = next as unknown as Record<string, string>;
+    setValues((v) => ({ ...v, ...Object.fromEntries(describable.map((k) => [k, fresh[k] ?? ''])) }));
+    toast.success(t('described', { name: titleOf(item) }));
+  };
 
   const save = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -138,6 +158,22 @@ export function AssetDetailDialog({
             </div>
           )}
           <div className="flex min-w-0 flex-col gap-4">
+            {generation ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="quiet"
+                  loading={describing}
+                  disabled={dirty}
+                  title={dirty ? t('saveFirst') : emptyDescribable.length > 0 ? t('describeHint') : undefined}
+                  onClick={() => (emptyDescribable.length > 0 ? void describe(false) : setConfirmDescribe(true))}
+                >
+                  <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                  {emptyDescribable.length > 0 ? t('describe') : t('describeAgain')}
+                </Button>
+                {emptyDescribable.length > 0 ? <span className="text-xs text-muted">{t('describeHint')}</span> : null}
+              </div>
+            ) : null}
             {fields.map((f) => {
               const id = `asset-${f.key}`;
               const error = touched && f.required && !values[f.key]?.trim() ? t('required') : undefined;
@@ -148,6 +184,7 @@ export function AssetDetailDialog({
                       id={id}
                       value={values[f.key]}
                       maxLength={f.max}
+                      disabled={describing}
                       onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
                       className="min-h-20"
                     />
@@ -156,6 +193,7 @@ export function AssetDetailDialog({
                       id={id}
                       value={values[f.key]}
                       maxLength={f.max}
+                      disabled={describing}
                       onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
                     />
                   )}
@@ -215,12 +253,22 @@ export function AssetDetailDialog({
               <Button variant="ghost" onClick={onClose} disabled={update.isPending}>
                 {tc('cancel')}
               </Button>
-              <Button type="submit" variant="primary" loading={update.isPending} disabled={!dirty}>
+              <Button type="submit" variant="primary" loading={update.isPending} disabled={!dirty || describing}>
                 {tc('save')}
               </Button>
             </DialogFooter>
           </div>
         </form>
+        <ConfirmDialog
+          open={confirmDescribe}
+          onOpenChange={(o) => !o && !describing && setConfirmDescribe(false)}
+          title={t('describeAgainTitle', { name: titleOf(item) })}
+          description={t('describeAgainBody')}
+          confirmLabel={t('describeAgain')}
+          onConfirm={() => void describe(true)}
+          pending={describing}
+          danger={false}
+        />
       </DialogContent>
     </Dialog>
   );

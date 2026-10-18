@@ -1,5 +1,5 @@
 import type { AgentRunResult, AgentType, ContentLanguage } from '@open-drama/contracts';
-import { ApiError } from '../../../http/errors';
+import { ApiError, invalid } from '../../../http/errors';
 import { logger } from '../../../http/logger';
 import { scrubSecrets } from '../../../lib/secrets';
 import { getAppSettings } from '../../configuration/settings';
@@ -9,17 +9,22 @@ import type { AgentContext, DramaAgentContext } from './context';
 import { assembleInstructions } from './instructions';
 import { resolveTextModel } from './model';
 import { isApiCallError, runToolLoop, type RunLoopResult, type ToolCallRecord } from './sdk';
+import type { ToolSpec } from './tool';
 
 export interface RunAgentInput {
   agentType: AgentType;
   message: string;
-  /** Required by an episode-scoped agent, absent for a drama-scoped one (adr-0015). */
+  /** Required by an episode-scoped agent, absent for a drama-scoped one (adr-0015); either for an agent of both scopes (adr-0024). */
   episodeId?: number;
   dramaId: number;
   model?: string;
   textServiceId?: number;
   maxSteps?: number;
+  /** The subset of the agent's tools this run may call (a design run: one kind's read and save); absent means all (adr-0024). */
+  tools?: string[];
   target?: AgentContext['target'];
+  /** A describe run may write over the target's filled fields (adr-0024). */
+  replace?: boolean;
   jobId?: number;
   /** Started from the chat endpoint (see DramaAgentContext.chat). */
   chat?: boolean;
@@ -52,7 +57,10 @@ function wordError(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-/** The run's context for its agent's scope: an episode-scoped agent without an episode is a programming error. */
+/**
+ * The run's context for its agent's scope: an episode-scoped agent without an episode is a programming error; an
+ * agent of both scopes runs in the drama's context when no episode is given (adr-0024).
+ */
 function contextFor(input: RunAgentInput, language: ContentLanguage, modelId: string): DramaAgentContext {
   const def = AGENTS[input.agentType];
   const base: DramaAgentContext = {
@@ -62,11 +70,27 @@ function contextFor(input: RunAgentInput, language: ContentLanguage, modelId: st
     log: logger.child({ agent: input.agentType, dramaId: input.dramaId, episodeId: input.episodeId, model: modelId }),
     jobId: input.jobId,
     chat: input.chat,
+    target: input.target,
+    replace: input.replace,
   };
-  if (def.scope === 'drama') return base;
+  if (def.scope === 'drama' || (def.scope === 'both' && input.episodeId === undefined)) return base;
   if (input.episodeId === undefined) throw new ApiError('INTERNAL', `The ${def.name} runs on an episode`);
-  const ctx: AgentContext = { ...base, episodeId: input.episodeId, target: input.target, scriptRevision: input.scriptRevision };
+  const ctx: AgentContext = { ...base, episodeId: input.episodeId, scriptRevision: input.scriptRevision };
   return ctx;
+}
+
+/**
+ * The tools this run is offered (adr-0024): the agent's set, cut to the run's allowlist when it has one, minus every
+ * episode tool when the run has no episode. An allowlist naming a tool the agent lacks is a caller's mistake.
+ */
+function toolsFor(ctx: DramaAgentContext, allow: string[] | undefined): ToolSpec[] {
+  const all = AGENT_TOOLS[ctx.agentType];
+  const unknown = allow?.filter((id) => !all.some((t) => t.id === id)) ?? [];
+  if (unknown.length > 0) throw invalid(`The ${AGENTS[ctx.agentType].name} has no tool ${unknown.join(', ')}`);
+  const inEpisode = 'episodeId' in ctx;
+  const offered = all.filter((t) => (allow === undefined || allow.includes(t.id)) && (inEpisode || t.scope === 'drama'));
+  ctx.log.trace({ tools: offered.map((t) => t.id) }, 'tools offered');
+  return offered;
 }
 
 /** RunAgent: one tool loop scoped to a drama or to one of its episodes (Plan 2 §4, adr-0015). Throws ApiError on failure. */
@@ -81,6 +105,7 @@ export async function runAgent(input: RunAgentInput): Promise<AgentRunResult & R
     textServiceId: input.textServiceId,
   });
   const ctx = contextFor(input, language, resolved.modelId);
+  const tools = toolsFor(ctx, input.tools);
   const started = performance.now();
   ctx.log.info({ language }, 'agent run started');
   try {
@@ -88,7 +113,7 @@ export async function runAgent(input: RunAgentInput): Promise<AgentRunResult & R
       model: resolved.model,
       instructions,
       message: input.message,
-      tools: AGENT_TOOLS[input.agentType],
+      tools,
       ctx,
       maxSteps: input.maxSteps ?? def.maxSteps,
       temperature: resolved.temperature,

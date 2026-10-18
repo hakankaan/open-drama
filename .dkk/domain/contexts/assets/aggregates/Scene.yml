@@ -6,6 +6,8 @@ handles:
   - UpdateScene
   - DeleteScene
   - SaveExtractedScenes
+  - SaveDesignedScenes
+  - DescribeAsset
   - GenerateSceneFinalPrompt
   - SaveSceneFinalPrompt
   - RequestSceneImage
@@ -15,6 +17,7 @@ emits:
   - SceneUpdated
   - SceneDeleted
   - ScenesExtracted
+  - AssetDescribed
   - SceneFinalPromptSaved
   - SceneImageRequested
   - SceneImageAttached

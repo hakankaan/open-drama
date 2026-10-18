@@ -6,7 +6,7 @@
 
 ## Summary
 
-A person in the drama with appearance and styling descriptions, an optional role, a final prompt describing the person, and reference views: a headshot, a full body, optional side and back views, and a multi-view sheet kept from before views or uploaded (adr-0018), and the voice its lines are spoken in: one of the speech model's voices and a recording of its voice, cloned by speech models that clone (adr-0021). Shared across the drama's episodes through episode links, each of which may give it another outfit and a full-body picture of it for that episode (adr-0023).
+A person in the drama with appearance and styling descriptions, an optional role, a final prompt describing the person, and reference views: a headshot, a full body, optional side and back views, and a multi-view sheet kept from before views or uploaded (adr-0018), and the voice its lines are spoken in: one of the speech model's voices and a recording of its voice, cloned by speech models that clone (adr-0021). Shared across the drama's episodes through episode links, each of which may give it another outfit and a full-body picture of it for that episode (adr-0023), set by the creator or by the extractor from the episode's script (adr-0024).
 
 
 
@@ -29,6 +29,8 @@ A person in the drama with appearance and styling descriptions, an optional role
 | Handles | `UpdateCharacter` |
 | Handles | `DeleteCharacter` |
 | Handles | `SaveExtractedCharacters` |
+| Handles | `SaveDesignedCharacters` |
+| Handles | `DescribeAsset` |
 | Handles | `GenerateCharacterFinalPrompt` |
 | Handles | `SaveCharacterFinalPrompt` |
 | Handles | `RequestCharacterImage` |
@@ -38,6 +40,7 @@ A person in the drama with appearance and styling descriptions, an optional role
 | Emits | `CharacterUpdated` |
 | Emits | `CharacterDeleted` |
 | Emits | `CharactersExtracted` |
+| Emits | `AssetDescribed` |
 | Emits | `CharacterFinalPromptSaved` |
 | Emits | `CharacterImageRequested` |
 | Emits | `CharacterImageAttached` |
@@ -52,3 +55,4 @@ A person in the drama with appearance and styling descriptions, an optional role
 | [adr-0018](../../adr/adr-0018.md) | Character reference views | accepted |
 | [adr-0021](../../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |
 | [adr-0023](../../adr/adr-0023.md) | Per-episode outfits | proposed |
+| [adr-0024](../../adr/adr-0024.md) | Assets designed from the story | proposed |

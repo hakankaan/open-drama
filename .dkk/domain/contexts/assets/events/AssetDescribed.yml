@@ -1,0 +1,19 @@
+name: AssetDescribed
+description: >-
+  The asset designer described one existing character, scene or prop from the story (adr-0024): the describable fields
+  it wrote and the ones it kept. When a field the final prompt is written from changed, the prompt is stale; a
+  character's styling and a scene's lighting also stale the keyframes bound to it.
+fields:
+  - name: assetKind
+    type: string
+  - name: assetId
+    type: ID
+  - name: written
+    type: string[]
+  - name: kept
+    type: string[]
+  - name: replace
+    type: boolean
+raised_by: Character
+adr_refs:
+  - adr-0024

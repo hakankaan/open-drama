@@ -1,4 +1,3 @@
-# Command — an instruction to change domain state.
 name: DeleteScene
 description: Soft-delete a scene; shots that referenced it lose their scene binding.
 fields:
@@ -6,3 +5,7 @@ fields:
     type: ID
 actor: Creator
 handled_by: Scene
+rejections:
+  - An image of the scene is being generated (409, delete it once the task has finished)
+adr_refs:
+  - adr-0024

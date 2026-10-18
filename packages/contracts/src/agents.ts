@@ -11,6 +11,8 @@ export const AgentSummary = z.object({
   type: AgentType,
   name: z.string(),
   skillCount: z.number().int(),
+  /** The skill ids the agent is given: its own directory first, then any it shares (an id equal to a prefix or under it). */
+  skillPrefixes: z.array(z.string()),
   model: z.string().nullable(),
   promptSource: PromptSource,
 });
@@ -78,6 +80,8 @@ export const RunAgentRequest = z.object({
   episodeId: z.number().int().positive().optional(),
   model: z.string().trim().max(200).optional(),
   textServiceId: z.number().int().positive().optional(),
+  /** The subset of the agent's tools this run may call; absent means its whole set (adr-0024). */
+  tools: z.array(z.string().trim().min(1).max(80)).max(40).optional(),
 });
 export type RunAgentRequest = z.input<typeof RunAgentRequest>;
 

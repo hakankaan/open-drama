@@ -1,17 +1,19 @@
 name: RunAgent
 description: >-
-  Run one agent with a user message scoped to a drama and, for an episode-scoped agent, to an episode of it. Used by
-  the production, assets and storyboard contexts (outline, plan, write, rewrite, recap, extraction, breakdown,
+  Run one agent with a user message scoped to a drama and, for an episode-scoped agent, to an episode of it. Used by the
+  production, assets and storyboard contexts (outline, plan, write, rewrite, recap, extraction, design, breakdown,
   prompts) and by the debugging chat endpoint.
 fields:
   - name: agentType
     type: string
-    description: script_rewriter | extractor | storyboard_breaker | prompt_generator | recap_writer | story_writer | episode_planner | episode_writer
+    description: >-
+      script_rewriter | extractor | storyboard_breaker | prompt_generator | recap_writer | story_writer |
+      episode_planner | episode_writer | asset_designer
   - name: message
     type: string
   - name: episodeId
     type: ID
-    description: Required for an episode-scoped agent, absent for a drama-scoped one
+    description: Required for an episode-scoped agent, absent for a drama-scoped one, either for the prompt generator (adr-0024)
   - name: dramaId
     type: ID
   - name: model
@@ -20,6 +22,9 @@ fields:
     type: ID
   - name: maxSteps
     type: number
+  - name: tools
+    type: "string[]"
+    description: The subset of the agent's tools this run may call (a design run names one kind's read and save); absent means all (adr-0024)
   - name: scriptRevision
     type: number
     description: Recap runs only — the revision SaveRecap pins to
@@ -31,7 +36,9 @@ rejections:
   - Unknown agent type
   - An episode-scoped agent without an episode, or an episode of another drama
   - No text model service configured
+  - A tool in the run's allowlist the agent does not have
 adr_refs:
   - adr-0006
   - adr-0014
   - adr-0015
+  - adr-0024

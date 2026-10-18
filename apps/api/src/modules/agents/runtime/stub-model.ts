@@ -1,4 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises';
+import { AssetKind, DesignTarget } from '@open-drama/contracts';
 import { env } from '../../../env';
 import type { LanguageModelV4 } from './sdk';
 
@@ -93,11 +94,17 @@ function stubCharacters(script: string, existing: string[]): Json[] {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4)
     .map(([name]) => existing.find((e) => e.toLowerCase() === name.toLowerCase()) ?? name);
+  // "Mei wears a red raincoat." dresses Mei for the episode (adr-0024); the save decides whether it is written.
+  const outfitOf = (name: string) => {
+    const m = new RegExp(`\\b${name}\\b[^.\\n]*?\\b(?:wears|wearing|dressed in)\\s+([^.\\n]+)`, 'i').exec(script);
+    return m ? { outfit: m[1]!.trim() } : {};
+  };
   return names.map((name) => ({
     name,
     role: 'character',
     appearance: `${name}, as described in the script`,
     styling: 'everyday clothes suited to the scene',
+    ...outfitOf(name),
   }));
 }
 
@@ -223,6 +230,8 @@ function stubOutline(read: { title?: string; synopsis?: string; genre?: string; 
     '',
     '## World and tone',
     `${read?.genre?.trim() || 'Drama'}, close and quiet; the places the premise names, lit as the time of day allows.`,
+    '- Main location: where the premise plays out, seen by day and again at night.',
+    '- Meeting place: where the offer is made, a public room after dark.',
     '',
     '## Story',
     `Act one: ${sentences[0] ?? premise}`,
@@ -231,8 +240,73 @@ function stubOutline(read: { title?: string; synopsis?: string; genre?: string; 
     '',
     '## Season shape',
     `${Math.max(planned, 6)} episodes of about 45 seconds; the acts fall at the end of episodes 2 and 4.`,
-    ...(read?.serial === false ? [] : ['', '## Threads', '- The stranger\'s offer, repeated once per act with the price raised.', '- What the protagonist keeps hidden, shown a little more each episode.']),
+    ...(read?.serial === false ? [] : ['', '## Threads', '- The offer: a folded paper the stranger leaves behind, shown once per act with the price raised.', '- The keepsake: what the protagonist keeps hidden, shown a little more each episode.']),
   ].join('\n');
+}
+
+/** The list lines of one `## Heading` section of an outline, each split at its first colon into a name and a text. */
+function sectionEntries(outline: string, heading: RegExp): { name: string; text: string }[] {
+  const lines = outline.split('\n');
+  const start = lines.findIndex((l) => /^#{1,6}\s/.test(l) && heading.test(l));
+  if (start < 0) return [];
+  const entries: { name: string; text: string }[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (/^#{1,6}\s/.test(line)) break;
+    const m = /^\s*(?:[-*•]|\d+[.)])\s+\**([^:：*]+?)\**\s*[:：]\s*(.*)$/.exec(line);
+    if (m) entries.push({ name: m[1]!.trim(), text: m[2]!.trim() });
+  }
+  return entries;
+}
+
+/**
+ * A placeholder design from the outline (adr-0024): one character per Cast line, named as written; one place per
+ * list line of the World section (one "Main location" when it has none); one prop per list line of the Threads
+ * section, so an outline without object threads designs no props. Existing names keep their spelling.
+ */
+function stubDesign(target: DesignTarget, outline: string, existing: string[]): Json[] {
+  const spelled = (name: string) => existing.find((e) => e.toLowerCase() === name.toLowerCase()) ?? name;
+  if (target === 'characters') {
+    return sectionEntries(outline, /cast|characters/i).map(({ name, text }) => ({
+      name: spelled(name),
+      role: text.split(/[.;]/)[0]!.slice(0, 80),
+      appearance: `${name}, as the outline describes: ${text.slice(0, 200)}`,
+      styling: 'everyday clothes suited to the world of the story',
+    }));
+  }
+  if (target === 'scenes') {
+    const places = sectionEntries(outline, /world|places|setting/i);
+    return (places.length > 0 ? places : [{ name: 'Main location', text: '' }]).map(({ name, text }) => ({
+      location: spelled(name),
+      time: /\bnight\b/i.test(text) ? 'Night' : 'Day',
+      prompt: text || `${name}, dressed as the outline describes`,
+      lighting: 'natural light for the time of day',
+    }));
+  }
+  return sectionEntries(outline, /threads|objects|props/i).map(({ name, text }) => ({
+    name: spelled(name),
+    type: 'object',
+    description: text || `${name}, as the outline describes`,
+  }));
+}
+
+/**
+ * A placeholder description of one asset (adr-0024): every describable field of its kind, cut from the outline, or
+ * from the premise when there is none, with the asset's name from the request. The tool keeps the filled fields
+ * unless the run replaces, so the stub sends them all. A name containing #fail is never described: the stub answers
+ * without the tool, so the failure path (one retry, then the error) can be seen offline.
+ */
+function stubDescription(kind: AssetKind, label: string, source: string): Json {
+  const text = source.replace(/\s+/g, ' ').trim().slice(0, 160) || 'nothing is told about it yet';
+  if (kind === 'character') {
+    return {
+      role: 'a role the story gives them',
+      appearance: `${label}, as the story describes: ${text}`,
+      styling: 'everyday clothes suited to the world of the story',
+      description: `${label} as the story tells it: ${text}`,
+    };
+  }
+  if (kind === 'scene') return { prompt: `${label}, dressed as the story describes: ${text}`, lighting: 'natural light for the time of day' };
+  return { type: 'object', description: `${label}, as the story describes: ${text}` };
 }
 
 /** A placeholder beat sheet for one planned episode, cut from the outline's prose and padded to the minimum. */
@@ -330,6 +404,32 @@ function plan(options: CallOptions): Step {
       return next('save_recap', { recap: stubRecap(read?.episodeNumber ?? 0, read?.script ?? '') });
     }
     return { text: 'Saved the recap.' };
+  }
+
+  const design = DesignTarget.options.find((t) => tools.has(`save_designed_${t}`));
+  if (design) {
+    if (!done.has('read_story_for_design')) return next('read_story_for_design');
+    if (!done.has(`read_existing_${design}`)) return next(`read_existing_${design}`);
+    if (!done.has(`save_designed_${design}`)) {
+      const outline = String((done.get('read_story_for_design') as { outline?: string } | null)?.outline ?? '');
+      const existing = ((done.get(`read_existing_${design}`) as { items?: { name?: string; location?: string }[] } | null)?.items ?? [])
+        .map((i) => i.name ?? i.location ?? '')
+        .filter(Boolean);
+      return next(`save_designed_${design}`, { items: stubDesign(design, outline, existing) });
+    }
+    return { text: `Designed the ${design}.` };
+  }
+
+  const describe = AssetKind.options.find((k) => tools.has(`describe_${k}`));
+  if (describe) {
+    if (message.includes('#fail')) return { text: 'Nothing to do.' };
+    if (!done.has('read_story_for_design')) return next('read_story_for_design');
+    if (!done.has(`describe_${describe}`)) {
+      const read = done.get('read_story_for_design') as { outline?: string; premise?: { synopsis?: string } } | null;
+      const label = /"([^"]+)"/.exec(message)?.[1] ?? describe;
+      return next(`describe_${describe}`, stubDescription(describe, label, read?.outline?.trim() || read?.premise?.synopsis || ''));
+    }
+    return { text: `Described the ${describe}.` };
   }
 
   if (tools.has('save_dedup_characters')) {

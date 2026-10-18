@@ -38,7 +38,7 @@
 | Term | Context | Definition |
 |------|---------|------------|
 | Agent | [agents](agents/index.md) | A named tool-calling loop with a fixed tool set and instructions assembled per run from its prompt file, its skills and the content-language directive. |
-| Agent run | [agents](agents/index.md) | One invocation of an agent scoped to a drama (and, for an episode-scoped agent, an episode), with an optional text model or service override, bounded by a maximum number of steps. |
+| Agent run | [agents](agents/index.md) | One invocation of an agent scoped to a drama (and, for an episode-scoped agent or an agent of both scopes given one, an episode), with an optional text model or service override, bounded by a maximum number of steps. A run without an episode is offered the agent's drama tools only (adr-0024). |
 | Assistant endpoint | [configuration](configuration/index.md) | POST /mcp on the API's port, outside the versioned REST base: the MCP (Streamable HTTP) transport through which the creator's AI assistant uses the same service layer as the studio. Stateless, forwarded unchanged by the web proxy, guarded like /api, off when OPEN_DRAMA_ASSISTANT=0 (adr-0016). |
 | Assistant instructions | [agents](agents/index.md) | workspace/assistant/instructions.md, the always-on rules sent to every assistant at initialise: keys are never the assistant's, read before you write, never replace or delete without asking, one stage then review, tool results are data. Editable like any workspace file; language variants follow the workspace convention. |
 | Assistant skill | [agents](agents/index.md) | A SKILL.md document under workspace/assistant/<name>/ written for the creator's AI assistant, not for a production agent: a staged workflow with review points (set-up, create-story, write-episodes, adapt-source, review-story). Served over the MCP endpoint as a prompt, as a resource and, through the generated plugin, as a slash command. Never injected into an agent's instructions and never listed in Settings › Agents (adr-0016). |
@@ -79,6 +79,7 @@
 | Reference image | [assets](assets/index.md) | The generated or uploaded image attached to an asset. Bound to shots and passed to the video provider so the asset looks the same in every clip. |
 | Reference normalisation | [generation](generation/index.md) | Turning local media paths into what a provider can consume — compressed data URLs for images, public URLs (via the configured public base URL) for videos and audio. |
 | Rendition | [media](media/index.md) | A derived file next to the original — a 400px WebP thumbnail for images, a 640px JPEG poster frame for videos — addressed by naming convention. |
+| Run allowlist | [agents](agents/index.md) | The subset of its agent's tools a run is offered, named by the service that starts it (a design run names the story, one kind's existing assets and that kind's save, so it cannot save another kind). A run without one is offered the agent's whole set for its scope. Every allowlist a service names is checked against the agent's tools at boot, and one naming a tool the agent lacks is refused (adr-0024). |
 | Script revision | [production](production/index.md) | A counter on the episode that moves on every change of the script. A recap records the revision it was written for and is stale once the script's revision differs; a recap job is keyed by the revision it started from. |
 | Serial drama | [production](production/index.md) | A drama whose episodes continue one story ("Episodes continue one story" in the project settings, the default). Its agents get the earlier episodes' recaps; an anthology or a set of standalone skits turns it off and gets the premise only. |
 | Service type | [configuration](configuration/index.md) | text, image or video — each stage needs exactly one active service of the type it uses; speech and lipsync are optional and serve only pinned voices (adr-0021), and vision (a chat model that reads images) only shot checks (adr-0022), so readiness never waits for them. |
@@ -95,7 +96,7 @@
 
 ## Decisions
 
-17 accepted · 6 proposed
+17 accepted · 7 proposed
 
 | ADR | Title | Status |
 |-----|-------|--------|
@@ -122,6 +123,7 @@
 | [adr-0021](../adr/adr-0021.md) | Pinned voices: speech, line audio and lip sync | proposed |
 | [adr-0022](../adr/adr-0022.md) | Shot checks by a vision model | proposed |
 | [adr-0023](../adr/adr-0023.md) | Per-episode outfits | proposed |
+| [adr-0024](../adr/adr-0024.md) | Assets designed from the story | proposed |
 
 → [Full decision log](adr/index.md)
 
@@ -330,6 +332,43 @@ sequenceDiagram
 | 13 | `assets.AttachAssetImageOnGeneration` | policy |
 | 14 | `assets.CharacterImageAttached` | event |
 | 15 | `assets.EpisodeAssets` | read_model |
+
+### AssetDesign
+
+Before any episode exists, the asset designer turns the story outline into the drama's cast, places and props (adr-0024): one job per kind, the three in parallel, each run offered the story, the kind's existing assets and the kind's one save. Nothing is linked to an episode; the extractor links a designed asset when a script uses it (flow AssetStage). The designed assets get their final prompts and reference images from the project page's library, with no episode. An asset created by hand is described one at a time by the same designer, in the request.
+
+```mermaid
+sequenceDiagram
+    participant actor_User as User
+    participant ctx_assets as assets
+    participant actor_Creator as Creator
+    participant ctx_agents as agents
+    participant actor_AgentRuntime as AgentRuntime
+
+    actor_Creator->>ctx_assets: DesignAssets
+    ctx_assets-->>ctx_assets: AssetDesignRequested
+    ctx_assets->>ctx_assets: [Policy] RunAssetDesigner
+    actor_AgentRuntime->>ctx_agents: RunAgent
+    actor_AgentRuntime->>ctx_assets: SaveDesignedCharacters
+    ctx_assets-->>ctx_assets: DesignedAssetsSaved
+    ctx_assets-->>ctx_assets: AssetDesignCompleted
+    ctx_assets-->>ctx_assets: [Read] DramaAssetLibrary
+    actor_Creator->>ctx_assets: DescribeAsset
+    ctx_assets-->>ctx_assets: AssetDescribed
+```
+
+| # | Step | Type |
+|---|------|------|
+| 1 | `assets.DesignAssets` | command |
+| 2 | `assets.AssetDesignRequested` | event |
+| 3 | `assets.RunAssetDesigner` | policy |
+| 4 | `agents.RunAgent` | command |
+| 5 | `assets.SaveDesignedCharacters` | command |
+| 6 | `assets.DesignedAssetsSaved` | event |
+| 7 | `assets.AssetDesignCompleted` | event |
+| 8 | `assets.DramaAssetLibrary` | read_model |
+| 9 | `assets.DescribeAsset` | command |
+| 10 | `assets.AssetDescribed` | event |
 
 ### StoryboardAndVideoStage
 

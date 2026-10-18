@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
-import { PlanProgress, type JobOutcome } from '@open-drama/contracts';
+import { DesignProgress, DesignTarget, PlanProgress, type JobOutcome } from '@open-drama/contracts';
 import { db } from '../../db/client';
 import { dramas, episodes, type agentJobs } from '../../db/schema';
 
@@ -8,7 +8,8 @@ type Row = typeof agentJobs.$inferSelect;
 /**
  * What a settled job produced (adr-0016), read from its targets as they are now: the outline's size and revision, the
  * episodes a plan added (kept by a failed or cancelled plan too), the script and the recap job a write started, the
- * recap's size and revision. Null while the job runs, and for a failed run that saved nothing.
+ * recap's size and revision, what a design run saved (adr-0024). Null while the job runs, and for a failed run that
+ * saved nothing.
  */
 export function jobOutcome(job: Row): JobOutcome | null {
   if (job.status === 'running') return null;
@@ -44,6 +45,15 @@ export function jobOutcome(job: Row): JobOutcome | null {
       if (job.status !== 'done' || job.episodeId === null) return null;
       const row = db.select({ recap: episodes.recap, recapRevision: episodes.recapRevision }).from(episodes).where(eq(episodes.id, job.episodeId)).get();
       return row ? { kind: 'recap', recapChars: row.recap.length, recapRevision: row.recapRevision } : null;
+    }
+    case 'design': {
+      // The save writes its counts in one step; a job that ended without them (cancelled or failed before the save,
+      // or done without one) has no outcome, and a cancelled one that saved first keeps what it saved.
+      const design = DesignProgress.safeParse(job.progress);
+      const target = DesignTarget.safeParse(job.target);
+      if (!design.success || !target.success || design.data.saved === undefined) return null;
+      const { saved, filled = 0, skipped = [], overflow = [], outlineRevision = null } = design.data;
+      return { kind: 'design', target: target.data, saved, filled, skipped, overflow, outlineRevision };
     }
     default:
       return { kind: job.kind };

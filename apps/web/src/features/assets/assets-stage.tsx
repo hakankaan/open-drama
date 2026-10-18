@@ -114,7 +114,16 @@ export function AssetsStage({ episode, onScript }: { episode: EpisodeView; onScr
             </Button>
           ))}
         </div>
-        {creating ? <AssetCreateDialog kind={creating} dramaId={episode.dramaId} episodeId={episode.id} onClose={() => setCreating(null)} /> : null}
+        {creating ? (
+          <AssetCreateDialog
+            kind={creating}
+            dramaId={episode.dramaId}
+            episodeId={episode.id}
+            onClose={() => setCreating(null)}
+            onDescribe={(item) => generation.describe(item, false)}
+            onOpen={(id) => setOpen({ kind: creating, id })}
+          />
+        ) : null}
       </section>
     );
   }
@@ -206,10 +215,21 @@ export function AssetsStage({ episode, onScript }: { episode: EpisodeView; onScr
             promptPending: generation.isPromptPending(openItem),
             onGenerateImage: (views) => generation.image(openItem, views),
             imagePending: generation.isImagePending(openItem),
+            onDescribe: (replace) => generation.describe(openItem, replace),
+            describePending: generation.isDescribePending(openItem),
           }}
         />
       ) : null}
-      {creating ? <AssetCreateDialog kind={creating} dramaId={episode.dramaId} episodeId={episode.id} onClose={() => setCreating(null)} /> : null}
+      {creating ? (
+        <AssetCreateDialog
+          kind={creating}
+          dramaId={episode.dramaId}
+          episodeId={episode.id}
+          onClose={() => setCreating(null)}
+          onDescribe={(item) => generation.describe(item, false)}
+          onOpen={(id) => setOpen({ kind: creating, id })}
+        />
+      ) : null}
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}

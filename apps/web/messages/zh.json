@@ -465,8 +465,7 @@
       "scene": "还没有场景。场景指某个时段下的某个地点。",
       "prop": "还没有道具。这里只放剧情离不开的关键物件。"
     },
-    "needEpisode": "请先创建一集：提示词需要结合具体某一集来写。",
-    "alreadyGenerating": "这个素材的图片正在生成中。",
+    "alreadyGenerating": "此素材的图像、提示词或描述正在进行中。",
     "saveFirst": "请先保存你的修改。",
     "generatePrompt": "生成提示词",
     "regeneratePrompt": "重写提示词",
@@ -531,7 +530,14 @@
       "headshotFirst": "请先生成或上传头像特写：服装图基于它绘制",
       "saveFirst": "请先点击输入框外部保存服装",
       "alreadyDrawing": "这个角色已有一张图片正在绘制。"
-    }
+    },
+    "describe": "AI 描述",
+    "describeAgain": "重新描述",
+    "describeWithAi": "用 AI 描述",
+    "describeHint": "根据故事补全空白字段；已填写的保持不变。",
+    "describeAgainTitle": "重新描述{name}？",
+    "describeAgainBody": "设计师会根据故事重写所有描述字段。名称保留，图像提示词将过期。",
+    "described": "已根据故事描述{name}。"
   },
   "project": {
     "notFound": "该项目不存在或已被删除。",
@@ -587,7 +593,25 @@
       "running": "正在写大纲，通常不到一分钟。",
       "failed": "大纲生成失败：{error}",
       "saved": "大纲已保存。",
-      "plan": "规划剧集"
+      "plan": "规划剧集",
+      "design": "设计角色、场景与道具",
+      "designTitle": "根据故事设计资产？",
+      "designBody": "AI 根据大纲设计角色、场景和道具，每类运行一次文本模型，共三次。已有资产保留原有字段，只补齐空缺字段。此时不会生成图片。",
+      "designNeedsOutline": "请先写好大纲：资产由大纲设计而来。",
+      "designSaveFirst": "请先保存大纲：资产由已保存的大纲设计而来。",
+      "designRunning": "正在设计{target}……",
+      "designDone": "{target}：新增 {saved} 个，补齐 {filled} 个。",
+      "designSkipped": "已跳过：{names}。",
+      "designOverflow": "超出上限，未保存：{names}。",
+      "designFailed": "设计{target}失败：{error}",
+      "designCancelled": "已取消设计{target}；已保存的内容保留。",
+      "designStale": "这些资产设计后，大纲已有改动。",
+      "designOpenAssets": "打开资产库",
+      "targets": {
+        "characters": "角色",
+        "scenes": "场景",
+        "props": "道具"
+      }
     },
     "plan": {
       "title": "规划剧集",

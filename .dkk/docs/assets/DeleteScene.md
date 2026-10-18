@@ -15,6 +15,9 @@ Soft-delete a scene; shots that referenced it lose their scene binding.
 |------|------|-------------|
 | `sceneId` | `ID` | — |
 
+## Rules & Invariants
+
+- An image of the scene is being generated (409, delete it once the task has finished)
 
 
 ## Relationships
@@ -26,4 +29,6 @@ Soft-delete a scene; shots that referenced it lose their scene binding.
 
 ## Linked ADRs
 
-_No linked ADRs._
+| ADR | Title | Status |
+|-----|-------|--------|
+| [adr-0024](../../adr/adr-0024.md) | Assets designed from the story | proposed |

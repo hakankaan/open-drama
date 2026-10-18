@@ -5,32 +5,49 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { AssetKind } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/cn';
+import { useToastError } from '@/lib/errors';
 import { useModelPicks } from '../configuration/model-picks';
-import { useDramaAssets } from './api';
+import { useDeleteAsset, useDramaAssets } from './api';
 import { AssetCard } from './asset-card';
 import { AssetCreateDialog } from './asset-create-dialog';
 import { AssetDetailDialog } from './asset-detail-dialog';
-import { KIND_ORDER, type AnyAsset } from './model';
+import { KIND_ORDER, titleOf, type AnyAsset } from './model';
 import { useAssetGeneration } from './use-asset-generation';
 import { useImageUpload } from './use-image-upload';
 
 type Filter = AssetKind | 'all';
 
 /**
- * DramaAssetLibrary on the project page: every asset of the drama, grouped by kind. Generation needs an episode
- * for the prompt agent's context; the first episode is used, and without one the buttons explain why they are off.
+ * DramaAssetLibrary on the project page: every asset of the drama, grouped by kind, whether or not an episode uses
+ * it yet. Prompts and images are generated without an episode (the project's image service, no lock; adr-0024), and
+ * an asset is deleted from here after confirmation.
  */
-export function AssetLibrary({ dramaId, episodeId }: { dramaId: number; episodeId: number | undefined }) {
+export function AssetLibrary({ dramaId }: { dramaId: number }) {
   const t = useTranslations('assets');
+  const ts = useTranslations('studio.assets');
+  const toastError = useToastError();
   const library = useDramaAssets(dramaId);
   const upload = useImageUpload(dramaId);
+  const remove = useDeleteAsset(dramaId);
   const { picks } = useModelPicks();
-  const generation = useAssetGeneration(dramaId, episodeId, picks);
+  const generation = useAssetGeneration(dramaId, undefined, picks);
   const [filter, setFilter] = useState<Filter>('all');
   const [open, setOpen] = useState<{ kind: AssetKind; id: number } | null>(null);
   const [creating, setCreating] = useState<AssetKind | null>(null);
+  const [deleting, setDeleting] = useState<AnyAsset | null>(null);
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    try {
+      await remove.mutateAsync({ kind: deleting.kind, id: deleting.asset.id });
+      setDeleting(null);
+    } catch (err) {
+      toastError(err);
+    }
+  };
 
   if (library.isLoading) return <Skeleton className="h-64" />;
   const data = library.data;
@@ -91,7 +108,7 @@ export function AssetLibrary({ dramaId, episodeId }: { dramaId: number; episodeI
                   uploading={upload.isBusy(item)}
                   onGenerate={() => generation.image(item)}
                   generating={generation.isImagePending(item)}
-                  generateDisabled={episodeId ? undefined : t('needEpisode')}
+                  onDelete={() => setDeleting(item)}
                 />
               ))}
             </div>
@@ -108,19 +125,34 @@ export function AssetLibrary({ dramaId, episodeId }: { dramaId: number; episodeI
           onClose={() => setOpen(null)}
           onUpload={(view) => upload.pick(openItem, view)}
           uploading={upload.isBusy(openItem)}
-          generation={
-            episodeId
-              ? {
-                  onGeneratePrompt: () => generation.prompt(openItem),
-                  promptPending: generation.isPromptPending(openItem),
-                  onGenerateImage: (views) => generation.image(openItem, views),
-                  imagePending: generation.isImagePending(openItem),
-                }
-              : undefined
-          }
+          generation={{
+            onGeneratePrompt: () => generation.prompt(openItem),
+            promptPending: generation.isPromptPending(openItem),
+            onGenerateImage: (views) => generation.image(openItem, views),
+            imagePending: generation.isImagePending(openItem),
+            onDescribe: (replace) => generation.describe(openItem, replace),
+            describePending: generation.isDescribePending(openItem),
+          }}
         />
       ) : null}
-      {creating ? <AssetCreateDialog kind={creating} dramaId={dramaId} onClose={() => setCreating(null)} /> : null}
+      {creating ? (
+        <AssetCreateDialog
+          kind={creating}
+          dramaId={dramaId}
+          onClose={() => setCreating(null)}
+          onDescribe={(item) => generation.describe(item, false)}
+          onOpen={(id) => setOpen({ kind: creating, id })}
+        />
+      ) : null}
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(o) => !o && setDeleting(null)}
+        title={ts('deleteTitle', { name: deleting ? titleOf(deleting) : '' })}
+        description={ts('deleteBody')}
+        confirmLabel={ts('deleteConfirm')}
+        onConfirm={confirmDelete}
+        pending={remove.isPending}
+      />
     </div>
   );
 }

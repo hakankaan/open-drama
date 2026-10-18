@@ -4,10 +4,12 @@ import {
   CreateCharacter,
   CreateProp,
   CreateScene,
+  DescribeAsset,
   GenerateFinalPrompt,
   IdParam,
   RequestAssetImage,
   RequestOutfitImage,
+  StartDesign,
   StartExtraction,
   UpdateCharacter,
   UpdateEpisodeOutfit,
@@ -16,6 +18,8 @@ import {
 } from '@open-drama/contracts';
 import { created, ok } from '../../http/envelope';
 import { v } from '../../http/validate';
+import { describeAsset } from '../agents/services/describe';
+import { startDesign } from '../agents/services/design';
 import { startExtraction } from '../agents/services/extraction';
 import { generateFinalPrompt } from '../agents/services/final-prompt';
 import { requestAssetImage } from './generate';
@@ -49,8 +53,8 @@ export const assetsRoutes = new Hono()
   .patch('/characters/:id/outfit', id, v('json', UpdateEpisodeOutfit), (c) =>
     ok(c, updateEpisodeOutfit(c.req.valid('param').id, c.req.valid('json'))),
   )
-  .post('/characters/:id/outfit/image', id, v('json', RequestOutfitImage), (c) =>
-    ok(c, requestOutfitImage(c.req.valid('param').id, c.req.valid('json'))),
+  .post('/characters/:id/outfit/image', id, v('json', RequestOutfitImage), async (c) =>
+    ok(c, await requestOutfitImage(c.req.valid('param').id, c.req.valid('json'))),
   )
   .post('/scenes', v('json', CreateScene), (c) => created(c, createScene(c.req.valid('json'))))
   .patch('/scenes/:id', id, v('json', UpdateScene), (c) =>
@@ -63,6 +67,11 @@ export const assetsRoutes = new Hono()
   .post('/episodes/:id/extract', id, v('json', StartExtraction), (c) => {
     const { target, ...opts } = c.req.valid('json');
     return ok(c, startExtraction(c.req.valid('param').id, target, opts));
+  })
+  // The asset designer on the whole project, one job per kind (adr-0024).
+  .post('/dramas/:id/design', id, v('json', StartDesign), (c) => {
+    const { target, ...opts } = c.req.valid('json');
+    return ok(c, startDesign(c.req.valid('param').id, target, opts));
   });
 
 // Agent- and generation-backed commands, the same for the three kinds.
@@ -73,5 +82,9 @@ for (const kind of AssetKind.options) {
     )
     .post(`/${PATHS[kind]}/:id/image`, id, v('json', RequestAssetImage), async (c) =>
       ok(c, await requestAssetImage(kind, c.req.valid('param').id, c.req.valid('json'))),
+    )
+    // The asset designer on this one asset, in the request (adr-0024).
+    .post(`/${PATHS[kind]}/:id/describe`, id, v('json', DescribeAsset), async (c) =>
+      ok(c, await describeAsset(kind, c.req.valid('param').id, c.req.valid('json'))),
     );
 }

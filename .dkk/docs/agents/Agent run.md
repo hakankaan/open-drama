@@ -6,11 +6,11 @@
 
 ## Summary
 
-One invocation of an agent scoped to a drama (and, for an episode-scoped agent, an episode), with an optional text model or service override, bounded by a maximum number of steps.
+One invocation of an agent scoped to a drama (and, for an episode-scoped agent or an agent of both scopes given one, an episode), with an optional text model or service override, bounded by a maximum number of steps. A run without an episode is offered the agent's drama tools only (adr-0024).
 
 ## Meaning
 
-One invocation of an agent scoped to a drama (and, for an episode-scoped agent, an episode), with an optional text model or service override, bounded by a maximum number of steps.
+One invocation of an agent scoped to a drama (and, for an episode-scoped agent or an agent of both scopes given one, an episode), with an optional text model or service override, bounded by a maximum number of steps. A run without an episode is offered the agent's drama tools only (adr-0024).
 
 
 

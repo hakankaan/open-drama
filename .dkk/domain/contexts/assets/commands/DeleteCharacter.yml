@@ -1,4 +1,3 @@
-# Command — an instruction to change domain state.
 name: DeleteCharacter
 description: Soft-delete a character; it disappears from every episode of the drama and from shot bindings.
 fields:
@@ -6,3 +5,7 @@ fields:
     type: ID
 actor: Creator
 handled_by: Character
+rejections:
+  - An image of the character is being generated (409, delete it once the task has finished)
+adr_refs:
+  - adr-0024

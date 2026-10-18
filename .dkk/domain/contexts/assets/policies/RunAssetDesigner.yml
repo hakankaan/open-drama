@@ -1,0 +1,11 @@
+name: RunAssetDesigner
+description: >-
+  When a design is requested, run the asset designer scoped to the drama with a kind-specific instruction and the run's
+  tool allowlist (the story, the kind's existing assets, the kind's one save) — agents.RunAgent, a cross-context
+  command, see flow AssetDesign. The agent reads the story, reuses existing names and saves the whole set once through
+  the SaveDesigned* command of its kind.
+when:
+  events:
+    - AssetDesignRequested
+adr_refs:
+  - adr-0024

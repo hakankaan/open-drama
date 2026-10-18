@@ -1,15 +1,17 @@
-# Read model — a query-optimised projection.
 name: DramaAssetLibrary
-description: The drama-wide asset library tab on the project page — every character, scene and prop of the drama regardless of episode, with image, final prompt and edit/generate affordances.
+description: >-
+  The drama-wide asset library tab on the project page — every character, scene and prop of the drama regardless of
+  episode, with image, final prompt and edit/generate/delete affordances. Prompts and images are generated from here
+  without an episode, in the project's image service (adr-0024), so a cast can be drawn before episode 1.
 fields:
   - name: dramaId
     type: ID
   - name: characters
-    type: "CharacterCard[]"
+    type: CharacterCard[]
   - name: scenes
-    type: "SceneCard[]"
+    type: SceneCard[]
   - name: props
-    type: "PropCard[]"
+    type: PropCard[]
 subscribes_to:
   - CharacterCreated
   - CharacterUpdated
@@ -22,3 +24,5 @@ subscribes_to:
   - PropDeleted
 used_by:
   - Creator
+adr_refs:
+  - adr-0024

@@ -1,0 +1,10 @@
+name: AssetDesignCompleted
+description: The asset designer run finished for the kind; the Story tab shows the counts and the asset library refreshes.
+fields:
+  - name: dramaId
+    type: ID
+  - name: target
+    type: string
+raised_by: DesignJob
+adr_refs:
+  - adr-0024

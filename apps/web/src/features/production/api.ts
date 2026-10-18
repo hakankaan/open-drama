@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { z } from 'zod';
 import {
   AgentJob,
+  DesignTarget,
   Drama,
   DramaDetail,
   DramaJobs,
@@ -18,6 +19,7 @@ import {
   type CreateDrama,
   type CreateEpisode,
   type PlanEpisodes,
+  type StartDesign,
   type StartTextRun,
   type UpdateDrama,
   type UpdateEpisode,
@@ -170,9 +172,13 @@ export const useEpisodeJobs = (id: number | undefined) =>
     refetchInterval: (query) => (anyRunning(query.state.data) ? 2500 : false),
   });
 
+/** The drama's jobs as a list: the outline, the plan and the three design jobs (adr-0024). */
+const dramaJobList = (d: DramaJobs) => [d.outline, d.plan, ...Object.values(d.design)];
+
 /**
- * DramaJobs (adr-0015): the outline and plan jobs, polled while either runs. The drama detail is refetched when a job
- * settles or a plan batch lands (its progress.written grows), so the outline and the new episodes show up.
+ * DramaJobs (adr-0015, adr-0024): the outline, plan and design jobs, polled while any runs. The drama detail and the
+ * asset library are refetched when a job settles or a plan batch lands (its progress.written grows), so the
+ * outline, the new episodes and the designed assets show up.
  */
 export function useDramaJobs(id: number) {
   const qc = useQueryClient();
@@ -181,26 +187,31 @@ export function useDramaJobs(id: number) {
     queryFn: () => request(DramaJobs, 'GET', `/dramas/${id}/jobs`),
     refetchInterval: (q) => {
       const d = q.state.data;
-      return d && [d.outline, d.plan].some((j) => j?.status === 'running') ? 2500 : false;
+      return d && dramaJobList(d).some((j) => j?.status === 'running') ? 2500 : false;
     },
   });
   const d = query.data;
   const written = d?.plan && Array.isArray(d.plan.progress.written) ? d.plan.progress.written.length : 0;
-  const state = d ? `${d.outline?.id}:${d.outline?.status}|${d.plan?.id}:${d.plan?.status}:${written}` : null;
+  const state = d ? `${dramaJobList(d).map((j) => `${j?.id}:${j?.status}`).join('|')}:${written}` : null;
   const previous = useRef<string | null>(null);
   useEffect(() => {
     if (state === null || !d) return;
     const before = previous.current;
     previous.current = state;
+    const refetch = () => {
+      void qc.invalidateQueries({ queryKey: productionKeys.drama(id) });
+      // The asset library's key (features/assets/api.ts), spelled here so the two modules do not import each other.
+      void qc.invalidateQueries({ queryKey: ['assets', 'library', id] });
+    };
     if (before === null) {
       // The first snapshot: a job that settled after the detail was fetched (a fast one, finished before the jobs
       // request answered) has changed what the detail shows, so it is refetched once.
       const fetched = qc.getQueryState(productionKeys.drama(id))?.dataUpdatedAt ?? 0;
-      const settledSince = [d.outline, d.plan].some((j) => j?.finishedAt !== null && j?.finishedAt !== undefined && Date.parse(j.finishedAt) > fetched);
-      if (settledSince) void qc.invalidateQueries({ queryKey: productionKeys.drama(id) });
+      const settledSince = dramaJobList(d).some((j) => j?.finishedAt !== null && j?.finishedAt !== undefined && Date.parse(j.finishedAt) > fetched);
+      if (settledSince) refetch();
       return;
     }
-    if (before !== state) void qc.invalidateQueries({ queryKey: productionKeys.drama(id) });
+    if (before !== state) refetch();
   }, [state, d, qc, id]);
   return query;
 }
@@ -210,6 +221,20 @@ export function useStartOutline(dramaId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: StartTextRun) => request(JobStarted, 'POST', `/dramas/${dramaId}/outline`, body),
+    onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.dramaJobs(dramaId) }),
+  });
+}
+
+/** The asset designer (adr-0024): one job per kind, the three started together; a duplicate start returns the running job. */
+/**
+ * Starts the three design jobs of a drama at once (adr-0024), one request per kind, and settles with each kind's
+ * result, so one refusal neither hides the others nor stops them; a kind already running is returned, not restarted.
+ */
+export function useStartDesign(dramaId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Omit<StartDesign, 'target'>) =>
+      Promise.allSettled(DesignTarget.options.map((target) => request(JobStarted, 'POST', `/dramas/${dramaId}/design`, { ...body, target }))),
     onSettled: () => void qc.invalidateQueries({ queryKey: productionKeys.dramaJobs(dramaId) }),
   });
 }

@@ -54,15 +54,16 @@ export function episodeForAsset(dramaId: number, episodeId: number) {
 
 /**
  * Generate*FinalPrompt: the prompt generator writes and saves the prompt (style prefix added by the save tool).
- * An up-to-date prompt is returned as is unless `force`.
+ * An up-to-date prompt is returned as is unless `force`. The agent runs in the episode's context when one is given
+ * and in the drama's otherwise (adr-0024): the prompt describes the asset, not an episode.
  */
 export async function generateFinalPrompt(
   kind: AssetKind,
   id: number,
-  opts: { episodeId: number; force?: boolean } & z.input<typeof TextModelOverride>,
+  opts: { episodeId?: number; force?: boolean } & z.input<typeof TextModelOverride>,
 ): Promise<string> {
   const asset = loadAssetForPrompt(kind, id);
-  episodeForAsset(asset.dramaId, opts.episodeId);
+  if (opts.episodeId !== undefined) episodeForAsset(asset.dramaId, opts.episodeId);
   if (!opts.force && asset.finalPrompt && !asset.finalPromptStale) return asset.finalPrompt;
   await runAgentUntilSaved(
     {
@@ -95,7 +96,7 @@ export function fallbackPrompt(kind: AssetKind, asset: AssetPromptState): string
 export async function ensureFinalPrompt(
   kind: AssetKind,
   id: number,
-  opts: { episodeId: number } & z.input<typeof TextModelOverride>,
+  opts: { episodeId?: number } & z.input<typeof TextModelOverride>,
 ): Promise<string> {
   try {
     const prompt = await generateFinalPrompt(kind, id, opts);

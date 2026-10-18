@@ -1,4 +1,3 @@
-# Command — an instruction to change domain state.
 name: DeleteProp
 description: Soft-delete a prop; shots that referenced it lose the binding.
 fields:
@@ -6,3 +5,7 @@ fields:
     type: ID
 actor: Creator
 handled_by: Prop
+rejections:
+  - An image of the prop is being generated (409, delete it once the task has finished)
+adr_refs:
+  - adr-0024

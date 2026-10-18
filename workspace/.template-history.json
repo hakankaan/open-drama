@@ -20,6 +20,10 @@
   "assistant/write-episodes/SKILL.md": [
     "25a818a3d10ae837f493dfc28cc506715e3f9d29fefac6ba59f42466a9ec060d"
   ],
+  "prompts/asset_designer.md": [
+    "843acc34984e1e0b7cd6a8343ff8d78d4d1f71f409b05d76edbc635826cd25d3",
+    "bcd695e552d7874c4a620de4f426bfc86ae314226326e976e86a9cfa1c294e0b"
+  ],
   "prompts/episode_planner.md": [
     "b1f81fd56cb39a22dd173bfddf08cb6e6f231be3dfdc8eeaace7db3ed87b0d92"
   ],
@@ -27,9 +31,11 @@
     "57410189bc6783dfecd3274fd1ec2708451fbcf621f6d248e37e9de1283b1d84"
   ],
   "prompts/extractor.md": [
-    "0fcdde8ec3fd901d636661192b5468c7049c36200c5529fccdb617bc54720fde"
+    "0fcdde8ec3fd901d636661192b5468c7049c36200c5529fccdb617bc54720fde",
+    "146fc60a6178de167caa46a1092501d80e3c515db0fb710d10b96747d4c8701b"
   ],
   "prompts/prompt_generator.md": [
+    "221fbaaf97fb62f65dbd54caf1004e7ed84bdfe594c4f60e4931330c41ee8024",
     "4ede2ab33fea0d3c6530db47fbcc13ed5b956d9abd506d7330b93e572c5f42fe"
   ],
   "prompts/recap_writer.md": [
@@ -49,6 +55,11 @@
     "b1decd411eb3635c8a24eff9a021a96273f8adc4c948d197899c9a86f58f329b",
     "bde8d88c36e021d637cbde4be2ae8103b09d08f035103636e8dd8333e750e93c"
   ],
+  "skills/asset-designer/SKILL.md": [
+    "1ec013b0f7ba8c424866c734f17603e1197abf39f304e227cb39ba076119cf9e",
+    "5636a515e688756097838690861ffe989357ce08fcfe01401053289a7a635965",
+    "f54798f4e2566ae3047dc6d3c9663ba9d6923b46af54a081ed8c95313e422939"
+  ],
   "skills/episode-planner/SKILL.md": [
     "fa99d4475a3b3111f0c31d9a8d6c2e6c80b0a3bbb3e1ffa1c44251159f11bdf8"
   ],
@@ -56,7 +67,12 @@
     "42e796ee32e4cc966180172f30f0aa04d4c32680b338ca6c3e700be50bd7b8e6"
   ],
   "skills/extractor/SKILL.md": [
+    "1f1879395555f29dd3d6e35ddd386fae7f43d46ce6663ab6bea0cd32dc6b4676",
+    "46ae2b232f29d811ed51539fc1f3f6a3c7eecde0afdae712bbefdc05b145a1de",
     "de42682358557da5d4e88dd26027b9f5ef2ae3a2d75f47935b846988d7f7e882"
+  ],
+  "skills/extractor/fields/SKILL.md": [
+    "b69a0ddb8c4f0092b126940b2ce832557854863e7c42b617af4f89e6ed35c51c"
   ],
   "skills/prompt-generator/character-prompt/SKILL.md": [
     "4528401d7fd94e889a8af447b479dbd49a08a3ffb80deff6190636a1b531acb3",

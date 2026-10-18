@@ -1,22 +1,24 @@
 name: RequestPropImage
-description: Generate the prop's reference image as a square white-background product shot. Ensures a final prompt first.
+description: Generate the prop's reference image as a square white-background product shot. Ensures a final prompt first. Without an episode (the project's asset library, adr-0024) the task runs in the explicit service, else the highest-priority active image service, and no episode lock is claimed.
 fields:
-- name: propId
-  type: ID
-- name: episodeId
-  type: ID
-- name: model
-  type: string
-- name: imageServiceId
-  type: ID
-- name: textModel
-  type: string
-- name: textServiceId
-  type: ID
+  - name: propId
+    type: ID
+  - name: episodeId
+    type: ID
+    description: Optional (adr-0024); with one the task runs in the episode's locked image service, without one in the explicit service, else the highest-priority active one, and no lock is claimed
+  - name: model
+    type: string
+  - name: imageServiceId
+    type: ID
+  - name: textModel
+    type: string
+  - name: textServiceId
+    type: ID
 actor: Creator
 handled_by: Prop
 rejections:
-- No image model service configured
-- An image task for this prop is still processing
+  - No image model service configured
+  - An image task for this prop is still processing
 adr_refs:
-- adr-0005
+  - adr-0005
+  - adr-0024

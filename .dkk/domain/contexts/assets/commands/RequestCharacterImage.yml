@@ -1,16 +1,18 @@
 name: RequestCharacterImage
 description: >-
-  Generate the character's reference views (adr-0018), by default the headshot and the full body. Ensures a final
-  prompt exists first (generating one if missing, falling back to a locally composed prompt when the agent fails), then
+  Generate the character's reference views (adr-0018), by default the headshot and the full body. Ensures a final prompt
+  exists first (generating one if missing, falling back to a locally composed prompt when the agent fails), then
   requests the first view through the generation context using the episode's locked image service unless overridden;
   each following view is requested when the one before completes, drawn from the headshot. The headshot is 1:1, the
   other views 9:16. Batch generation in the UI issues this once per asset with bounded concurrency; there is no
   server-side batch.
+  Without an episode (the project's asset library, adr-0024) the task runs in the explicit service, else the highest-priority active image service, and no episode lock is claimed.
 fields:
   - name: characterId
     type: ID
   - name: episodeId
     type: ID
+    description: Optional (adr-0024); with one the task runs in the episode's locked image service, without one in the explicit service, else the highest-priority active one, and no lock is claimed
   - name: views
     type: string[]
     description: headshot, body, side and back, each at most once; generated headshot first
@@ -33,3 +35,4 @@ rejections:
 adr_refs:
   - adr-0005
   - adr-0018
+  - adr-0024

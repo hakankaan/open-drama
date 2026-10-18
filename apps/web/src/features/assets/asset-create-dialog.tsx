@@ -6,20 +6,32 @@ import type { AssetKind } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Field, Input, Textarea } from '@/components/ui/input';
+import { Sparkles } from 'lucide-react';
 import { useToastError } from '@/lib/errors';
 import { useCreateAsset, type CreateAssetInput } from './api';
 import { ASSET_FIELDS } from './fields';
+import type { AnyAsset } from './model';
+import type { Described } from './use-asset-generation';
 
+/**
+ * A new asset from the typed fields. "Describe with AI" creates it the same way, then has the designer fill its empty
+ * fields from the story (adr-0024); when that fails the asset stays and `onOpen` shows it, so a retry describes it
+ * instead of creating it again.
+ */
 export function AssetCreateDialog({
   kind,
   dramaId,
   episodeId,
   onClose,
+  onDescribe,
+  onOpen,
 }: {
   kind: AssetKind;
   dramaId: number;
   episodeId?: number;
   onClose: () => void;
+  onDescribe?: (item: AnyAsset) => Promise<Described>;
+  onOpen?: (id: number) => void;
 }) {
   const t = useTranslations('assets');
   const tc = useTranslations('common');
@@ -28,10 +40,11 @@ export function AssetCreateDialog({
   const fields = ASSET_FIELDS[kind];
   const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(fields.map((f) => [f.key, ''])));
   const [touched, setTouched] = useState(false);
+  const [describing, setDescribing] = useState(false);
   const missing = fields.find((f) => f.required && !values[f.key]?.trim());
+  const busy = create.isPending || describing;
 
-  const save = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const submit = async (describe: boolean) => {
     setTouched(true);
     if (missing) return;
     const body = {
@@ -39,16 +52,28 @@ export function AssetCreateDialog({
       ...(episodeId ? { episodeId } : {}),
       ...Object.fromEntries(fields.map((f) => [f.key, values[f.key]!.trim()])),
     };
+    let created;
     try {
-      await create.mutateAsync({ kind, body } as CreateAssetInput);
-      onClose();
+      created = await create.mutateAsync({ kind, body } as CreateAssetInput);
     } catch (err) {
       toastError(err);
+      return;
     }
+    if (!describe || !onDescribe) return onClose();
+    setDescribing(true);
+    const described = await onDescribe({ kind, asset: created } as AnyAsset);
+    setDescribing(false);
+    onClose();
+    if (described === null) onOpen?.(created.id);
+  };
+
+  const save = (e: React.SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    void submit(false);
   };
 
   return (
-    <Dialog open onOpenChange={(o) => !o && !create.isPending && onClose()}>
+    <Dialog open onOpenChange={(o) => !o && !busy && onClose()}>
       <DialogContent title={t(`create.${kind}`)}>
         <form onSubmit={save} className="flex flex-col gap-4" noValidate>
           {fields.map((f, i) => {
@@ -66,10 +91,16 @@ export function AssetCreateDialog({
             );
           })}
           <DialogFooter>
-            <Button variant="ghost" onClick={onClose} disabled={create.isPending}>
+            <Button variant="ghost" onClick={onClose} disabled={busy}>
               {tc('cancel')}
             </Button>
-            <Button type="submit" variant="primary" loading={create.isPending}>
+            {onDescribe ? (
+              <Button onClick={() => void submit(true)} loading={describing} disabled={create.isPending && !describing}>
+                <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                {t('describeWithAi')}
+              </Button>
+            ) : null}
+            <Button type="submit" variant="primary" loading={create.isPending && !describing} disabled={describing}>
               {tc('create')}
             </Button>
           </DialogFooter>

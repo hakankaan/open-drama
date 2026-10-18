@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TextModelOverride } from './agents';
 import { AddModelService, UpdateModelService } from './configuration';
-import { ContentLanguage, Id, JobKind, JobStatus, RequiredServiceType, ServiceType, Timestamp } from './common';
+import { ContentLanguage, DesignTarget, Id, JobKind, JobStatus, RequiredServiceType, ServiceType, Timestamp } from './common';
 import { AgentJob } from './jobs';
 import { EpisodeView, ScriptFromContent, UpdateDrama, UpdateEpisode } from './production';
 
@@ -123,6 +123,16 @@ export const JobOutcome = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('write'), scriptChars: z.number().int(), scriptRevision: z.number().int(), recapJobId: z.number().int().nullable() }),
   z.object({ kind: z.literal('rewrite'), scriptChars: z.number().int(), scriptRevision: z.number().int(), recapJobId: z.number().int().nullable() }),
   z.object({ kind: z.literal('recap'), recapChars: z.number().int(), recapRevision: z.number().int() }),
+  z.object({
+    kind: z.literal('design'),
+    target: DesignTarget,
+    saved: z.number().int(),
+    filled: z.number().int(),
+    skipped: z.array(z.string()),
+    overflow: z.array(z.string()),
+    /** The outline revision the run designed from; null when it was cancelled before reading. */
+    outlineRevision: z.number().int().nullable(),
+  }),
   z.object({ kind: z.enum(['extraction', 'breakdown', 'videoPromptBatch']) }),
 ]);
 export type JobOutcome = z.infer<typeof JobOutcome>;

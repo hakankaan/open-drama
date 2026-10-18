@@ -1,0 +1,21 @@
+name: DesignedAssetsSaved
+description: >-
+  The asset designer saved one kind's set on the drama (adr-0024); reports how many were created, how many existing ones
+  had empty fields filled, which names were skipped (deleted, or under an image claim) and which were over the cap.
+  Recorded on the job's progress, where the Story tab and wait_for_job read it.
+fields:
+  - name: dramaId
+    type: ID
+  - name: target
+    type: string
+  - name: saved
+    type: number
+  - name: filled
+    type: number
+  - name: skipped
+    type: string[]
+  - name: overflow
+    type: string[]
+raised_by: DesignJob
+adr_refs:
+  - adr-0024

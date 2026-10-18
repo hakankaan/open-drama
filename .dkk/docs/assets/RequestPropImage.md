@@ -6,7 +6,7 @@
 
 ## Summary
 
-Generate the prop's reference image as a square white-background product shot. Ensures a final prompt first.
+Generate the prop's reference image as a square white-background product shot. Ensures a final prompt first. Without an episode (the project's asset library, adr-0024) the task runs in the explicit service, else the highest-priority active image service, and no episode lock is claimed.
 
 
 ## Fields
@@ -14,7 +14,7 @@ Generate the prop's reference image as a square white-background product shot. E
 | Name | Type | Description |
 |------|------|-------------|
 | `propId` | `ID` | — |
-| `episodeId` | `ID` | — |
+| `episodeId` | `ID` | Optional (adr-0024); with one the task runs in the episode's locked image service, without one in the explicit service, else the highest-priority active one, and no lock is claimed |
 | `model` | `string` | — |
 | `imageServiceId` | `ID` | — |
 | `textModel` | `string` | — |
@@ -38,3 +38,4 @@ Generate the prop's reference image as a square white-background product shot. E
 | ADR | Title | Status |
 |-----|-------|--------|
 | [adr-0005](../../adr/adr-0005.md) | One generation task lifecycle behind provider adapters | accepted |
+| [adr-0024](../../adr/adr-0024.md) | Assets designed from the story | proposed |
