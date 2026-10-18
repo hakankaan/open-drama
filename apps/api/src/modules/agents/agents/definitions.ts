@@ -15,11 +15,6 @@ export interface AgentDefinition {
   /** Every skill whose id starts with one of these is injected into the instructions. */
   skillPrefixes: string[];
   maxSteps: number;
-  /**
-   * The agent writes something new (a story, a script, a design, shots, a prompt), so its runs ask the model to think
-   * first; an agent that only restates what it reads (extraction, recaps) runs with thinking off.
-   */
-  thinking: boolean;
   /** Its save tool works only inside its job (the job row holds its state), so the chat route refuses it. */
   jobOnly?: boolean;
   /** Built-in fallback when the workspace has no prompt file. */
@@ -33,7 +28,6 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
     name: 'Script rewriter',
     promptFile: 'script_rewriter',
     skillPrefixes: ['script-rewriter'],
-    thinking: true,
     maxSteps: 20,
     defaultPrompt:
       'Rewrite the episode raw content into a formatted shooting script: scene headings, action paragraphs and dialogue lines, no camera language. Call read_episode_script, then save_script once with the whole script.',
@@ -44,7 +38,6 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
     name: 'Asset extractor',
     promptFile: 'extractor',
     skillPrefixes: ['extractor'],
-    thinking: false,
     maxSteps: 20,
     defaultPrompt:
       'Extract the requested kind of asset from the episode script. Read the script, read the existing assets of that kind, then save every asset of that kind in this episode with the matching save_dedup tool, reusing existing names.',
@@ -55,7 +48,6 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
     name: 'Storyboard breaker',
     promptFile: 'storyboard_breaker',
     skillPrefixes: ['storyboard-breaker', 'prompt-generator/video-prompt'],
-    thinking: true,
     maxSteps: 20,
     defaultPrompt:
       'Split the episode script into 8-15 second shots of 2-4 sub-shots, bind the visible assets by id, and save them with save_shots in batches of at most 8; the first batch sets replaceExisting.',
@@ -67,7 +59,6 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
     name: 'Prompt generator',
     promptFile: 'prompt_generator',
     skillPrefixes: ['prompt-generator'],
-    thinking: true,
     maxSteps: 10,
     defaultPrompt:
       'Write the generation prompt for the one target named in the request. Read it first, then save the prompt with the matching save tool. Never add visual-style words.',
@@ -78,7 +69,6 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
     name: 'Recap writer',
     promptFile: 'recap_writer',
     skillPrefixes: ['recap-writer'],
-    thinking: false,
     maxSteps: 8,
     jobOnly: true,
     defaultPrompt:
@@ -91,7 +81,6 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
     promptFile: 'episode_writer',
     // The shooting-script layout is the rewriter's format skill, shared so it stays listed under the rewriter.
     skillPrefixes: ['episode-writer', 'script-rewriter/format'],
-    thinking: true,
     maxSteps: 10,
     defaultPrompt:
       "Expand the episode's beat sheet into a formatted shooting script: scene headings, action paragraphs and dialogue lines, no camera language, continuous with the earlier episodes' recaps and stopping where the beats stop. Call read_episode_for_writing, then save_script once with the whole script.",
@@ -102,7 +91,6 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
     name: 'Story writer',
     promptFile: 'story_writer',
     skillPrefixes: ['story-writer'],
-    thinking: true,
     maxSteps: 8,
     defaultPrompt:
       "Write the project's story outline from its premise: logline, cast, world and tone, the story in acts with its ending, the season shape (episode count and length) and, for a serial drama, the threads across episodes; it must agree with the episodes already written or planned. Call read_story, then save_outline once with the whole outline.",
@@ -113,7 +101,6 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
     name: 'Episode planner',
     promptFile: 'episode_planner',
     skillPrefixes: ['episode-planner'],
-    thinking: true,
     maxSteps: 20,
     jobOnly: true,
     defaultPrompt:
@@ -126,7 +113,6 @@ export const AGENTS: Record<AgentType, AgentDefinition> = {
     promptFile: 'asset_designer',
     // The field rules are the extractor's, shared so the two write the same kind of asset (adr-0024).
     skillPrefixes: ['asset-designer', 'extractor/fields'],
-    thinking: true,
     maxSteps: 8,
     jobOnly: true,
     defaultPrompt:

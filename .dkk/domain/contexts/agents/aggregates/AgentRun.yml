@@ -25,9 +25,8 @@ invariants:
     directive.
   - >-
     The text model is the request override, else the prompt file's model, else the default model of the resolved text
-    service; provider quirks (thinking, temperature, max output tokens) are patched at the transport layer. A run of
-    an agent that writes something new (story, plan, script, design, shots, prompts) asks for thinking; any other run
-    has it off on relays (adr-0006 amendment 2026-10-18).
+    service; provider quirks (thinking, temperature, max output tokens) are patched at the transport layer. Every run
+    asks for thinking unless OPEN_DRAMA_AI_DISABLE_THINKING=1 (adr-0006 amendment 2026-10-18).
 adr_refs:
   - adr-0006
   - adr-0015

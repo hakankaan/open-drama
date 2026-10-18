@@ -32,12 +32,13 @@ function thinkingPatch(provider: string, on: boolean): Record<string, unknown> {
 const seen = new Set<string>();
 
 /**
- * Wraps fetch for text requests (Plan 2 §4). On hosts other than the official OpenAI and Gemini APIs it sets thinking
- * and raises the output limit, because relays often default to slow thinking and small limits: a `thinking` run (an
- * agent that writes something new) asks for thinking, any other turns it off unless OPEN_DRAMA_AI_DISABLE_THINKING=0.
- * Official hosts keep the model's own default. Keys already present in the request body are never overwritten.
+ * Wraps fetch for text requests (Plan 2 §4). On hosts other than the official OpenAI and Gemini APIs it asks for
+ * thinking (off with OPEN_DRAMA_AI_DISABLE_THINKING=1) and raises the output limit, because relays differ in their
+ * thinking default and often set small limits. Official hosts keep the model's own default. Keys already present in
+ * the request body are never overwritten.
  */
-export function patchedFetch(provider: string, baseUrl: string, thinking: boolean): typeof fetch {
+export function patchedFetch(provider: string, baseUrl: string): typeof fetch {
+  const thinking = !env.OPEN_DRAMA_AI_DISABLE_THINKING;
   const official = isOfficialHost(baseUrl);
   return async (input, init) => {
     const key = `${provider} ${baseUrl}`;
@@ -52,20 +53,15 @@ export function patchedFetch(provider: string, baseUrl: string, thinking: boolea
     } catch {
       return fetch(input, init);
     }
-    const setThinking = thinking || env.OPEN_DRAMA_AI_DISABLE_THINKING;
     if (provider === 'gemini') {
-      if (setThinking) {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-        const gen = (body.generationConfig ??= {}) as Record<string, unknown>;
-        // Gemini 3 takes a level; 2.x a token budget, where -1 lets the model size its thinking.
-        gen.thinkingConfig ??= /gemini-3/i.test(url)
-          ? { thinkingLevel: thinking ? 'high' : 'low' }
-          : { thinkingBudget: thinking ? -1 : 0 };
-      }
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      const gen = (body.generationConfig ??= {}) as Record<string, unknown>;
+      // Gemini 3 takes a level; 2.x a token budget, where -1 lets the model size its thinking.
+      gen.thinkingConfig ??= /gemini-3/i.test(url)
+        ? { thinkingLevel: thinking ? 'high' : 'low' }
+        : { thinkingBudget: thinking ? -1 : 0 };
     } else {
-      if (setThinking) {
-        for (const [k, v] of Object.entries(thinkingPatch(provider, thinking))) if (!(k in body)) body[k] = v;
-      }
+      for (const [k, v] of Object.entries(thinkingPatch(provider, thinking))) if (!(k in body)) body[k] = v;
       if (!('max_tokens' in body) && !('max_completion_tokens' in body)) body.max_tokens = env.OPEN_DRAMA_AI_MAX_TOKENS;
     }
     return fetch(input, { ...init, body: JSON.stringify(body) });

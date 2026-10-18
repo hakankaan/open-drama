@@ -21,7 +21,8 @@ import { wardrobeOf } from './video';
 const TILE = 512;
 /** Frames at these fractions of the clip: clear of the fade-in and of the steady ending a continued shot is asked for. */
 const AT = [1 / 6, 1 / 2, 5 / 6];
-const TIMEOUT_MS = 90_000;
+// The model thinks before it answers (adr-0006 amendment 2026-10-18).
+const TIMEOUT_MS = 180_000;
 const LANGUAGE = { en: 'English', zh: 'Simplified Chinese', ja: 'Japanese', ko: 'Korean' } as const;
 
 /** The model's answer: a result and a note per point (skipped ones are set in code). */

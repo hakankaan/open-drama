@@ -43,11 +43,11 @@ const EnvSchema = z.object({
   OPEN_DRAMA_STUB_DELAY_MS: z.coerce.number().int().min(0).max(600_000).default(0),
   // Shot videos generating at once per episode; further requests wait for a slot (cost and rate-limit guard).
   OPEN_DRAMA_VIDEO_CONCURRENCY: z.coerce.number().int().min(1).max(32).default(4),
-  // Text transport patches for relays (Plan 2 §4). Agents that write something new always ask for thinking; this turns
-  // it off for the rest (extraction, recaps, shot checks). The two patches replace the default thinking keys.
+  // Text transport patches for relays (Plan 2 §4). Every agent run and shot check asks for thinking; 1 turns it off.
+  // The two patches replace the default thinking-on and thinking-off keys.
   OPEN_DRAMA_AI_DISABLE_THINKING: z
     .enum(['0', '1', 'true', 'false'])
-    .default('1')
+    .default('0')
     .transform((v) => v === '1' || v === 'true'),
   OPEN_DRAMA_AI_MAX_TOKENS: z.coerce.number().int().min(256).max(1_000_000).default(16384),
   OPEN_DRAMA_AI_THINKING_OFF_PATCH: z.string().optional(),

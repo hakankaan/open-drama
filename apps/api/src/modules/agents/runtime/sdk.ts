@@ -3,7 +3,7 @@ import { createGoogle } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { APICallError, type LanguageModelV4 } from '@ai-sdk/provider';
-import { generateText, isStepCount, simulateStreamingMiddleware, streamText, tool, wrapLanguageModel, type LanguageModel } from 'ai';
+import { isStepCount, simulateStreamingMiddleware, streamText, tool, wrapLanguageModel, type LanguageModel } from 'ai';
 import type { DramaAgentContext } from './context';
 import type { ToolSpec } from './tool';
 
@@ -58,9 +58,25 @@ export interface RunLoopResult {
 }
 
 /**
- * One tool-calling loop: instructions, one user message, the agent's tools, a step budget. It streams, so a long
- * thinking step stays within a relay's limit on unstreamed requests (ModelRunner's is 95 s).
+ * Every call streams, so a long thinking step stays within a relay's limit on unstreamed requests (ModelRunner's is
+ * 95 s). streamText reports a provider failure to onError instead of throwing; the first one is rethrown here, once
+ * the stream has ended, so a call fails as it would unstreamed.
  */
+async function streamToEnd(options: Parameters<typeof streamText>[0]) {
+  let failure: { error: unknown } | undefined;
+  const result = streamText({
+    ...options,
+    onError: ({ error }) => {
+      failure ??= { error };
+    },
+  });
+  await result.consumeStream();
+  options.abortSignal?.throwIfAborted();
+  if (failure) throw failure.error;
+  return result;
+}
+
+/** One tool-calling loop: instructions, one user message, the agent's tools, a step budget. */
 export async function runToolLoop(opts: {
   model: LanguageModel;
   instructions: string;
@@ -112,10 +128,8 @@ export async function runToolLoop(opts: {
       return { error: (err as Error).message };
     }
   }
-  // streamText reports a provider failure to onError instead of throwing; the first one is rethrown below.
-  let failure: { error: unknown } | undefined;
   try {
-    const result = streamText({
+    const result = await streamToEnd({
       model: opts.model,
       instructions: opts.instructions,
       prompt: opts.message,
@@ -126,13 +140,7 @@ export async function runToolLoop(opts: {
       temperature: opts.temperature,
       abortSignal: opts.abortSignal,
       timeout: opts.stepTimeoutMs === undefined ? undefined : { stepMs: opts.stepTimeoutMs },
-      onError: ({ error }) => {
-        failure ??= { error };
-      },
     });
-    await result.consumeStream();
-    opts.abortSignal?.throwIfAborted();
-    if (failure) throw failure.error;
     const [text, steps, finishReason, usage] = await Promise.all([result.text, result.steps, result.finishReason, result.totalUsage]);
     const done = !!opts.isDone?.(toolCalls);
     return {
@@ -158,7 +166,7 @@ export async function askAboutImages(opts: {
   temperature?: number;
   timeoutMs: number;
 }): Promise<{ text: string; finishReason: RunLoopResult['finishReason'] }> {
-  const result = await generateText({
+  const result = await streamToEnd({
     model: opts.model,
     instructions: opts.instructions,
     messages: [
@@ -170,5 +178,6 @@ export async function askAboutImages(opts: {
     temperature: opts.temperature,
     abortSignal: AbortSignal.timeout(opts.timeoutMs),
   });
-  return { text: result.text, finishReason: result.finishReason };
+  const [text, finishReason] = await Promise.all([result.text, result.finishReason]);
+  return { text, finishReason };
 }

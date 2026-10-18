@@ -3,7 +3,6 @@ import { env } from '../../../env';
 import { precondition } from '../../../http/errors';
 import { rememberSecret } from '../../../lib/secrets';
 import { resolveService } from '../../configuration/services';
-import { AGENTS } from '../agents/definitions';
 import { buildLanguageModel, type LanguageModel } from './sdk';
 import { stubLanguageModel } from './stub-model';
 import { patchedFetch } from './transport-patches';
@@ -31,8 +30,7 @@ function withPrefix(provider: string, baseUrl: string): string {
 
 /**
  * Text service: explicit id, else the active one. Model: request override, else the prompt file's `model`, else
- * the service's default model; it thinks when the agent writes something new. With OPEN_DRAMA_STUB_PROVIDERS=1 a
- * scripted offline model is used instead.
+ * the service's default model. With OPEN_DRAMA_STUB_PROVIDERS=1 a scripted offline model is used instead.
  */
 export function resolveTextModel(opts: {
   agentType: AgentType;
@@ -45,7 +43,7 @@ export function resolveTextModel(opts: {
   }
   const resolved = resolveService('text', { explicitId: opts.textServiceId });
   if (!resolved) throw precondition('Add an active text service with an API key in Settings before running an agent');
-  return modelOf(resolved.row, opts.modelOverride || opts.promptModel || resolved.row.models[0], AGENTS[opts.agentType].thinking);
+  return modelOf(resolved.row, opts.modelOverride || opts.promptModel || resolved.row.models[0]);
 }
 
 /**
@@ -58,10 +56,10 @@ export function resolveVisionModel(opts: { model?: string; serviceId?: number })
   }
   const resolved = resolveService('vision', { explicitId: opts.serviceId });
   if (!resolved) throw precondition('Add an active vision service (a chat model that reads images) in Settings to check shots');
-  return modelOf(resolved.row, opts.model || resolved.row.models[0], false);
+  return modelOf(resolved.row, opts.model || resolved.row.models[0]);
 }
 
-function modelOf(row: ServiceRow, modelId: string | undefined, thinking: boolean): ResolvedModel {
+function modelOf(row: ServiceRow, modelId: string | undefined): ResolvedModel {
   if (!modelId) throw precondition(`The ${row.serviceType} service ${row.name} lists no model; add one in Settings`);
   if (!row.apiKey) throw precondition(`The ${row.serviceType} service ${row.name} has no API key`);
   rememberSecret(row.apiKey);
@@ -71,7 +69,7 @@ function modelOf(row: ServiceRow, modelId: string | undefined, thinking: boolean
       baseURL: withPrefix(row.provider, row.baseUrl),
       apiKey: row.apiKey,
       modelId,
-      fetch: patchedFetch(row.provider, row.baseUrl, thinking),
+      fetch: patchedFetch(row.provider, row.baseUrl),
     }),
     modelId,
     serviceId: row.id,
