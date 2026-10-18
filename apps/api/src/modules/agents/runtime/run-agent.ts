@@ -123,7 +123,7 @@ export async function runAgent(input: RunAgentInput): Promise<AgentRunResult & R
     });
     const elapsedMs = Math.round(performance.now() - started);
     ctx.log.info(
-      { steps: result.steps, tools: result.toolCalls.length, finishReason: result.finishReason, elapsedMs },
+      { steps: result.steps, tools: result.toolCalls.length, finishReason: result.finishReason, reasoningTokens: result.reasoningTokens, elapsedMs },
       'agent run finished',
     );
     return { ...result, elapsedMs, model: resolved.modelId };

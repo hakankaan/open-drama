@@ -3,7 +3,7 @@ import { createGoogle } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { APICallError, type LanguageModelV4 } from '@ai-sdk/provider';
-import { generateText, isStepCount, tool, type LanguageModel } from 'ai';
+import { generateText, isStepCount, simulateStreamingMiddleware, streamText, tool, wrapLanguageModel, type LanguageModel } from 'ai';
 import type { DramaAgentContext } from './context';
 import type { ToolSpec } from './tool';
 
@@ -13,6 +13,10 @@ export type { LanguageModel, LanguageModelV4 };
 export const isApiCallError = (err: unknown): err is { statusCode?: number; message: string } => APICallError.isInstance(err);
 
 type FetchFn = typeof fetch;
+
+/** Serves a generate-only model (the offline stub) to the streaming tool loop. */
+export const simulateStreaming = (model: LanguageModelV4): LanguageModelV4 =>
+  wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() });
 
 export function buildLanguageModel(opts: {
   provider: string;
@@ -49,9 +53,14 @@ export interface RunLoopResult {
   finishReason: 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other';
   /** The loop stopped because the step budget ran out, not because the result was saved. */
   stepLimitReached: boolean;
+  /** Thinking tokens across the run, when the provider reports them. */
+  reasoningTokens?: number;
 }
 
-/** One tool-calling loop: instructions, one user message, the agent's tools, a step budget. */
+/**
+ * One tool-calling loop: instructions, one user message, the agent's tools, a step budget. It streams, so a long
+ * thinking step stays within a relay's limit on unstreamed requests (ModelRunner's is 95 s).
+ */
 export async function runToolLoop(opts: {
   model: LanguageModel;
   instructions: string;
@@ -103,9 +112,10 @@ export async function runToolLoop(opts: {
       return { error: (err as Error).message };
     }
   }
-  let result;
+  // streamText reports a provider failure to onError instead of throwing; the first one is rethrown below.
+  let failure: { error: unknown } | undefined;
   try {
-    result = await generateText({
+    const result = streamText({
       model: opts.model,
       instructions: opts.instructions,
       prompt: opts.message,
@@ -116,18 +126,26 @@ export async function runToolLoop(opts: {
       temperature: opts.temperature,
       abortSignal: opts.abortSignal,
       timeout: opts.stepTimeoutMs === undefined ? undefined : { stepMs: opts.stepTimeoutMs },
+      onError: ({ error }) => {
+        failure ??= { error };
+      },
     });
+    await result.consumeStream();
+    opts.abortSignal?.throwIfAborted();
+    if (failure) throw failure.error;
+    const [text, steps, finishReason, usage] = await Promise.all([result.text, result.steps, result.finishReason, result.totalUsage]);
+    const done = !!opts.isDone?.(toolCalls);
+    return {
+      text,
+      steps: steps.length,
+      toolCalls,
+      finishReason,
+      stepLimitReached: !done && steps.length >= opts.maxSteps,
+      reasoningTokens: usage.outputTokenDetails.reasoningTokens,
+    };
   } finally {
     await Promise.allSettled(inFlight);
   }
-  const done = !!opts.isDone?.(toolCalls);
-  return {
-    text: result.text,
-    steps: result.steps.length,
-    toolCalls,
-    finishReason: result.finishReason,
-    stepLimitReached: !done && result.steps.length >= opts.maxSteps,
-  };
 }
 
 /** One question about some images, answered in text: no tools, one call (shot checks, adr-0022). */

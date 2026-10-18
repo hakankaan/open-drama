@@ -1,7 +1,7 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { AssetKind, DesignTarget } from '@open-drama/contracts';
 import { env } from '../../../env';
-import type { LanguageModelV4 } from './sdk';
+import { simulateStreaming, type LanguageModelV4 } from './sdk';
 
 /**
  * Offline text model for OPEN_DRAMA_STUB_PROVIDERS=1 (Plan 2 goal 6). It drives the real tool loop with scripted,
@@ -505,7 +505,7 @@ function plan(options: CallOptions): Step {
 let counter = 0;
 
 export function stubLanguageModel(): LanguageModelV4 {
-  return {
+  return simulateStreaming({
     specificationVersion: 'v4',
     provider: 'stub',
     modelId: 'stub-text',
@@ -538,5 +538,5 @@ export function stubLanguageModel(): LanguageModelV4 {
     doStream() {
       throw new Error('The stub text model does not stream');
     },
-  };
+  });
 }
