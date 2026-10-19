@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import {
   AUDIO_UPLOAD_EXTENSIONS,
+  continuityBreak,
   coverOf,
   IMAGE_UPLOAD_EXTENSIONS,
   imageLimitOf,
@@ -236,6 +237,8 @@ function planLabel(plan: ReferencePlan, view: (v: string) => string): string {
 export interface Continuity {
   /** The number of the shot before; null for the first shot, which cannot continue anything. */
   previous: number | null;
+  /** The scene of the shot before: a take does not move to another scene. */
+  previousSceneId: number | null;
   /** The shot before and the one before that both continue: this one would be the third in a row. */
   capped: boolean;
 }
@@ -285,7 +288,22 @@ export function ShotEditor({
   // A shot that continues the one before starts from its last frame; one with a keyframe starts from that. Either
   // way, on a model that takes a first frame, no reference image is sent.
   const continues = shot.continuesPrevious && continuity.previous !== null;
-  const chained = continues && target.caps.firstFrame && !otherMedia && !continuity.capped;
+  const broken = continues ? continuityBreak(shot, { sceneId: continuity.previousSceneId }, target.model) : null;
+  // Why a shot marked as continuing cannot be generated as it stands (the API refuses it for the same reasons).
+  const blocked = !continues
+    ? null
+    : broken === 'model'
+      ? t('continuity.noTakes', { model: modelName })
+      : broken === 'scene'
+        ? t('continuity.otherScene', { number: continuity.previous! })
+        : continuity.capped
+          ? t('continuity.capped')
+          : !target.caps.firstFrame
+            ? t('continuity.noFirstFrame', { model: modelName })
+            : otherMedia
+              ? t('continuity.noMedia')
+              : null;
+  const chained = continues && !blocked;
   const fromKeyframe = !continues && Boolean(shot.keyframePath) && target.caps.firstFrame && !otherMedia;
   const plan =
     target.model && !fromKeyframe && !chained
@@ -298,16 +316,6 @@ export function ShotEditor({
       : plan?.slots.length
         ? t('refs.plan', { model: target.model ?? '', list: planLabel(plan, tv) })
         : null;
-  // Why a shot marked as continuing cannot be generated as it stands (the API refuses it for the same reasons).
-  const blocked = !continues
-    ? null
-    : continuity.capped
-      ? t('continuity.capped')
-      : !target.caps.firstFrame
-        ? t('continuity.noFirstFrame', { model: modelName })
-        : otherMedia
-          ? t('continuity.noMedia')
-          : null;
 
   return (
     <div className="flex flex-col gap-5 p-4">

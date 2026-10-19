@@ -164,7 +164,11 @@ export function VideoStage({ episode, onScript, onAssets }: { episode: EpisodeVi
   // Where the selected shot stands in its take, as the API counts it (adr-0020): the first shot continues nothing.
   const at = selected ? shots.indexOf(selected) : -1;
   const continues = (i: number) => i > 0 && shots[i]!.continuesPrevious;
-  const continuity = { previous: at > 0 ? shots[at - 1]!.shotNumber : null, capped: continues(at - 1) && continues(at - 2) };
+  const continuity = {
+    previous: at > 0 ? shots[at - 1]!.shotNumber : null,
+    previousSceneId: at > 0 ? shots[at - 1]!.sceneId : null,
+    capped: continues(at - 1) && continues(at - 2),
+  };
   const withoutPrompt = shots.filter((s) => !s.videoPrompt.trim() || s.videoPromptStale).length;
   // The episode's length as the model renders it, against the creator's target (the breakdown is held to it).
   const rendered = shots.reduce((n, s) => n + target.clamp(s.durationSeconds), 0);

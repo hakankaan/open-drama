@@ -5,6 +5,7 @@ import { AgentJob, JobStarted } from './jobs';
 import { TextModelOverride } from './agents';
 import { SentView } from './references';
 import { CharacterViews } from './assets';
+import { cleanModelId } from './video-providers';
 
 /** Shot duration bounds (domain Shot invariant); agents target 8-15 s. */
 export const SHOT_DURATION_MIN = 2;
@@ -137,6 +138,23 @@ export const ShotCard = Shot.extend({
   continuationStale: z.boolean(),
 });
 export type ShotCard = z.infer<typeof ShotCard>;
+
+const VEO = /\bveo\b/i;
+
+/**
+ * What stops a shot marked as continuing the one before from being one take with it (adr-0020), beside the model's
+ * caps, so the API's refusal and the studio's warning agree: Veo makes no continued takes (its shots start from their
+ * keyframe or reference images), and a take does not move to another scene. Null when nothing does.
+ */
+export function continuityBreak(
+  shot: { sceneId: number | null },
+  previous: { sceneId: number | null },
+  model: string | null | undefined,
+): 'model' | 'scene' | null {
+  if (model && VEO.test(cleanModelId(model))) return 'model';
+  if (shot.sceneId !== null && previous.sceneId !== null && shot.sceneId !== previous.sceneId) return 'scene';
+  return null;
+}
 
 export const EpisodeShotList = z.object({
   episodeId: z.number().int(),

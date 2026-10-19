@@ -1,6 +1,6 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { and, desc, eq, inArray } from 'drizzle-orm';
-import { VIDEO_TASK_TYPES } from '@open-drama/contracts';
+import { continuityBreak, VIDEO_TASK_TYPES } from '@open-drama/contracts';
 import { db } from '../../db/client';
 import { generationTasks, shots } from '../../db/schema';
 import { invalid, precondition } from '../../http/errors';
@@ -29,11 +29,11 @@ export interface ChainSource {
   waitingFor: number | null;
 }
 
-/** Whether the next live shot continues this one: its video then ends on a steady moment to start from. */
-export function continuedByNext(shot: ShotRow): boolean {
+/** Whether the next live shot continues this one on the model: its video then ends on a steady moment to start from. */
+export function continuedByNext(shot: ShotRow, model: string): boolean {
   const live = liveShotRows(shot.episodeId);
-  const i = live.findIndex((s) => s.id === shot.id);
-  return Boolean(live[i + 1]?.continuesPrevious);
+  const next = live[live.findIndex((s) => s.id === shot.id) + 1];
+  return Boolean(next?.continuesPrevious && !continuityBreak(next, shot, model));
 }
 
 const processingVideo = (shotId: number) =>
@@ -46,8 +46,9 @@ const processingVideo = (shotId: number) =>
 
 /**
  * Where a shot marked as continuing the previous one starts (adr-0020), or null when it starts a take (it is the
- * first shot). Refused (412) when it cannot continue: the model takes no first frame, the request carries reference
- * video or audio, it would be the third shot in a row to continue, or the previous shot has no video and none generating.
+ * first shot). Refused (412) when it cannot continue: the model is Veo or the previous shot is in another scene
+ * (`continuityBreak`), the model takes no first frame, the request carries reference video or audio, it would be the
+ * third shot in a row to continue, or the previous shot has no video and none generating.
  */
 export function chainSource(shot: ShotRow, opts: { model: string; firstFrame: boolean; otherMedia: number }): ChainSource | null {
   if (!shot.continuesPrevious) return null;
@@ -55,6 +56,17 @@ export function chainSource(shot: ShotRow, opts: { model: string; firstFrame: bo
   const i = live.findIndex((s) => s.id === shot.id);
   if (i <= 0) return null;
   const prev = live[i - 1]!;
+  const blocked = continuityBreak(shot, prev, opts.model);
+  if (blocked === 'model') {
+    throw precondition(
+      `${opts.model} makes no continued takes, so this shot cannot continue shot ${prev.shotNumber}; turn off Continuity so it starts from its keyframe or reference images, or pick another model`,
+    );
+  }
+  if (blocked === 'scene') {
+    throw precondition(
+      `Shot ${shot.shotNumber} is in another scene than shot ${prev.shotNumber}, so the two cannot be one take; turn off Continuity, or bind the same scene`,
+    );
+  }
   let depth = 1;
   // The first shot's mark means nothing: it has no shot before it to continue.
   while (depth <= MAX_CONTINUED && i - depth > 0 && live[i - depth]!.continuesPrevious) depth++;

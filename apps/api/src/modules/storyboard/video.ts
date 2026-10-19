@@ -177,8 +177,8 @@ function keyframeUse(
  * frame (unless the request says otherwise or carries reference video or audio): the keyframe goes alone, without
  * reference images, since it was drawn from them, and the prompt names the people the plan would have sent. A shot
  * marked as continuing the previous one starts from that shot's last frame instead, the same way (adr-0020): taken when
- * its video is ready (the task waits for one still generating), and refused when it cannot (`chainSource`). A shot the
- * next one continues is asked to end on a steady moment. In a drama that pins voices (adr-0021) a shot with a line is
+ * its video is ready (the task waits for one still generating), and refused when it cannot (`chainSource`: on Veo, or
+ * from another scene, among others). A shot the next one can continue is asked to end on a steady moment. In a drama that pins voices (adr-0021) a shot with a line is
  * made silent, long enough for its line audio (412 without one, or past the model's longest), and lip-synced once
  * stored; a shot without a line is asked for silence. Otherwise the speaker's voice sample goes as reference audio
  * where the model has room for it.
@@ -302,7 +302,7 @@ export async function requestShotVideo(shotId: number, body: z.output<typeof Req
     lighting && `Lighting: ${lighting}.`,
     [
       cast.length === 0 ? '' : fromFrame ? IDENTITY_FROM_FRAME : people.some((c) => c.outfit && !c.views?.body) ? IDENTITY_OUTFIT : IDENTITY,
-      continuedByNext(shot) ? ENDS_STEADY : '',
+      continuedByNext(shot, resolved.model) ? ENDS_STEADY : '',
       lipSync && speaker ? speaksOf(speaker.name) : '',
       drama.pinnedVoices && !spoken ? NOBODY_SPEAKS : '',
       CLEAN_FRAME,

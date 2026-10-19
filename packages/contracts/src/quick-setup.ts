@@ -52,8 +52,8 @@ export const QUICK_SETUP_TEMPLATES: QuickSetupTemplate[] = [
         provider: 'modelrunner',
         name: 'Video (ModelRunner)',
         baseUrl: MODELRUNNER_QUEUE,
-        // Veo 3.1 for shots that start from a first frame (a keyframe or a continued shot) when Seedance 2.0 refuses a
-        // photo-real one as a possible real person; it makes 4, 6 or 8 s, and its reference mode renders 16:9 only.
+        // Veo 3.1 starts from a photo-real keyframe that Seedance 2.0 refuses as a possible real person; it makes 4, 6
+        // or 8 s and no continued takes (adr-0020).
         models: ['bytedance/seedance-v2/reference-to-video', 'bytedance/seedance-v2.5/reference-to-video', 'google/veo-3.1/reference-to-video'],
       },
       {

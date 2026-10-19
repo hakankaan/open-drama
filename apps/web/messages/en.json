@@ -825,6 +825,8 @@
         "capped": "At most two shots in a row can continue the one before: they get no reference image, so faces drift.",
         "noFirstFrame": "{model} takes no first frame, so this shot cannot continue the one before. Pick a model that does, or turn this off.",
         "noMedia": "A shot that continues the one before takes no reference video or audio. Remove them, or turn this off.",
+        "noTakes": "{model} makes no continued takes, so this shot cannot continue the one before. Turn this off and it starts from its keyframe or reference images, or pick another model.",
+        "otherScene": "This shot is in another scene than shot #{number}, so the two cannot be one take. Turn this off, or bind the same scene.",
         "waiting": "Shot #{number}'s video is still generating; this shot starts from its last frame once it is ready.",
         "short": "Continues #{number}",
         "stale": "This video does not continue shot #{number} as it is now: that shot was generated again or another version was picked, the shots moved, or this video was made before the shot was marked. The merge cuts here until this shot is generated again.",
