@@ -21,6 +21,8 @@ export function useToastError() {
       switch (err.errorClass) {
         case 'moderation':
           return toast.error(t('moderation'), { description: err.message });
+        case 'likeness':
+          return toast.error(t('likeness'), { description: err.message });
         case 'auth':
           return toast.error(t('auth'), { description: err.message });
         case 'quota':

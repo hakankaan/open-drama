@@ -2,7 +2,7 @@
 
 import { Clapperboard, Link2, Loader2, Play, ScanEye, TriangleAlert, Unlink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { ShotCard } from '@open-drama/contracts';
+import type { ShotCard, TaskErrorClass } from '@open-drama/contracts';
 import { Button } from '@/components/ui/button';
 import { Tag } from '@/components/ui/tag';
 import { cn } from '@/lib/cn';
@@ -13,6 +13,12 @@ export type ShotFilter = 'all' | ShotState;
 const FILTERS: ShotFilter[] = ['all', 'pending', 'generating', 'done', 'failed'];
 
 export const STATE_TONE = { pending: 'neutral', generating: 'info', done: 'success', failed: 'danger' } as const;
+
+/** The advice shown before a refused video task's message: what to change, since a plain retry is refused again. */
+export const REFUSAL_HINT: Partial<Record<TaskErrorClass, 'moderationHint' | 'likenessHint'>> = {
+  moderation: 'moderationHint',
+  likeness: 'likenessHint',
+};
 
 /** Column 1: the shots in order, their state from latestVideoTask, filters and (in select mode) checkboxes. */
 export function TaskList({
@@ -160,7 +166,7 @@ export function TaskList({
                       <span className="flex items-start gap-1 text-xs text-danger">
                         <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
                         <span className="line-clamp-2">
-                          {task.errorClass === 'moderation' ? `${t('moderationHint')} ` : ''}
+                          {task.errorClass && REFUSAL_HINT[task.errorClass] ? `${t(REFUSAL_HINT[task.errorClass]!)} ` : ''}
                           {task.error}
                         </span>
                       </span>

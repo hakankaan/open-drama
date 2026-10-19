@@ -13,7 +13,7 @@ import { useToastError } from '@/lib/errors';
 import { mediaUrl, posterOf, thumbOf } from '@/lib/media';
 import { useDeleteTask, useRequestLineAudio, useRequestLipSync, useShotVideos } from '../api';
 import { shotStateOf } from '../model';
-import { STATE_TONE } from './task-list';
+import { REFUSAL_HINT, STATE_TONE } from './task-list';
 
 /** The still the shot's video starts from: draw, redraw or remove it, and whether the target model will use it. */
 function Keyframe({
@@ -340,7 +340,7 @@ export function ShotInspector({
           </div>
           {state === 'failed' && task?.error ? (
             <p className="mt-2 text-xs text-danger" role="alert">
-              {task.errorClass === 'moderation' ? `${t('moderationHint')} ` : ''}
+              {task.errorClass && REFUSAL_HINT[task.errorClass] ? `${t(REFUSAL_HINT[task.errorClass]!)} ` : ''}
               {task.error}
             </p>
           ) : null}

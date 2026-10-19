@@ -1,6 +1,6 @@
 # Command — an instruction to change domain state.
 name: FailGenerationTask
-description: Mark the task failed with a creator-readable error (moderation, timeout, provider error, missing configuration).
+description: Mark the task failed with a creator-readable error (moderation, a picture refused as a possible real person, timeout, provider error, missing configuration).
 fields:
   - name: taskId
     type: ID

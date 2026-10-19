@@ -6,7 +6,7 @@
 
 ## Summary
 
-Mark the task failed with a creator-readable error (moderation, timeout, provider error, missing configuration).
+Mark the task failed with a creator-readable error (moderation, a picture refused as a possible real person, timeout, provider error, missing configuration).
 
 
 ## Fields

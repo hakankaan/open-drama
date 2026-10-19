@@ -70,6 +70,7 @@
   "errors": {
     "network": "Cannot reach the Open Drama server. Check that it is running.",
     "moderation": "The provider refused this content. Switch the model and retry.",
+    "likeness": "The provider refused a picture as a possible real person; a retry fails the same way. Switch the model or use other pictures.",
     "auth": "The provider rejected the API key. Check it in Settings.",
     "quota": "The provider's quota or rate limit was reached. Try again later.",
     "timeout": "The provider took too long to answer.",
@@ -786,6 +787,7 @@
       "dropped": "Over the model's reference limit, left out: {names}",
       "alreadyGenerating": "This shot is already generating.",
       "moderationHint": "The provider refused this content; switch the video model and retry.",
+      "likenessHint": "The video model refused a picture as a possible real person; a retry fails the same way. Switch the video model, or remove the keyframe or Continuity so the character pictures go instead.",
       "shotN": "Shot #{number}",
       "selectShot": "Select shot #{number}",
       "generateShot": "Generate shot #{number}",

@@ -26,7 +26,11 @@ export type TaskStatus = z.infer<typeof TaskStatus>;
 export const FilmStatus = TaskStatus;
 export type FilmStatus = TaskStatus;
 
-export const TaskErrorClass = z.enum(['moderation', 'auth', 'quota', 'timeout', 'provider', 'config']);
+/**
+ * `likeness`: the provider refused an input picture as a possible real person (Seedance 2.0's face filter, say). A
+ * retry sends the same picture, so the remedy is another model or other pictures, not a reworded prompt.
+ */
+export const TaskErrorClass = z.enum(['moderation', 'likeness', 'auth', 'quota', 'timeout', 'provider', 'config']);
 export type TaskErrorClass = z.infer<typeof TaskErrorClass>;
 
 /** `cancelled`: stopped by the creator; nothing it had not saved yet is kept. */

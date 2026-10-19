@@ -2,8 +2,10 @@ import type { TaskErrorClass } from '@open-drama/contracts';
 import { scrubSecrets } from '../../../lib/secrets';
 import { ProviderError } from '../adapters/types';
 
+/** An input picture refused as a possible real person (Ark: InputImageSensitiveContentDetected.PrivacyInformation). */
+const LIKENESS = /real[- ]?person|real (human )?faces?|PrivacyInformation/i;
 const MODERATION =
-  /sensitive|moderat|policy|safety|inappropriate|real[- ]?person|celebrit|copyright|OutputVideoSensitiveContentDetected|InputTextSensitiveContentDetected|InputImageSensitiveContentDetected|blocked/i;
+  /sensitive|moderat|policy|safety|inappropriate|celebrit|copyright|OutputVideoSensitiveContentDetected|InputTextSensitiveContentDetected|InputImageSensitiveContentDetected|blocked/i;
 
 export class ConfigError extends Error {}
 
@@ -13,6 +15,7 @@ export function classify(err: unknown): TaskErrorClass {
   const message = err instanceof Error ? err.message : String(err);
   const status = err instanceof ProviderError ? err.status : undefined;
   const code = err instanceof ProviderError ? (err.code ?? '') : '';
+  if (LIKENESS.test(message) || LIKENESS.test(code)) return 'likeness';
   if (MODERATION.test(message) || MODERATION.test(code)) return 'moderation';
   if (status === 401 || status === 403) return 'auth';
   if (status === 429 || status === 402) return 'quota';

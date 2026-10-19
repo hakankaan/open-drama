@@ -70,6 +70,7 @@
   "errors": {
     "network": "无法连接 Open Drama 服务器，请确认它正在运行。",
     "moderation": "服务商拒绝了该内容。换个模型再试试。",
+    "likeness": "服务商认为图片可能是真实人物而拒绝了它，重试也会被拒。换个模型，或换用其他图片。",
     "auth": "服务商拒绝了该 API Key，请到设置中检查。",
     "quota": "已达到服务商的额度或限流上限，请稍后再试。",
     "timeout": "服务商响应超时。",
@@ -786,6 +787,7 @@
       "dropped": "超出模型的参考数量上限，已省略：{names}",
       "alreadyGenerating": "这个分镜正在生成中。",
       "moderationHint": "服务商拒绝了该内容，换个视频模型再试试。",
+      "likenessHint": "视频模型认为图片可能是真实人物而拒绝了它，重试也会被拒。换个视频模型，或移除关键帧、关闭连贯性，改为发送角色图片。",
       "shotN": "分镜 #{number}",
       "selectShot": "选择分镜 #{number}",
       "generateShot": "生成分镜 #{number}",
